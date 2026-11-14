@@ -23,6 +23,14 @@ Ordem de trabalho do front. Cada item é um comportamento: teste vermelho (quand
 - [ ] Membro removido: conferir o vínculo ativo a cada recusa por regra da fila (ao abrir com sinal já confere); sem vínculo, `clearUser` e logout.
 - [ ] Playwright contra o stack local do backend.
 
+## 2b. Scratch visual (sem testes, dados de exemplo)
+
+Esboço da estrutura visual do sistema inteiro, antes da integração real. Regras em [CLAUDE.md](../CLAUDE.md#scratch-visual). Os itens que faltam da etapa 2 (service worker com a fila, conferência do vínculo nas recusas da fila, Playwright) ficam para depois do scratch, junto com as etapas 3 e 4 de verdade.
+
+- [ ] Componentes reutilizáveis, dados de exemplo compartilhados e a vitrine em `/dev/components`.
+- [ ] Telas do técnico (etapa 3) em scratch.
+- [ ] Telas do escritório (etapa 4) em scratch.
+
 ## 3. Técnico
 
 - [ ] Minhas O.S. com cache persistido (TanStack Query no IndexedDB).

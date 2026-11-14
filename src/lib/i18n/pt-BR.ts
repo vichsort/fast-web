@@ -1,5 +1,10 @@
 // Textos da interface em pt-BR. Toda frase da tela sai daqui (t('chave')), para a tradução futura.
+// Cada área tem o seu arquivo (ui.ts, technician.ts, office.ts), para não disputarem este.
 // `errors` tem uma chave por código do catálogo do backend (../fast/docs/errors.md) e os erros do aparelho.
+
+import { officeTexts } from './office';
+import { technicianTexts } from './technician';
+import { uiTexts } from './ui';
 
 /** Códigos do catálogo do backend (errors.md, "Catálogo"). */
 export const BACKEND_ERROR_CODES = [
@@ -57,6 +62,9 @@ const errors = {
 } satisfies Record<ErrorCode, string>;
 
 export const ptBR = {
+  ui: uiTexts,
+  technician: technicianTexts,
+  office: officeTexts,
   common: {
     appName: 'Fast O.S.',
     updatedAt: 'Atualizado às {time}',

@@ -1,15 +1,14 @@
 // Rotas (TanStack Router, definidas em código). A raiz decide a interface pelo papel (pages/gate.tsx).
-import { createRootRoute, createRoute, createRouter, Outlet } from '@tanstack/react-router';
-import { OfficeHome } from '@/office/home';
-import { OfficeLayout } from '@/office/layout';
-import { TechnicianHome } from '@/technician/home';
-import { TechnicianLayout } from '@/technician/layout';
+// Cada área declara as suas rotas no próprio arquivo (technician/routes.tsx, office/routes.tsx, dev/routes.tsx).
+import { createRoute, createRouter } from '@tanstack/react-router';
+import { officeRouteTree } from '@/office/routes';
+import { technicianRouteTree } from '@/technician/routes';
+import { devRouteTree } from './dev/routes';
 import { ForgotPasswordPage } from './pages/forgot-password';
 import { Gate } from './pages/gate';
 import { LoginPage } from './pages/login';
 import { SetPasswordPage } from './pages/set-password';
-
-const rootRoute = createRootRoute({ component: Outlet });
+import { rootRoute } from './root-route';
 
 const gateRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: Gate });
 
@@ -33,27 +32,14 @@ const setPasswordRoute = createRoute({
   component: SetPasswordPage,
 });
 
-const technicianRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/technician',
-  component: TechnicianLayout,
-});
-const technicianHomeRoute = createRoute({
-  getParentRoute: () => technicianRoute,
-  path: '/',
-  component: TechnicianHome,
-});
-
-const officeRoute = createRoute({ getParentRoute: () => rootRoute, path: '/office', component: OfficeLayout });
-const officeHomeRoute = createRoute({ getParentRoute: () => officeRoute, path: '/', component: OfficeHome });
-
 const routeTree = rootRoute.addChildren([
   gateRoute,
   loginRoute,
   forgotPasswordRoute,
   setPasswordRoute,
-  technicianRoute.addChildren([technicianHomeRoute]),
-  officeRoute.addChildren([officeHomeRoute]),
+  technicianRouteTree,
+  officeRouteTree,
+  ...(import.meta.env.DEV ? [devRouteTree] : []),
 ]);
 
 export const router = createRouter({ routeTree, defaultPreload: 'intent' });

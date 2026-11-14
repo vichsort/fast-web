@@ -50,6 +50,16 @@ Regras de trabalho neste repositório. O backend (Supabase) fica no repositório
 5. `npm run check` verde (lint, tipos e Vitest).
 6. Refatorar com tudo verde, marcar o roadmap e commitar.
 
+## Scratch visual
+
+Etapa 2b do [roadmap](docs/roadmap.md): esboço da estrutura visual, pedido pelo usuário em 2026-11-13. Enquanto durar, valem estas exceções às regras acima, só para as telas e componentes do scratch:
+
+- **Sem TDD e sem testes novos** para telas e componentes visuais. `npm run check` continua verde (lint, tipos, testes existentes).
+- **Dados de exemplo, não o Supabase:** as telas leem de `src/mocks/` (tipados a partir de `database.types.ts`), por funções que imitam a forma das consultas reais, para depois trocar pela integração sem refazer a tela. Ações (aprovar, enviar, salvar) só mostram o efeito na tela, com aviso de scratch.
+- **Sem integrações precisas:** nada de fila real, service worker, câmera real ou chamadas às RPCs.
+- **Cada área nos seus arquivos**, para trabalhos em paralelo não colidirem: técnico em `src/technician/**`, escritório em `src/office/**`, componentes em `src/components/**`; rotas em `src/<área>/routes.tsx`; textos em `src/lib/i18n/<área>.ts` (`ui`, `technician`, `office`). Os textos continuam centralizados, sem frase solta no JSX.
+- As regras de negócio dos docs do backend continuam valendo para o que a tela mostra e permite (quem pode o quê, status, motivo obrigatório, alertas).
+
 ## Git
 
 - Branch `main`. Trabalho paralelo (subagentes) em worktree com branch própria, juntado na `main` pelo agente principal.
