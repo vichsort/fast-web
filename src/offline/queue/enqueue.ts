@@ -20,3 +20,27 @@ export async function enqueueStart(
     ...fresh(),
   });
 }
+
+/**
+ * Enviar (Q4, Q5): o rascunho sai de `editing` para `queued` e entra na fila, numa transação. Repetir o toque
+ * com o rascunho já na fila não faz nada. Rascunho de outro usuário, recusado ou inexistente é erro da tela.
+ */
+export async function enqueueSubmit(
+  db: FastDb,
+  item: { userId: string; draftId: string; clientSubmittedAt: string },
+): Promise<void> {
+  await db.transaction('rw', db.drafts, db.queue, async () => {
+    const draft = await db.drafts.get(item.draftId);
+    if (!draft || draft.userId !== item.userId) throw new Error(`draft ${item.draftId} not found for this user`);
+    if (draft.state === 'queued') return;
+    if (draft.state !== 'editing') throw new Error(`draft ${item.draftId} is ${draft.state}`);
+    await db.drafts.update(draft.id, { state: 'queued', updatedAt: new Date().toISOString() });
+    await db.queue.add({
+      userId: draft.userId,
+      orderId: draft.orderId,
+      type: 'submit',
+      payload: { draftId: draft.id, clientSubmittedAt: item.clientSubmittedAt, stagedPhotoIds: [] },
+      ...fresh(),
+    });
+  });
+}
