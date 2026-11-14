@@ -1,3 +1,4 @@
+import Dexie from 'dexie';
 import { type Draft, FastDb } from '@/offline/db';
 import { savePhotoToDraft } from './draft-photos';
 import { PhotoError } from './errors';
@@ -102,6 +103,41 @@ describe('save photo to draft', () => {
       savePhotoToDraft(db, { draftId: crypto.randomUUID(), userId: 'tech-1', photo: photo() }),
       'draft_not_editable',
     );
+    expect(await db.photos.count()).toBe(0);
+  });
+
+  const quotaError = () => new DOMException('The quota has been exceeded.', 'QuotaExceededError');
+
+  it('F5: when IndexedDB refuses the write for lack of space, throws storage_full and keeps nothing', async () => {
+    const d = draft();
+    await db.drafts.add(d);
+    vi.spyOn(db.photos, 'add').mockRejectedValue(quotaError());
+
+    await expectPhotoError(savePhotoToDraft(db, { draftId: d.id, userId: 'tech-1', photo: photo() }), 'storage_full');
+    vi.restoreAllMocks();
+    expect(await db.photos.count()).toBe(0);
+  });
+
+  it('F5: a quota error that aborts the transaction on commit is also storage_full', async () => {
+    const d = draft();
+    await db.drafts.add(d);
+    // No IndexedDB real, a cota estoura no commit: o Dexie rejeita com AbortError e a causa em `inner`.
+    vi.spyOn(db.photos, 'add').mockRejectedValue(new Dexie.AbortError('Transaction aborted', quotaError()));
+
+    await expectPhotoError(savePhotoToDraft(db, { draftId: d.id, userId: 'tech-1', photo: photo() }), 'storage_full');
+    vi.restoreAllMocks();
+    expect(await db.photos.count()).toBe(0);
+  });
+
+  it('F5: other write errors are not storage_full', async () => {
+    const d = draft();
+    await db.drafts.add(d);
+    const boom = new DOMException('Something else.', 'UnknownError');
+    vi.spyOn(db.photos, 'add').mockRejectedValue(boom);
+
+    const error = await savePhotoToDraft(db, { draftId: d.id, userId: 'tech-1', photo: photo() }).catch((e) => e);
+    vi.restoreAllMocks();
+    expect(error).not.toBeInstanceOf(PhotoError);
     expect(await db.photos.count()).toBe(0);
   });
 });
