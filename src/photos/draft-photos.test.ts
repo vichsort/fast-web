@@ -1,6 +1,6 @@
 import Dexie from 'dexie';
 import { type Draft, FastDb } from '@/offline/db';
-import { savePhotoToDraft } from './draft-photos';
+import { removePhotoFromDraft, savePhotoToDraft } from './draft-photos';
 import { PhotoError } from './errors';
 import type { ProcessedPhoto } from './types';
 
@@ -139,5 +139,44 @@ describe('save photo to draft', () => {
     vi.restoreAllMocks();
     expect(error).not.toBeInstanceOf(PhotoError);
     expect(await db.photos.count()).toBe(0);
+  });
+});
+
+describe('remove photo from draft', () => {
+  const draftWithPhoto = async (overrides: Partial<Draft> = {}) => {
+    const d = draft();
+    await db.drafts.add(d);
+    const saved = await savePhotoToDraft(db, { draftId: d.id, userId: 'tech-1', photo: photo() });
+    if (Object.keys(overrides).length > 0) await db.drafts.update(d.id, overrides);
+    return saved.id;
+  };
+
+  it('F6: removes the photo from an editing draft', async () => {
+    const photoId = await draftWithPhoto();
+
+    await removePhotoFromDraft(db, { photoId, userId: 'tech-1' });
+
+    expect(await db.photos.get(photoId)).toBeUndefined();
+  });
+
+  it.each(['queued', 'refused'] as const)('F6: refuses when the draft is %s', async (state) => {
+    const photoId = await draftWithPhoto({ state });
+
+    await expectPhotoError(removePhotoFromDraft(db, { photoId, userId: 'tech-1' }), 'draft_not_editable');
+    expect(await db.photos.get(photoId)).toBeDefined();
+  });
+
+  it('F6: refuses a photo of another user', async () => {
+    const photoId = await draftWithPhoto();
+
+    await expectPhotoError(removePhotoFromDraft(db, { photoId, userId: 'tech-2' }), 'draft_not_editable');
+    expect(await db.photos.get(photoId)).toBeDefined();
+  });
+
+  it('F6: removing a photo that is already gone does nothing (double tap)', async () => {
+    const photoId = await draftWithPhoto();
+    await removePhotoFromDraft(db, { photoId, userId: 'tech-1' });
+
+    await expect(removePhotoFromDraft(db, { photoId, userId: 'tech-1' })).resolves.toBeUndefined();
   });
 });

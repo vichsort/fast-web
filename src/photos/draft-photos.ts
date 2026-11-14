@@ -52,3 +52,16 @@ function isQuotaExceeded(error: unknown): boolean {
   }
   return false;
 }
+
+/** Tira a foto de um rascunho `editing` do usuário. Foto que já não existe: nada a fazer (toque repetido). */
+export async function removePhotoFromDraft(db: FastDb, input: { photoId: string; userId: string }): Promise<void> {
+  await db.transaction('rw', db.drafts, db.photos, async () => {
+    const photo = await db.photos.get(input.photoId);
+    if (!photo) return;
+    const draft = await db.drafts.get(photo.draftId);
+    if (photo.userId !== input.userId || !draft || draft.state !== 'editing') {
+      throw new PhotoError('draft_not_editable');
+    }
+    await db.photos.delete(photo.id);
+  });
+}
