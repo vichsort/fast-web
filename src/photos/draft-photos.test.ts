@@ -1,0 +1,107 @@
+import { type Draft, FastDb } from '@/offline/db';
+import { savePhotoToDraft } from './draft-photos';
+import { PhotoError } from './errors';
+import type { ProcessedPhoto } from './types';
+
+let db: FastDb;
+
+beforeEach(() => {
+  db = new FastDb(`test-${crypto.randomUUID()}`);
+});
+
+afterEach(async () => {
+  await db.delete();
+});
+
+const draft = (overrides: Partial<Draft> = {}): Draft => ({
+  id: crypto.randomUUID(),
+  userId: 'tech-1',
+  orderId: 'order-1',
+  supplementsExecutionId: null,
+  description: '',
+  participants: ['tech-1'],
+  clientStartedAt: null,
+  state: 'editing',
+  refusal: null,
+  createdAt: '2026-11-13T10:00:00Z',
+  updatedAt: '2026-11-13T10:00:00Z',
+  ...overrides,
+});
+
+const photo = (): ProcessedPhoto => ({
+  blob: new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xd9])], { type: 'image/jpeg' }),
+  source: 'gallery',
+  width: 1600,
+  height: 1200,
+  capturedAt: '2026-11-13T09:30:00.000Z',
+  latitude: -23.56,
+  longitude: -46.65,
+  accuracyM: 12,
+});
+
+const expectPhotoError = async (promise: Promise<unknown>, code: PhotoError['code']) => {
+  const error = await promise.then(
+    () => null,
+    (e: unknown) => e,
+  );
+  expect(error).toBeInstanceOf(PhotoError);
+  expect((error as PhotoError).code).toBe(code);
+};
+
+describe('save photo to draft', () => {
+  it('F5: saves the photo in an editing draft of the same user, not uploaded, with the order of the draft', async () => {
+    const d = draft();
+    await db.drafts.add(d);
+
+    const saved = await savePhotoToDraft(db, { draftId: d.id, userId: 'tech-1', photo: photo() });
+
+    const stored = await db.photos.get(saved.id);
+    expect(stored).toMatchObject({
+      draftId: d.id,
+      userId: 'tech-1',
+      orderId: 'order-1',
+      source: 'gallery',
+      width: 1600,
+      height: 1200,
+      capturedAt: '2026-11-13T09:30:00.000Z',
+      latitude: -23.56,
+      longitude: -46.65,
+      accuracyM: 12,
+      uploaded: false,
+    });
+    expect(stored?.id).toMatch(/^[0-9a-f-]{36}$/);
+    expect(stored?.blob.size).toBe(4);
+    expect(stored?.blob.type).toBe('image/jpeg');
+    expect(Number.isNaN(Date.parse(stored?.createdAt ?? ''))).toBe(false);
+  });
+
+  it('F5: refuses a draft of another user', async () => {
+    const d = draft({ userId: 'tech-2' });
+    await db.drafts.add(d);
+
+    await expectPhotoError(
+      savePhotoToDraft(db, { draftId: d.id, userId: 'tech-1', photo: photo() }),
+      'draft_not_editable',
+    );
+    expect(await db.photos.count()).toBe(0);
+  });
+
+  it.each(['queued', 'refused'] as const)('F5: refuses a %s draft', async (state) => {
+    const d = draft({ state });
+    await db.drafts.add(d);
+
+    await expectPhotoError(
+      savePhotoToDraft(db, { draftId: d.id, userId: 'tech-1', photo: photo() }),
+      'draft_not_editable',
+    );
+    expect(await db.photos.count()).toBe(0);
+  });
+
+  it('F5: refuses a draft that does not exist', async () => {
+    await expectPhotoError(
+      savePhotoToDraft(db, { draftId: crypto.randomUUID(), userId: 'tech-1', photo: photo() }),
+      'draft_not_editable',
+    );
+    expect(await db.photos.count()).toBe(0);
+  });
+});
