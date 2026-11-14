@@ -126,4 +126,80 @@ describe('processQueue', () => {
     ]);
     expect(status).toEqual({ kind: 'idle' });
   });
+
+  it('Q6: a session error renews the session and tries again', async () => {
+    const db = newDb();
+    let expired = true;
+    const { api, calls } = fakeApi({
+      startExecution: async () => {
+        if (expired) throw new ApiError('session', 'PGRST303', 'JWT expired');
+      },
+      refreshSession: async () => {
+        expired = false;
+        return true;
+      },
+    });
+    await enqueueStart(db, { userId: 'u1', orderId: 'o1', clientStartedAt: at });
+
+    const status = await processQueue({ db, api, lock: noLock, clock: fakeClock(), userId: 'u1' });
+
+    expect(calls.map((c) => c.method)).toEqual(['startExecution', 'refreshSession', 'startExecution']);
+    expect(await db.queue.count()).toBe(0);
+    expect(status).toEqual({ kind: 'idle' });
+  });
+
+  it('Q6: when the renewal fails, the whole queue stops and asks for login', async () => {
+    const db = newDb();
+    const { api, calls } = fakeApi({
+      startExecution: async () => {
+        throw new ApiError('session', null, '401');
+      },
+      refreshSession: async () => false,
+    });
+    await enqueueStart(db, { userId: 'u1', orderId: 'o1', clientStartedAt: at });
+    await enqueueStart(db, { userId: 'u1', orderId: 'o2', clientStartedAt: at });
+
+    const status = await processQueue({ db, api, lock: noLock, clock: fakeClock(), userId: 'u1' });
+
+    expect(calls.map((c) => c.method)).toEqual(['startExecution', 'refreshSession']);
+    expect(await db.queue.orderBy('id').toArray()).toMatchObject([
+      { orderId: 'o1', state: 'pending', attempts: 0, nextAttemptAt: 0 },
+      { orderId: 'o2', state: 'pending', attempts: 0, nextAttemptAt: 0 },
+    ]);
+    expect(status).toEqual({ kind: 'needs_login' });
+  });
+
+  it('Q6: a session error again right after a renewal asks for login', async () => {
+    const db = newDb();
+    const { api, calls } = fakeApi({
+      startExecution: async () => {
+        throw new ApiError('session', null, '401');
+      },
+    });
+    await enqueueStart(db, { userId: 'u1', orderId: 'o1', clientStartedAt: at });
+
+    const status = await processQueue({ db, api, lock: noLock, clock: fakeClock(), userId: 'u1' });
+
+    expect(calls.map((c) => c.method)).toEqual(['startExecution', 'refreshSession', 'startExecution']);
+    expect(status).toEqual({ kind: 'needs_login' });
+  });
+
+  it('Q6: a renewal that fails for lack of network makes the item wait', async () => {
+    const db = newDb();
+    const clock = fakeClock();
+    const { api } = fakeApi({
+      startExecution: async () => {
+        throw new ApiError('session', null, '401');
+      },
+      refreshSession: async () => {
+        throw new ApiError('network', null, 'offline');
+      },
+    });
+    await enqueueStart(db, { userId: 'u1', orderId: 'o1', clientStartedAt: at });
+
+    const status = await processQueue({ db, api, lock: noLock, clock, userId: 'u1' });
+
+    expect(await db.queue.toArray()).toMatchObject([{ attempts: 1, lastError: 'offline' }]);
+    expect(status).toEqual({ kind: 'waiting', retryAt: clock.now() + 5_000 });
+  });
 });

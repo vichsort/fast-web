@@ -24,6 +24,8 @@ export function processQueue(deps: QueueDeps): Promise<QueueStatus> {
 
 async function run(input: QueueDeps): Promise<QueueStatus> {
   const deps = { ...input, api: resettingWaitsOnSuccess(input) };
+  /** A sessão já foi renovada depois do último item aceito: outro erro de sessão é login vencido. */
+  let renewed = false;
   for (;;) {
     const heads = await headsByOrder(deps);
     const now = deps.clock.now();
@@ -31,6 +33,7 @@ async function run(input: QueueDeps): Promise<QueueStatus> {
     if (!item) return statusOf(heads);
     try {
       await execute(deps, item);
+      renewed = false;
     } catch (error) {
       const failure = asApiError(error);
       switch (failure.errorClass) {
@@ -38,10 +41,28 @@ async function run(input: QueueDeps): Promise<QueueStatus> {
         case 'server':
           await wait(deps, item, failure);
           break;
+        case 'session': {
+          if (renewed) return { kind: 'needs_login' };
+          const renewal = await renewSession(deps);
+          if (renewal === 'needs_login') return { kind: 'needs_login' };
+          if (renewal instanceof ApiError) await wait(deps, item, renewal);
+          else renewed = true;
+          break;
+        }
         default:
           await block(deps, item, failure);
       }
     }
+  }
+}
+
+/** Sessão (Q6): renova e o item é tentado de novo; sem renovação, a fila inteira para e pede login. */
+async function renewSession({ api }: QueueDeps): Promise<'renewed' | 'needs_login' | ApiError> {
+  try {
+    return (await api.refreshSession()) ? 'renewed' : 'needs_login';
+  } catch (error) {
+    const failure = asApiError(error);
+    return failure.errorClass === 'network' || failure.errorClass === 'server' ? failure : 'needs_login';
   }
 }
 
