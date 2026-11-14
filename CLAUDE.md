@@ -39,6 +39,7 @@ Regras de trabalho neste repositório. O backend (Supabase) fica no repositório
 - **Horários:** ISO 8601; mostrar no fuso da empresa (`companies.timezone`) com `Intl.DateTimeFormat`.
 - **Banco local:** schema em `src/offline/db.ts`; mudança de schema é versão nova do Dexie, nunca edição de uma versão publicada.
 - **Lint e formatação:** Biome (`npm run lint`, `npm run format`). TypeScript `strict`.
+- **Componentes shadcn/ui** (Base UI, estilo `base-nova`): `node node_modules/shadcn/dist/index.js add <nome>`. Não use `npx shadcn` nem `npm run`: eles repassam o `allow-scripts` do `~/.npmrc` como flag ao npm filho, e o npm 12 recusa. `src/components/ui` é gerado: fica fora do lint e não se edita à mão sem motivo.
 
 ## Ciclo
 
