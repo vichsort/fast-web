@@ -89,4 +89,17 @@ describe('processQueue', () => {
     expect(await db.queue.toArray()).toMatchObject([{ orderId: 'o2', attempts: 1 }]);
     expect(status).toEqual({ kind: 'waiting', retryAt: clock.now() + 5_000 });
   });
+
+  it("Q3: only the logged user's items are sent; the others stay untouched", async () => {
+    const db = newDb();
+    const { api, calls } = fakeApi();
+    await enqueueStart(db, { userId: 'u2', orderId: 'o1', clientStartedAt: at });
+    await enqueueStart(db, { userId: 'u1', orderId: 'o2', clientStartedAt: at });
+
+    const status = await processQueue({ db, api, lock: noLock, clock: fakeClock(), userId: 'u1' });
+
+    expect(calls.map((c) => (c.args[0] as StartExecutionArgs).p_order_id)).toEqual(['o2']);
+    expect(await db.queue.toArray()).toMatchObject([{ userId: 'u2', orderId: 'o1', attempts: 0 }]);
+    expect(status).toEqual({ kind: 'idle' });
+  });
 });
