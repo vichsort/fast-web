@@ -49,6 +49,9 @@ async function run(input: QueueDeps): Promise<QueueStatus> {
           else renewed = true;
           break;
         }
+        case 'rule':
+          await refuse(deps, item, failure);
+          break;
         default:
           await block(deps, item, failure);
       }
@@ -106,6 +109,32 @@ function statusOf(heads: QueueItem[]): QueueStatus {
 function asApiError(error: unknown): ApiError {
   if (error instanceof ApiError) return error;
   return new ApiError('bug', null, error instanceof Error ? `${error.name}: ${error.message}` : String(error));
+}
+
+/**
+ * Regra (Q6): o item sai da fila e o motivo fica para a tela. Lê o item de novo na transação: a tela pode ter
+ * trocado o texto de materiais enquanto a chamada estava no ar.
+ */
+async function refuse({ db, clock }: QueueDeps, item: QueueItem, failure: ApiError): Promise<void> {
+  const id = item.id as number;
+  const refusal = {
+    userId: item.userId,
+    orderId: item.orderId,
+    code: failure.code ?? failure.message,
+    createdAt: new Date(clock.now()).toISOString(),
+  };
+  await db.transaction('rw', [db.queue, db.refusals, db.drafts], async () => {
+    const current = await db.queue.get(id);
+    if (!current) return;
+    await db.queue.delete(id);
+    switch (current.type) {
+      case 'start':
+        await db.refusals.add({ ...refusal, type: 'start', payload: current.payload });
+        return;
+      default:
+        throw new Error(`not implemented: ${current.type}`);
+    }
+  });
 }
 
 /** Bug: o item para com o erro até o técnico pedir de novo; nunca é descartado (Q6). */

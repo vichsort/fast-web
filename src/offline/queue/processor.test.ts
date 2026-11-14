@@ -202,4 +202,25 @@ describe('processQueue', () => {
     expect(await db.queue.toArray()).toMatchObject([{ attempts: 1, lastError: 'offline' }]);
     expect(status).toEqual({ kind: 'waiting', retryAt: clock.now() + 5_000 });
   });
+
+  it('Q6: a rule refusal of start drops the item and keeps the reason for the screen', async () => {
+    const db = newDb();
+    const { api, calls } = fakeApi({
+      startExecution: async () => {
+        throw new ApiError('rule', 'order_closed', 'order_closed');
+      },
+    });
+    await enqueueStart(db, { userId: 'u1', orderId: 'o1', clientStartedAt: at });
+    await enqueueStart(db, { userId: 'u1', orderId: 'o1', clientStartedAt: at });
+
+    const status = await processQueue({ db, api, lock: noLock, clock: fakeClock(), userId: 'u1' });
+
+    expect(calls).toHaveLength(2);
+    expect(await db.queue.count()).toBe(0);
+    expect(await db.refusals.toArray()).toMatchObject([
+      { userId: 'u1', orderId: 'o1', type: 'start', code: 'order_closed', payload: { clientStartedAt: at } },
+      { userId: 'u1', orderId: 'o1', type: 'start', code: 'order_closed' },
+    ]);
+    expect(status).toEqual({ kind: 'idle' });
+  });
 });
