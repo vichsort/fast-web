@@ -1,0 +1,89 @@
+import { Navigate, useNavigate } from '@tanstack/react-router';
+import { type ReactNode, useEffect, useRef } from 'react';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { t } from '@/lib/i18n';
+import { pendingAuthLink } from '@/lib/supabase';
+import type { Access } from '../access';
+import { useAuth } from '../auth-context';
+import { signOutAndWipe, useAccess } from '../session';
+
+function Loading() {
+  return (
+    <main className="flex min-h-svh items-center justify-center p-4" aria-busy="true">
+      <Skeleton className="h-8 w-48" />
+      <span className="sr-only">{t('common.loading')}</span>
+    </main>
+  );
+}
+
+function Message({ text, children }: { text: string; children?: ReactNode }) {
+  return (
+    <main className="flex min-h-svh flex-col items-center justify-center gap-4 p-4 text-center">
+      <p className="max-w-sm text-muted-foreground">{text}</p>
+      {children}
+    </main>
+  );
+}
+
+/** Raiz: sem sessão vai ao login; com o link de email, a definir senha; senão, à interface do papel (access.ts). */
+export function Gate() {
+  const { session, ready } = useAuth();
+  const navigate = useNavigate();
+  const access = useAccess(session?.user.id);
+  const wiping = useRef(false);
+
+  useEffect(() => {
+    if (access.data?.kind !== 'no_access' || !session || wiping.current) return;
+    wiping.current = true;
+    void signOutAndWipe(session.user.id).then(() => navigate({ to: '/login', search: { removed: true } }));
+  }, [access.data, session, navigate]);
+
+  if (!ready) return <Loading />;
+  if (!session) return <Navigate to="/login" />;
+  if (pendingAuthLink()) return <Navigate to="/set-password" />;
+  if (!access.data) return <Loading />;
+
+  switch (access.data.kind) {
+    case 'technician':
+      return <Navigate to="/technician" />;
+    case 'office':
+      return <Navigate to="/office" />;
+    case 'no_access':
+      return <Loading />;
+    case 'platform_admin':
+      return (
+        <Message text={t('access.platformAdmin')}>
+          <Button
+            variant="outline"
+            onClick={() => void signOutAndWipe(session.user.id).then(() => navigate({ to: '/login' }))}
+          >
+            {t('common.logout')}
+          </Button>
+        </Message>
+      );
+    case 'offline_first_access':
+      return (
+        <Message text={t('access.offlineFirstAccess')}>
+          <Button variant="outline" onClick={() => void access.refetch()}>
+            {t('access.retry')}
+          </Button>
+        </Message>
+      );
+  }
+}
+
+/** Guarda das interfaces: só entra quem tem aquele acesso; o resto volta à raiz, que decide. */
+export function RequireAccess({
+  kind,
+  children,
+}: {
+  kind: 'technician' | 'office';
+  children: (access: Access) => ReactNode;
+}) {
+  const { session, ready } = useAuth();
+  const access = useAccess(session?.user.id);
+  if (!ready || (session && !access.data)) return <Loading />;
+  if (!session || access.data?.kind !== kind) return <Navigate to="/" />;
+  return children(access.data);
+}

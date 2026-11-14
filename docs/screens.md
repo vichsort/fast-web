@@ -11,7 +11,7 @@ Um PWA, duas interfaces escolhidas pelo papel depois do login ([spec](../../fast
 | Definir senha   | quem chegou pelo link do convite | Auth ([06](../../fast/docs/modules/06-members.md))          |
 | Meu perfil      | todos                            | `profiles` ([01](../../fast/docs/modules/01-foundation.md)) |
 
-Depois do login: `technician` vai para a interface do técnico; `owner` e `manager`, para a do escritório.
+Depois do login: `technician` vai para a interface do técnico; `owner` e `manager`, para a do escritório. Sem vínculo ativo (removido ou empresa excluída), o app apaga os dados do usuário e volta ao login com o aviso ([offline.md](../../fast/docs/offline.md#proteção-dos-dados-no-aparelho)). Os links de email do Auth (convite e recuperação) abrem a raiz do app (`site_url`), que leva a "definir senha"; link expirado ou já usado avisa no login.
 
 ## Técnico (celular, offline)
 
@@ -35,3 +35,11 @@ Depois do login: `technician` vai para a interface do técnico; `owner` e `manag
 | Membros (owner)        | convidar, trocar papel, remover                                                                                    | [06](../../fast/docs/modules/06-members.md)                                  |
 | Auditoria (owner)      | quem mudou empresa, membros e papéis                                                                               | [05](../../fast/docs/modules/05-dashboard-audit.md)                          |
 | Importação de clientes | CSV com erros e possíveis duplicados por linha                                                                     | [02](../../fast/docs/modules/02-clients.md) (depois do primeiro deploy)      |
+
+## Decisões
+
+- **2026-11-13** — Usuário em mais de uma empresa entra na do vínculo mais antigo; sem troca de empresa no MVP. *Por quê:* só há um cliente; a troca entra com o segundo.
+- **2026-11-13** — Platform admin sem vínculo vê um aviso e o botão de sair, sem tela. *Por quê:* a spec deixa a administração de empresas para o painel do Supabase até o segundo cliente; sem o aviso, ele seria tratado como removido.
+- **2026-11-13** — Sem sinal, o app abre com o último acesso guardado no aparelho; sem nada guardado, pede conexão. *Por quê:* falha de rede nunca pode ser lida como remoção, senão o app apagaria a prova de quem só está sem sinal.
+- **2026-11-13** — Servidor de desenvolvimento na porta 3000 (`127.0.0.1`). *Por quê:* é o `site_url` do Auth local no backend; os links do convite e da senha abrem no app sem mudar o backend.
+

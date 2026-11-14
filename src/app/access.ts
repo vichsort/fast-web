@@ -45,3 +45,8 @@ export function authLinkType(hash: string): 'invite' | 'recovery' | null {
   const type = new URLSearchParams(hash.replace(/^#/, '')).get('type');
   return type === 'invite' || type === 'recovery' ? type : null;
 }
+
+/** O Auth devolveu o link de email com erro (expirado ou já usado): `#error=...&error_code=...`. */
+export function authLinkError(hash: string): boolean {
+  return new URLSearchParams(hash.replace(/^#/, '')).has('error_code');
+}

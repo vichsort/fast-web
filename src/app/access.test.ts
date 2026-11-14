@@ -1,4 +1,4 @@
-import { accessFrom, authLinkType, resolveAccess } from './access';
+import { accessFrom, authLinkError, authLinkType, resolveAccess } from './access';
 
 const technician = { companyId: 'c1', role: 'technician' as const };
 const manager = { companyId: 'c1', role: 'manager' as const };
@@ -39,5 +39,13 @@ describe('access', () => {
     expect(authLinkType('#access_token=x&type=recovery')).toBe('recovery');
     expect(authLinkType('#type=signup')).toBeNull();
     expect(authLinkType('')).toBeNull();
+  });
+
+  it('tells an expired or already used Auth email link apart from a normal opening', () => {
+    expect(authLinkError('#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid')).toBe(
+      true,
+    );
+    expect(authLinkError('#access_token=x&type=recovery')).toBe(false);
+    expect(authLinkError('')).toBe(false);
   });
 });

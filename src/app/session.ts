@@ -1,0 +1,90 @@
+// Sessão e acesso do usuário logado: consulta ao servidor, cache para abrir sem sinal, logout com limpeza.
+import type { Session } from '@supabase/supabase-js';
+import { useQuery } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { classifyRpcError } from '@/offline/queue/errors';
+import { type Access, type AccessLookup, type Membership, type ResolvedAccess, resolveAccess } from './access';
+
+/** Sessão atual do Supabase; `ready` fica falso até a sessão guardada (ou a do link de email) ser lida. */
+export function useSession(): { session: Session | null; ready: boolean } {
+  const [state, setState] = useState<{ session: Session | null; ready: boolean }>({ session: null, ready: false });
+  useEffect(() => {
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => setState({ session, ready: true }));
+    return () => data.subscription.unsubscribe();
+  }, []);
+  return state;
+}
+
+/** Vínculos ativos (mais antigo primeiro) e a flag de platform admin. O RLS esconde os vínculos de quem foi removido. */
+async function lookupAccess(userId: string): Promise<AccessLookup> {
+  const [members, profile] = await Promise.all([
+    supabase
+      .from('company_members')
+      .select('company_id, role')
+      .eq('user_id', userId)
+      .is('deleted_at', null)
+      .order('created_at'),
+    supabase.from('profiles').select('is_platform_admin').eq('id', userId).maybeSingle(),
+  ]);
+  if (members.error) return { ok: false, errorClass: classifyRpcError(members.error, members.status).errorClass };
+  if (profile.error) return { ok: false, errorClass: classifyRpcError(profile.error, profile.status).errorClass };
+  const memberships: Membership[] = members.data.map((m) => ({ companyId: m.company_id, role: m.role }));
+  return { ok: true, memberships, isPlatformAdmin: profile.data?.is_platform_admin ?? false };
+}
+
+const cacheKey = (userId: string) => `fast.access.${userId}`;
+
+function readCachedAccess(userId: string): Access | null {
+  try {
+    const raw = localStorage.getItem(cacheKey(userId));
+    return raw ? (JSON.parse(raw) as Access) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedAccess(userId: string, access: Access): void {
+  try {
+    localStorage.setItem(cacheKey(userId), JSON.stringify(access));
+  } catch {
+    // Sem localStorage, o próximo acesso sem sinal só não terá cache.
+  }
+}
+
+/** Acesso do usuário: o servidor decide quando responde; sem resposta, o último acesso guardado (access.ts). */
+export function useAccess(userId: string | undefined) {
+  return useQuery({
+    queryKey: ['access', userId],
+    enabled: Boolean(userId),
+    networkMode: 'always',
+    retry: false,
+    staleTime: 5 * 60_000,
+    queryFn: async (): Promise<ResolvedAccess> => {
+      const id = userId as string;
+      const lookup = await lookupAccess(id);
+      const access = resolveAccess(lookup, readCachedAccess(id));
+      if (lookup.ok && access.kind !== 'offline_first_access') writeCachedAccess(id, access);
+      return access;
+    },
+  });
+}
+
+/** Itens do usuário ainda na fila do aparelho (o código offline só carrega quando preciso). */
+export async function pendingItems(userId: string): Promise<number> {
+  const [{ pendingCount }, { db }] = await Promise.all([import('@/offline/queue'), import('@/offline/db')]);
+  return pendingCount(db, userId);
+}
+
+/** Logout e remoção do membro: apaga rascunhos, fotos, fila e o acesso guardado, e encerra a sessão (queue.md, Q10). */
+export async function signOutAndWipe(userId: string): Promise<void> {
+  const [{ clearUser }, { db }] = await Promise.all([import('@/offline/queue'), import('@/offline/db')]);
+  await clearUser(db, userId);
+  try {
+    localStorage.removeItem(cacheKey(userId));
+  } catch {
+    // nada guardado
+  }
+  const { error } = await supabase.auth.signOut();
+  if (error) await supabase.auth.signOut({ scope: 'local' });
+}

@@ -5,6 +5,9 @@ import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  // Porta do site_url do Auth local (../fast/supabase/config.toml): os links do convite e da senha abrem aqui.
+  server: { host: '127.0.0.1', port: 3000, strictPort: true },
+  preview: { host: '127.0.0.1', port: 3000, strictPort: true },
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   plugins: [
     react(),
