@@ -1,8 +1,8 @@
-import type { StartExecutionArgs, UpdateMaterialsNotesArgs } from './api';
-import { enqueueMaterials, enqueueStart } from './enqueue';
+import type { PhotoRef, StartExecutionArgs, UpdateMaterialsNotesArgs } from './api';
+import { enqueueMaterials, enqueueStart, enqueueSubmit } from './enqueue';
 import { ApiError, type ErrorClass } from './errors';
 import { processQueue } from './processor';
-import { fakeApi, fakeClock, newDb, noLock } from './testing';
+import { addDraft, addPhoto, fakeApi, fakeClock, newDb, noLock } from './testing';
 
 const at = '2026-11-13T10:00:00.000Z';
 
@@ -287,6 +287,218 @@ describe('processQueue', () => {
         },
       ]);
       expect(status).toEqual({ kind: 'idle' });
+    });
+  });
+
+  describe('submit', () => {
+    const submittedAt = '2026-11-13T11:00:00.000Z';
+
+    /** Chamadas resumidas: método e a foto (ou o rascunho, no envio). */
+    const summary = (calls: { method: string; args: unknown[] }[]) =>
+      calls.map((c) => {
+        if (c.method === 'uploadPhoto') return `${c.method} ${c.args[0]}`;
+        if (c.method === 'submitExecution') return c.method;
+        return `${c.method} ${(c.args[0] as PhotoRef).photo_id}`;
+      });
+
+    it('Q4: each photo goes through request, PUT and confirm, one at a time, then submit_execution', async () => {
+      const db = newDb();
+      const { api, calls } = fakeApi();
+      const draft = await addDraft(db, { userId: 'u1', orderId: 'o1', participants: ['u1', 'u2'] });
+      const p1 = await addPhoto(db, draft, { createdAt: '2026-11-13T10:05:00.000Z' });
+      const p2 = await addPhoto(db, draft, {
+        createdAt: '2026-11-13T10:06:00.000Z',
+        source: 'gallery',
+        capturedAt: null,
+        latitude: null,
+        longitude: null,
+        accuracyM: null,
+      });
+      await enqueueSubmit(db, { userId: 'u1', draftId: draft.id, clientSubmittedAt: submittedAt });
+
+      const status = await processQueue({ db, api, lock: noLock, clock: fakeClock(), userId: 'u1' });
+
+      expect(summary(calls)).toEqual([
+        `requestPhotoUpload ${p1.id}`,
+        `uploadPhoto https://r2.test/${p1.id}`,
+        `confirmPhotoUpload ${p1.id}`,
+        `requestPhotoUpload ${p2.id}`,
+        `uploadPhoto https://r2.test/${p2.id}`,
+        `confirmPhotoUpload ${p2.id}`,
+        'submitExecution',
+      ]);
+      expect(calls[0]?.args[0]).toEqual({ order_id: 'o1', execution_id: draft.id, photo_id: p1.id });
+      expect(await (calls[1]?.args[1] as Blob | undefined)?.text()).toBe(await p1.blob.text());
+      expect(calls[6]?.args[0]).toEqual({
+        p_execution_id: draft.id,
+        p_order_id: 'o1',
+        p_description: 'Troquei a câmera',
+        p_participants: ['u1', 'u2'],
+        p_client_started_at: draft.clientStartedAt,
+        p_client_submitted_at: submittedAt,
+        p_photos: [
+          {
+            id: p1.id,
+            source: 'camera',
+            captured_at: p1.capturedAt,
+            latitude: -23.56,
+            longitude: -46.65,
+            accuracy_m: 12,
+            width: 1600,
+            height: 1200,
+          },
+          {
+            id: p2.id,
+            source: 'gallery',
+            captured_at: null,
+            latitude: null,
+            longitude: null,
+            accuracy_m: null,
+            width: 1600,
+            height: 1200,
+          },
+        ],
+      });
+      expect(await db.queue.count()).toBe(0);
+      expect(await db.drafts.count()).toBe(0);
+      expect(await db.photos.count()).toBe(0);
+      expect(status).toEqual({ kind: 'idle' });
+    });
+
+    it('Q4: a supplement goes with its main execution; an empty text is left out', async () => {
+      const db = newDb();
+      const { api, calls } = fakeApi();
+      const draft = await addDraft(db, {
+        userId: 'u1',
+        orderId: 'o1',
+        supplementsExecutionId: 'main-execution',
+        description: '',
+        clientStartedAt: null,
+      });
+      await addPhoto(db, draft);
+      await enqueueSubmit(db, { userId: 'u1', draftId: draft.id, clientSubmittedAt: submittedAt });
+
+      await processQueue({ db, api, lock: noLock, clock: fakeClock(), userId: 'u1' });
+
+      const args = calls.find((c) => c.method === 'submitExecution')?.args[0] as Record<string, unknown>;
+      expect(args.p_supplements_execution_id).toBe('main-execution');
+      // `undefined` some no JSON do supabase-js: o parâmetro vai omitido (api.md: igual a `null`).
+      expect(args.p_description).toBeUndefined();
+      expect(args.p_client_started_at).toBeUndefined();
+    });
+
+    it('Q4: a photo already uploaded is not sent again', async () => {
+      const db = newDb();
+      const draft = await addDraft(db, { userId: 'u1', orderId: 'o1' });
+      const p1 = await addPhoto(db, draft, { uploaded: true, createdAt: '2026-11-13T10:05:00.000Z' });
+      const p2 = await addPhoto(db, draft, { createdAt: '2026-11-13T10:06:00.000Z' });
+      const { api, calls } = fakeApi({
+        requestPhotoUpload: async () => ({ already_uploaded: true, upload_url: null }),
+      });
+      await enqueueSubmit(db, { userId: 'u1', draftId: draft.id, clientSubmittedAt: submittedAt });
+
+      await processQueue({ db, api, lock: noLock, clock: fakeClock(), userId: 'u1' });
+
+      expect(summary(calls)).toEqual([`requestPhotoUpload ${p2.id}`, 'submitExecution']);
+      expect((calls[1]?.args[0] as { p_photos: { id: string }[] } | undefined)?.p_photos.map((p) => p.id)).toEqual([
+        p1.id,
+        p2.id,
+      ]);
+      expect(await db.drafts.count()).toBe(0);
+    });
+
+    it('Q4: a failure midway keeps every finished step and the next attempt resumes from there', async () => {
+      const db = newDb();
+      const clock = fakeClock();
+      let offline = true;
+      const draft = await addDraft(db, { userId: 'u1', orderId: 'o1' });
+      const p1 = await addPhoto(db, draft, { createdAt: '2026-11-13T10:05:00.000Z' });
+      const p2 = await addPhoto(db, draft, { createdAt: '2026-11-13T10:06:00.000Z' });
+      const { api, calls } = fakeApi({
+        confirmPhotoUpload: async (photo: PhotoRef) => {
+          if (photo.photo_id === p2.id && offline) throw new ApiError('network', null, 'offline');
+        },
+      });
+      await enqueueSubmit(db, { userId: 'u1', draftId: draft.id, clientSubmittedAt: submittedAt });
+      await processQueue({ db, api, lock: noLock, clock, userId: 'u1' });
+
+      expect(await db.photos.get(p1.id)).toMatchObject({ uploaded: true });
+      expect(await db.photos.get(p2.id)).toMatchObject({ uploaded: false });
+      expect(await db.queue.toArray()).toMatchObject([{ attempts: 1, payload: { stagedPhotoIds: [p2.id] } }]);
+      expect(await db.drafts.get(draft.id)).toMatchObject({ state: 'queued' });
+
+      offline = false;
+      clock.advance(5_000);
+      calls.length = 0;
+      await processQueue({ db, api, lock: noLock, clock, userId: 'u1' });
+
+      expect(summary(calls)).toEqual([`confirmPhotoUpload ${p2.id}`, 'submitExecution']);
+      expect(await db.drafts.count()).toBe(0);
+    });
+
+    it('Q4: a staged photo that is no longer in storage is sent again', async () => {
+      const db = newDb();
+      const draft = await addDraft(db, { userId: 'u1', orderId: 'o1' });
+      const p1 = await addPhoto(db, draft);
+      let missing = true;
+      const { api, calls } = fakeApi({
+        confirmPhotoUpload: async () => {
+          if (missing) {
+            missing = false;
+            throw new ApiError('rule', 'photo_missing_in_storage', 'photo_missing_in_storage');
+          }
+        },
+      });
+      await enqueueSubmit(db, { userId: 'u1', draftId: draft.id, clientSubmittedAt: submittedAt });
+      await db.queue.toCollection().modify((i) => {
+        if (i.type === 'submit') i.payload.stagedPhotoIds = [p1.id];
+      });
+
+      await processQueue({ db, api, lock: noLock, clock: fakeClock(), userId: 'u1' });
+
+      expect(summary(calls)).toEqual([
+        `confirmPhotoUpload ${p1.id}`,
+        `requestPhotoUpload ${p1.id}`,
+        `uploadPhoto https://r2.test/${p1.id}`,
+        `confirmPhotoUpload ${p1.id}`,
+        'submitExecution',
+      ]);
+      expect(await db.drafts.count()).toBe(0);
+    });
+
+    it.each(['requestPhotoUpload', 'confirmPhotoUpload', 'submitExecution'] as const)(
+      'Q6: a rule refusal in %s leaves the draft refused with its photos and drops the item',
+      async (method) => {
+        const db = newDb();
+        const draft = await addDraft(db, { userId: 'u1', orderId: 'o1' });
+        const photo = await addPhoto(db, draft);
+        const { api } = fakeApi({
+          [method]: async () => {
+            throw new ApiError('rule', 'order_closed', 'order_closed');
+          },
+        });
+        await enqueueSubmit(db, { userId: 'u1', draftId: draft.id, clientSubmittedAt: submittedAt });
+
+        const status = await processQueue({ db, api, lock: noLock, clock: fakeClock(), userId: 'u1' });
+
+        expect(await db.queue.count()).toBe(0);
+        expect(await db.drafts.get(draft.id)).toMatchObject({ state: 'refused', refusal: 'order_closed' });
+        expect(await db.photos.get(photo.id)).toBeDefined();
+        expect(await db.refusals.count()).toBe(0);
+        expect(status).toEqual({ kind: 'idle' });
+      },
+    );
+
+    it('Q6: a submit item without its draft is a bug and stays blocked', async () => {
+      const db = newDb();
+      const { api } = fakeApi();
+      const draft = await addDraft(db, { userId: 'u1', orderId: 'o1' });
+      await enqueueSubmit(db, { userId: 'u1', draftId: draft.id, clientSubmittedAt: submittedAt });
+      await db.drafts.delete(draft.id);
+
+      await processQueue({ db, api, lock: noLock, clock: fakeClock(), userId: 'u1' });
+
+      expect(await db.queue.toArray()).toMatchObject([{ state: 'blocked' }]);
     });
   });
 });

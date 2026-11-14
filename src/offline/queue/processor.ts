@@ -1,5 +1,5 @@
 // Processador da fila (docs/queue.md): escolhe o próximo item, executa e trata a resposta pela classe de erro.
-import type { FastDb, MaterialsPayload, QueueItem } from '../db';
+import type { FastDb, MaterialsPayload, QueueItem, SubmitPayload } from '../db';
 import type { Clock, QueueApi, QueueLock } from './api';
 import { ApiError } from './errors';
 
@@ -137,8 +137,9 @@ async function refuse({ db, clock }: QueueDeps, item: QueueItem, failure: ApiErr
         await db.refusals.add({ ...refusal, type: 'materials', payload: current.payload, current: serverText });
         return;
       }
-      default:
-        throw new Error(`not implemented: ${current.type}`);
+      case 'submit':
+        await db.drafts.update(current.payload.draftId, { state: 'refused', refusal: refusal.code });
+        return;
     }
   });
 }
@@ -168,9 +169,87 @@ async function execute(deps: QueueDeps, item: QueueItem): Promise<void> {
     case 'materials':
       await sendMaterials(deps, id, item.orderId, item.payload);
       return;
-    default:
-      throw new Error(`not implemented: ${item.type}`);
+    case 'submit':
+      await sendSubmit(deps, id, item.payload);
+      return;
   }
+}
+
+/**
+ * Envio (Q4): cada foto ainda não enviada passa por pedir a URL, PUT e confirmar, uma por vez; com todas
+ * enviadas, `submit_execution`; aceito, o rascunho, as fotos e o item saem juntos. Cada passo fica gravado
+ * (`uploaded` na foto, `stagedPhotoIds` no item) para a próxima tentativa continuar dali.
+ */
+async function sendSubmit({ db, api }: QueueDeps, id: number, payload: SubmitPayload): Promise<void> {
+  const draft = await db.drafts.get(payload.draftId);
+  if (!draft) throw new Error(`draft ${payload.draftId} of queue item ${id} is gone`);
+  const photos = await db.photos.where('draftId').equals(draft.id).sortBy('createdAt');
+
+  for (const photo of photos) {
+    if (photo.uploaded) continue;
+    const ref = { order_id: draft.orderId, execution_id: draft.id, photo_id: photo.id };
+    let staged = payload.stagedPhotoIds.includes(photo.id);
+    if (staged) {
+      try {
+        await api.confirmPhotoUpload(ref);
+      } catch (error) {
+        // O staging expira (04, R18): o PUT de uma tentativa antiga pode não estar mais lá. Envia de novo.
+        if (!(error instanceof ApiError && error.code === 'photo_missing_in_storage')) throw error;
+        await setStaged(db, id, photo.id, false);
+        staged = false;
+      }
+    }
+    if (!staged) {
+      const upload = await api.requestPhotoUpload(ref);
+      if (!upload.already_uploaded) {
+        if (!upload.upload_url) throw new Error(`request_photo_upload gave no url for photo ${photo.id}`);
+        await api.uploadPhoto(upload.upload_url, photo.blob);
+        await setStaged(db, id, photo.id, true);
+        await api.confirmPhotoUpload(ref);
+      }
+    }
+    await db.transaction('rw', db.photos, db.queue, async () => {
+      await db.photos.update(photo.id, { uploaded: true });
+      await setStaged(db, id, photo.id, false);
+    });
+  }
+
+  await api.submitExecution({
+    p_execution_id: draft.id,
+    p_order_id: draft.orderId,
+    p_supplements_execution_id: draft.supplementsExecutionId ?? undefined,
+    p_description: draft.description || undefined,
+    p_participants: draft.participants,
+    p_client_started_at: draft.clientStartedAt ?? undefined,
+    p_client_submitted_at: payload.clientSubmittedAt,
+    p_photos: photos.map((p) => ({
+      id: p.id,
+      source: p.source,
+      captured_at: p.capturedAt,
+      latitude: p.latitude,
+      longitude: p.longitude,
+      accuracy_m: p.accuracyM,
+      width: p.width,
+      height: p.height,
+    })),
+  });
+  await db.transaction('rw', [db.drafts, db.photos, db.queue], async () => {
+    await db.photos.where('draftId').equals(draft.id).delete();
+    await db.drafts.delete(draft.id);
+    await db.queue.delete(id);
+  });
+}
+
+/** Marca (ou desmarca) a foto como já enviada ao staging, à espera da confirmação. */
+async function setStaged(db: FastDb, id: number, photoId: string, staged: boolean): Promise<void> {
+  await db.queue
+    .where('id')
+    .equals(id)
+    .modify((item) => {
+      if (item.type !== 'submit') return;
+      const others = item.payload.stagedPhotoIds.filter((p) => p !== photoId);
+      item.payload.stagedPhotoIds = staged ? [...others, photoId] : others;
+    });
 }
 
 /**
