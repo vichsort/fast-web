@@ -1,5 +1,6 @@
 // Dados da prova lidos do EXIF do arquivo ORIGINAL da galeria (docs/photos.md, F2 e F3): a compressão apaga o EXIF.
 import exifr from 'exifr';
+import { NO_LOCATION, toLocation } from './location';
 
 export interface ExifProof {
   /** ISO 8601 (UTC), ou `null` sem `DateTimeOriginal` válido. */
@@ -9,11 +10,16 @@ export interface ExifProof {
   accuracyM: number | null;
 }
 
-const NO_PROOF: ExifProof = { capturedAt: null, latitude: null, longitude: null, accuracyM: null };
+const NO_PROOF: ExifProof = { capturedAt: null, ...NO_LOCATION };
 
 interface RawExif {
   DateTimeOriginal?: unknown;
   OffsetTimeOriginal?: unknown;
+  GPSLatitude?: unknown;
+  GPSLatitudeRef?: unknown;
+  GPSLongitude?: unknown;
+  GPSLongitudeRef?: unknown;
+  GPSHPositioningError?: unknown;
 }
 
 /** Nunca lança: arquivo ilegível ou sem EXIF é foto sem data (o alerta `gallery_without_exif` avisa). */
@@ -22,7 +28,15 @@ export async function readExifProof(file: Blob): Promise<ExifProof> {
   try {
     // ArrayBuffer, não Blob: o exifr lê Blob com FileReader, que não existe no service worker nem no Node.
     raw = await exifr.parse(await file.arrayBuffer(), {
-      pick: ['DateTimeOriginal', 'OffsetTimeOriginal'],
+      pick: [
+        'DateTimeOriginal',
+        'OffsetTimeOriginal',
+        'GPSLatitude',
+        'GPSLatitudeRef',
+        'GPSLongitude',
+        'GPSLongitudeRef',
+        'GPSHPositioningError',
+      ],
       reviveValues: false,
       translateValues: false,
     });
@@ -30,7 +44,14 @@ export async function readExifProof(file: Blob): Promise<ExifProof> {
     return NO_PROOF;
   }
   if (!raw) return NO_PROOF;
-  return { ...NO_PROOF, capturedAt: capturedAt(raw.DateTimeOriginal, raw.OffsetTimeOriginal) };
+  return {
+    capturedAt: capturedAt(raw.DateTimeOriginal, raw.OffsetTimeOriginal),
+    ...toLocation(
+      degrees(raw.GPSLatitude, raw.GPSLatitudeRef, 'S'),
+      degrees(raw.GPSLongitude, raw.GPSLongitudeRef, 'W'),
+      raw.GPSHPositioningError,
+    ),
+  };
 }
 
 const DATE_TIME = /^(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})$/;
@@ -60,4 +81,13 @@ function capturedAt(dateTime: unknown, offset: unknown): string | null {
     return new Date(asUtc.getTime() - sign * minutes * 60_000).toISOString();
   }
   return new Date(y, mo - 1, d, h, mi, s).toISOString();
+}
+
+/** [graus, minutos, segundos] e a referência (N/S, E/W) → graus decimais com sinal. */
+function degrees(dms: unknown, ref: unknown, negativeRef: 'S' | 'W'): number | null {
+  if (!Array.isArray(dms) || dms.length !== 3 || !dms.every((n) => typeof n === 'number')) return null;
+  if (typeof ref !== 'string') return null;
+  const [d, m, s] = dms as [number, number, number];
+  const value = d + m / 60 + s / 3600;
+  return ref.trim().toUpperCase() === negativeRef ? -value : value;
 }

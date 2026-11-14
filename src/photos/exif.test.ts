@@ -55,3 +55,34 @@ describe('captured_at from EXIF', () => {
     expect(await readExifProof(file)).toEqual({ capturedAt: null, ...noLocation });
   });
 });
+
+describe('location from EXIF', () => {
+  it('F3: GPS with GPSHPositioningError gives latitude, longitude and accuracy', async () => {
+    const file = jpegBlob({ gps: { latitude: -23.5613, longitude: -46.6565, hPositioningError: 4.5 } });
+    const proof = await readExifProof(file);
+    expect(proof.latitude).toBeCloseTo(-23.5613, 6);
+    expect(proof.longitude).toBeCloseTo(-46.6565, 6);
+    expect(proof.accuracyM).toBe(4.5);
+  });
+
+  it('F3: GPS without GPSHPositioningError has accuracy null', async () => {
+    const proof = await readExifProof(jpegBlob({ gps: { latitude: 40.7, longitude: -74.0 } }));
+    expect(proof.latitude).toBeCloseTo(40.7, 6);
+    expect(proof.longitude).toBeCloseTo(-74.0, 6);
+    expect(proof.accuracyM).toBeNull();
+  });
+
+  it('F3: latitude without longitude (or the reverse) gives no location at all', async () => {
+    expect(await readExifProof(jpegBlob({ gps: { latitude: -23.5, hPositioningError: 5 } }))).toMatchObject(noLocation);
+    expect(await readExifProof(jpegBlob({ gps: { longitude: -46.6, hPositioningError: 5 } }))).toMatchObject(
+      noLocation,
+    );
+  });
+
+  it('F3: coordinates out of range give no location at all', async () => {
+    expect(await readExifProof(jpegBlob({ gps: { latitude: 95, longitude: 10, hPositioningError: 5 } }))).toMatchObject(
+      noLocation,
+    );
+    expect(await readExifProof(jpegBlob({ gps: { latitude: 10, longitude: 190 } }))).toMatchObject(noLocation);
+  });
+});
