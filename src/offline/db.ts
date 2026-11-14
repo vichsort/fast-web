@@ -50,18 +50,33 @@ export interface DraftPhoto {
 
 export type QueueItemType = 'start' | 'submit' | 'materials';
 
-/**
- * Item da fila. A ordem é o `id` (autoincremento), FIFO por O.S. O formato do `payload` por tipo e os
- * estados são da fila (docs/queue.md).
- */
-export interface QueueItem {
+/** `start_execution`: o relógio do aparelho no "iniciar" (04, R1). */
+export interface StartPayload {
+  clientStartedAt: string;
+}
+
+/** `submit_execution` de um rascunho (docs/queue.md, Q4 e Q5). */
+export interface SubmitPayload {
+  draftId: string;
+  /** Relógio do aparelho no toque em "Enviar" (Q5). */
+  clientSubmittedAt: string;
+  /** Fotos com PUT feito e confirmação ainda pendente: a retomada confirma sem reenviar o arquivo. */
+  stagedPhotoIds: string[];
+}
+
+/** `update_materials_notes` (03): só a última edição por O.S., com o texto que o aparelho viu do servidor. */
+export interface MaterialsPayload {
+  text: string | null;
+  expected: string | null;
+}
+
+interface QueueItemBase {
   id?: number;
   userId: string;
   orderId: string;
-  type: QueueItemType;
-  payload: unknown;
   /** pending: vai ser tentado; blocked: erro de bug, pausado até ação do técnico (nunca descartado). */
   state: 'pending' | 'blocked';
+  /** Falhas seguidas de rede ou servidor (espera crescente, Q7). */
   attempts: number;
   /** Epoch ms: antes disso não tenta de novo (espera crescente). */
   nextAttemptAt: number;
@@ -69,10 +84,36 @@ export interface QueueItem {
   createdAt: string;
 }
 
+/** Item da fila. A ordem é o `id` (autoincremento), FIFO por O.S. (docs/queue.md). */
+export type QueueItem = QueueItemBase &
+  (
+    | { type: 'start'; payload: StartPayload }
+    | { type: 'submit'; payload: SubmitPayload }
+    | { type: 'materials'; payload: MaterialsPayload }
+  );
+
+/**
+ * Recusa por regra de um item sem rascunho (`start`, `materials`), guardada para a tela mostrar até o técnico
+ * dispensar. A recusa de um envio fica no próprio rascunho (`Draft.refusal`).
+ */
+export type QueueRefusal = {
+  id?: number;
+  userId: string;
+  orderId: string;
+  /** Código do catálogo (errors.md do backend). */
+  code: string;
+  createdAt: string;
+} & (
+  | { type: 'start'; payload: StartPayload }
+  /** `current`: texto atual do servidor no `conflict` (`details.current`); senão `null`. */
+  | { type: 'materials'; payload: MaterialsPayload; current: string | null }
+);
+
 export class FastDb extends Dexie {
   drafts!: EntityTable<Draft, 'id'>;
   photos!: EntityTable<DraftPhoto, 'id'>;
   queue!: EntityTable<QueueItem, 'id'>;
+  refusals!: EntityTable<QueueRefusal, 'id'>;
 
   constructor(name = 'fast') {
     super(name);
@@ -80,6 +121,7 @@ export class FastDb extends Dexie {
       drafts: 'id, userId, orderId, state',
       photos: 'id, draftId, userId, orderId',
       queue: '++id, userId, orderId, [userId+orderId], nextAttemptAt',
+      refusals: '++id, userId, orderId',
     });
   }
 }
