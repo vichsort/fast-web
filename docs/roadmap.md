@@ -11,7 +11,7 @@ Ordem de trabalho do front. Cada item é um comportamento: teste vermelho (quand
 ## 1. Fila e fotos (em paralelo)
 
 - [ ] Fila offline: tipos de item, FIFO por O.S., envio do rascunho com fotos, classes de erro, espera crescente, lock, limpeza do usuário ([queue.md](queue.md)).
-- [ ] Fotos: compressão, `captured_at` e localização do EXIF, espaço, guardar e tirar do rascunho, alertas ([photos.md](photos.md)).
+- [x] Fotos: compressão, `captured_at` e localização do EXIF, espaço, guardar e tirar do rascunho, alertas ([photos.md](photos.md)).
 
 ## 2. Base do app
 
