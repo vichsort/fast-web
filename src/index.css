@@ -39,6 +39,12 @@
   --color-card: var(--card);
   --color-foreground: var(--foreground);
   --color-background: var(--background);
+  --color-brand: var(--primary);
+  --color-info: var(--tone-info);
+  --color-progress: var(--tone-progress);
+  --color-success: var(--tone-success);
+  --color-warning: var(--tone-warning);
+  --color-danger: var(--tone-danger);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -48,73 +54,211 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/*
+ * Tema do Fast O.S. A identidade visual muda aqui, num lugar só (docs/components.md, "Tema").
+ * 1. Marca e superfícies: --primary (cor da marca), --background, --card, --foreground, --sidebar…
+ * 2. Tons (--tone-*): uma cor por significado; os selos derivam o fundo suave e o texto com color-mix.
+ * 3. Papéis semânticos (--status-*, --priority-*, --alert-*…): apontam para um tom; troque o tom de um status aqui.
+ * 4. Forma e densidade: --radius e --density (compact, comfortable, touch, por data-density).
+ * Contraste pensado para o sol: texto secundário e bordas mais fortes que o padrão do shadcn.
+ */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --background: oklch(0.975 0.004 255);
+  --foreground: oklch(0.21 0.025 262);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.21 0.025 262);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --popover-foreground: oklch(0.21 0.025 262);
+  --primary: oklch(0.47 0.15 258);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.945 0.009 255);
+  --secondary-foreground: oklch(0.26 0.03 262);
+  --muted: oklch(0.95 0.007 255);
+  --muted-foreground: oklch(0.46 0.022 262);
+  --accent: oklch(0.94 0.025 255);
+  --accent-foreground: oklch(0.32 0.1 258);
+  --destructive: oklch(0.55 0.21 27);
+  --border: oklch(0.885 0.01 255);
+  --input: oklch(0.86 0.012 255);
+  --ring: oklch(0.6 0.15 258);
+  --chart-1: oklch(0.55 0.16 245);
+  --chart-2: oklch(0.55 0.14 155);
+  --chart-3: oklch(0.68 0.16 65);
+  --chart-4: oklch(0.52 0.18 285);
+  --chart-5: oklch(0.56 0.21 27);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: oklch(0.235 0.045 262);
+  --sidebar-foreground: oklch(0.86 0.015 260);
+  --sidebar-primary: oklch(0.72 0.13 250);
+  --sidebar-primary-foreground: oklch(0.18 0.03 262);
+  --sidebar-accent: oklch(0.31 0.055 262);
+  --sidebar-accent-foreground: oklch(0.99 0 0);
+  --sidebar-border: oklch(1 0 0 / 9%);
+  --sidebar-ring: oklch(0.72 0.13 250);
+
+  /* Tons: uma cor sólida por significado. */
+  --tone-neutral: oklch(0.52 0.025 262);
+  --tone-muted: oklch(0.64 0.012 262);
+  --tone-brand: var(--primary);
+  --tone-info: oklch(0.55 0.16 245);
+  --tone-progress: oklch(0.52 0.19 285);
+  --tone-warning: oklch(0.68 0.16 62);
+  --tone-danger: oklch(0.55 0.21 27);
+  --tone-success: oklch(0.54 0.14 155);
+  /* Mistura dos selos: fundo suave (tom sobre o cartão) e texto (tom sobre o texto). */
+  --tone-soft-mix: 13%;
+  --tone-text-mix: 62%;
+  /* Texto sobre o tom sólido. */
+  --tone-contrast: oklch(0.99 0 0);
+  --tone-contrast-warning: oklch(0.22 0.04 60);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: oklch(0.16 0.016 262);
+  --foreground: oklch(0.96 0.005 260);
+  --card: oklch(0.205 0.02 262);
+  --card-foreground: oklch(0.96 0.005 260);
+  --popover: oklch(0.225 0.022 262);
+  --popover-foreground: oklch(0.96 0.005 260);
+  --primary: oklch(0.7 0.14 252);
+  --primary-foreground: oklch(0.16 0.03 262);
+  --secondary: oklch(0.27 0.022 262);
+  --secondary-foreground: oklch(0.96 0.005 260);
+  --muted: oklch(0.26 0.02 262);
+  --muted-foreground: oklch(0.74 0.016 260);
+  --accent: oklch(0.3 0.045 258);
+  --accent-foreground: oklch(0.96 0.005 260);
+  --destructive: oklch(0.68 0.19 22);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 17%);
+  --ring: oklch(0.62 0.12 252);
+  --chart-1: oklch(0.72 0.13 245);
+  --chart-2: oklch(0.74 0.14 155);
+  --chart-3: oklch(0.8 0.14 75);
+  --chart-4: oklch(0.72 0.14 285);
+  --chart-5: oklch(0.7 0.18 25);
+  --sidebar: oklch(0.185 0.02 262);
+  --sidebar-foreground: oklch(0.84 0.012 260);
+  --sidebar-primary: oklch(0.72 0.13 250);
+  --sidebar-primary-foreground: oklch(0.16 0.03 262);
+  --sidebar-accent: oklch(0.27 0.03 262);
+  --sidebar-accent-foreground: oklch(0.99 0 0);
+  --sidebar-border: oklch(1 0 0 / 9%);
+  --sidebar-ring: oklch(0.62 0.12 252);
+
+  --tone-neutral: oklch(0.74 0.016 260);
+  --tone-muted: oklch(0.6 0.012 260);
+  --tone-info: oklch(0.72 0.13 245);
+  --tone-progress: oklch(0.72 0.14 285);
+  --tone-warning: oklch(0.8 0.14 75);
+  --tone-danger: oklch(0.7 0.18 25);
+  --tone-success: oklch(0.74 0.14 155);
+  --tone-soft-mix: 20%;
+  --tone-text-mix: 72%;
+  --tone-contrast: oklch(0.16 0.03 262);
+  --tone-contrast-warning: oklch(0.16 0.03 262);
+}
+
+/*
+ * Papéis semânticos: cada um aponta para um tom. Declarados também em .dark para seguirem o modo
+ * mesmo quando a classe .dark fica num elemento abaixo da raiz.
+ */
+:root,
+.dark {
+  --status-open: var(--tone-info);
+  --status-in-progress: var(--tone-progress);
+  --status-pending-approval: var(--tone-warning);
+  --status-rejected: var(--tone-danger);
+  --status-approved: var(--tone-success);
+  --status-cancelled: var(--tone-muted);
+
+  --priority-low: var(--tone-muted);
+  --priority-normal: var(--tone-neutral);
+  --priority-high: var(--tone-warning);
+  --priority-urgent: var(--tone-danger);
+
+  --service-installation: var(--tone-info);
+  --service-maintenance: var(--tone-progress);
+  --service-technical-visit: var(--tone-neutral);
+
+  --role-owner: var(--tone-brand);
+  --role-manager: var(--tone-info);
+  --role-technician: var(--tone-neutral);
+
+  --review-pending: var(--tone-warning);
+  --review-approved: var(--tone-success);
+  --review-rejected: var(--tone-danger);
+  --review-voided: var(--tone-muted);
+
+  --alert-gallery-without-exif: var(--tone-warning);
+  --alert-gallery-before-start: var(--tone-danger);
+  --alert-submitted-before-rejection: var(--tone-warning);
+  --alert-late-delivery: var(--tone-warning);
+
+  --overdue: var(--tone-danger);
+  --unassigned: var(--tone-warning);
+  --late-supplement: var(--tone-progress);
+  --new-item: var(--tone-brand);
+
+  --sync-ok: var(--tone-success);
+  --sync-busy: var(--tone-info);
+  --sync-pending: var(--tone-warning);
+  --sync-offline: var(--tone-neutral);
+  --sync-error: var(--tone-danger);
+}
+
+/*
+ * Densidade: --density multiplica os espaçamentos dos componentes (linhas, cartões, alvos de toque).
+ * Os derivados são redeclarados em todo [data-density] para recalcularem com o valor local.
+ */
+:root {
+  --density: 1;
+}
+[data-density="compact"] {
+  --density: 0.75;
+}
+[data-density="comfortable"] {
+  --density: 1;
+}
+[data-density="touch"] {
+  --density: 1.25;
+}
+:root,
+[data-density] {
+  --space-row-y: calc(0.625rem * var(--density));
+  --space-row-x: calc(0.75rem * var(--density));
+  --space-card: calc(1rem * var(--density));
+  --space-gap: calc(0.75rem * var(--density));
+  --size-touch: calc(2.25rem * var(--density));
+}
+
+/* Selos e destaques por tom. Defina --tone (ex.: [--tone:var(--status-open)]) e use uma destas classes. */
+@utility tone-soft {
+  background-color: color-mix(in oklch, var(--tone) var(--tone-soft-mix), var(--card));
+  color: color-mix(in oklch, var(--tone) var(--tone-text-mix), var(--foreground));
+  border-color: color-mix(in oklch, var(--tone) 30%, transparent);
+}
+@utility tone-solid {
+  background-color: var(--tone);
+  color: var(--tone-on, var(--tone-contrast));
+  border-color: transparent;
+}
+@utility tone-outline {
+  background-color: transparent;
+  color: color-mix(in oklch, var(--tone) var(--tone-text-mix), var(--foreground));
+  border-color: color-mix(in oklch, var(--tone) 50%, transparent);
+}
+@utility tone-text {
+  color: color-mix(in oklch, var(--tone) var(--tone-text-mix), var(--foreground));
+}
+@utility tone-fill {
+  background-color: var(--tone);
+}
+@utility tone-border {
+  border-color: var(--tone);
+}
+@utility tone-wash {
+  background-color: color-mix(in oklch, var(--tone) calc(var(--tone-soft-mix) / 2), var(--card));
 }
 
 @layer base {
@@ -126,5 +270,6 @@
   }
   html {
     @apply font-sans;
+    -webkit-tap-highlight-color: transparent;
   }
 }
