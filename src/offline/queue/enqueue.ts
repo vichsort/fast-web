@@ -44,3 +44,31 @@ export async function enqueueSubmit(
     });
   });
 }
+
+/**
+ * Editar materiais (03, "Offline e mobile"): só a última edição por O.S. Se já há um item de materiais do usuário
+ * nessa O.S., troca o texto no lugar e mantém o `expected` dele, o texto do servidor de onde a edição partiu.
+ */
+export async function enqueueMaterials(
+  db: FastDb,
+  item: { userId: string; orderId: string; text: string | null; expected: string | null },
+): Promise<void> {
+  await db.transaction('rw', db.queue, async () => {
+    const queued = await db.queue
+      .where('[userId+orderId]')
+      .equals([item.userId, item.orderId])
+      .filter((i) => i.type === 'materials')
+      .first();
+    if (queued?.type === 'materials') {
+      await db.queue.update(queued.id as number, { payload: { ...queued.payload, text: item.text } });
+      return;
+    }
+    await db.queue.add({
+      userId: item.userId,
+      orderId: item.orderId,
+      type: 'materials',
+      payload: { text: item.text, expected: item.expected },
+      ...fresh(),
+    });
+  });
+}

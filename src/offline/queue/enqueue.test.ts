@@ -1,4 +1,4 @@
-import { enqueueStart, enqueueSubmit } from './enqueue';
+import { enqueueMaterials, enqueueStart, enqueueSubmit } from './enqueue';
 import { addDraft, newDb } from './testing';
 
 describe('enqueue', () => {
@@ -61,5 +61,31 @@ describe('enqueue', () => {
     await expect(enqueueSubmit(db, { userId: 'u1', draftId: 'missing', clientSubmittedAt: at })).rejects.toThrow();
     expect(await db.queue.count()).toBe(0);
     expect(await db.drafts.get(refused.id)).toMatchObject({ state: 'refused' });
+  });
+
+  it('Q1: materials is queued with the new text and the server text it was edited from', async () => {
+    const db = newDb();
+
+    await enqueueMaterials(db, { userId: 'u1', orderId: 'o1', text: '2 cabos', expected: '1 cabo' });
+
+    expect(await db.queue.toArray()).toMatchObject([
+      { userId: 'u1', orderId: 'o1', type: 'materials', payload: { text: '2 cabos', expected: '1 cabo' } },
+    ]);
+  });
+
+  it('Q1: a new materials edit replaces the queued one in place, keeping the server text it started from', async () => {
+    const db = newDb();
+    await enqueueMaterials(db, { userId: 'u1', orderId: 'o1', text: '2 cabos', expected: '1 cabo' });
+    await enqueueStart(db, { userId: 'u1', orderId: 'o1', clientStartedAt: '2026-11-13T10:00:00.000Z' });
+    await enqueueMaterials(db, { userId: 'u2', orderId: 'o1', text: 'outro usuário', expected: null });
+
+    await enqueueMaterials(db, { userId: 'u1', orderId: 'o1', text: '3 cabos', expected: '2 cabos' });
+
+    const items = await db.queue.where('[userId+orderId]').equals(['u1', 'o1']).sortBy('id');
+    expect(items).toMatchObject([
+      { type: 'materials', payload: { text: '3 cabos', expected: '1 cabo' } },
+      { type: 'start' },
+    ]);
+    expect(await db.queue.where('userId').equals('u2').count()).toBe(1);
   });
 });

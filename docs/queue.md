@@ -41,3 +41,4 @@ O rascunho (`drafts`) é editado pela tela até o técnico tocar em "Enviar"; a�
 
 - **2026-11-13** — Um item por vez no aparelho todo, não um por O.S. em paralelo. _Por quê:_ sinal ruim é o normal; paralelismo só disputaria a mesma banda.
 - **2026-11-13** — Fila independente de React e DOM, com API, lock e relógio injetados. _Por quê:_ o mesmo código roda na página e no service worker, e os testes não usam rede.
+- **2026-11-13** — Nova edição de materiais com um item de materiais já na fila daquela O.S. troca o texto no lugar (mesma posição) e mantém o `expected` do item, o texto do servidor de onde a primeira edição partiu. _Por quê:_ o 03 manda guardar só a última edição; manter o `expected` original faz o `conflict` aparecer se alguém mudou o texto no servidor, em vez de sobrescrever o texto do outro com uma edição que partiu de uma versão velha.
