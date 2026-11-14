@@ -41,7 +41,8 @@ function classifyBody(error: RpcError, status: number): ApiError {
   if (status === 401 || SESSION_CODES.includes(error.code ?? '') || /JWT expired/i.test(message)) {
     return new ApiError('session', error.code ?? null, message);
   }
-  if (status >= 500) return new ApiError('server', error.code ?? null, message);
+  // 429: limite de requisições do Supabase ou do R2, passageiro; espera e tenta de novo.
+  if (status >= 500 || status === 429) return new ApiError('server', error.code ?? null, message);
   if (error.code === 'P0001') {
     // Sem login no banco é sessão vencida, não recusa da regra: recusar perderia o envio por um token.
     if (message === 'not_authenticated') return new ApiError('session', message, message);

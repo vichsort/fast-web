@@ -72,4 +72,10 @@ describe('error classes', () => {
     expect(classifyHttpStatus(401).errorClass).toBe('session');
     expect(classifyHttpStatus(403).errorClass).toBe('bug');
   });
+
+  it('Q6: too many requests (429) is a passing server limit, retried with the wait', async () => {
+    expect(classifyHttpStatus(429).errorClass).toBe('server');
+    expect(classifyRpcError({ message: 'Too Many Requests' }, 429).errorClass).toBe('server');
+    expect((await classifyFunctionError(functionResponse(429, { message: 'rate limited' }))).errorClass).toBe('server');
+  });
 });
