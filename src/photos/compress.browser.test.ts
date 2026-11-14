@@ -49,4 +49,15 @@ describe('compress photo', () => {
     expect({ width: out.width, height: out.height }).toEqual({ width: 200, height: 400 });
     expect(await dimensions(out.blob)).toEqual({ width: 200, height: 400 });
   });
+
+  it('F1: above the size limit, lowers the quality until it fits, keeping the resolution', async () => {
+    const original = await makeImage(1600, 1200, { noise: true });
+    const maxBytes = 300 * 1024;
+
+    const out = await compressPhoto(original, { maxBytes });
+
+    expect(out.blob.type).toBe('image/jpeg');
+    expect(out.blob.size).toBeLessThanOrEqual(maxBytes);
+    expect({ width: out.width, height: out.height }).toEqual({ width: 1600, height: 1200 });
+  });
 });
