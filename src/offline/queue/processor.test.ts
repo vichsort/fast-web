@@ -436,6 +436,26 @@ describe('processQueue', () => {
       expect(await db.drafts.count()).toBe(0);
     });
 
+    it('Q7: a photo accepted before a failure in the same item restarts its wait from 5 s', async () => {
+      const db = newDb();
+      const clock = fakeClock();
+      const draft = await addDraft(db, { userId: 'u1', orderId: 'o1' });
+      await addPhoto(db, draft, { createdAt: '2026-11-13T10:05:00.000Z' });
+      const p2 = await addPhoto(db, draft, { createdAt: '2026-11-13T10:06:00.000Z' });
+      const { api } = fakeApi({
+        requestPhotoUpload: async (photo: PhotoRef) => {
+          if (photo.photo_id === p2.id) throw new ApiError('network', null, 'offline');
+          return { already_uploaded: false, upload_url: 'https://r2.test/x' };
+        },
+      });
+      await enqueueSubmit(db, { userId: 'u1', draftId: draft.id, clientSubmittedAt: submittedAt });
+      await db.queue.toCollection().modify({ attempts: 3 });
+
+      await processQueue({ db, api, lock: noLock, clock, userId: 'u1' });
+
+      expect(await db.queue.toArray()).toMatchObject([{ attempts: 1, nextAttemptAt: clock.now() + 5_000 }]);
+    });
+
     it('Q4: a staged photo that is no longer in storage is sent again', async () => {
       const db = newDb();
       const draft = await addDraft(db, { userId: 'u1', orderId: 'o1' });

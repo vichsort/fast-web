@@ -149,14 +149,20 @@ async function block({ db }: QueueDeps, item: QueueItem, failure: ApiError): Pro
   await db.queue.update(item.id as number, { state: 'blocked', lastError: failure.message });
 }
 
-/** Rede ou servidor: o item fica e espera mais a cada falha, só naquela O.S. (Q6, Q7). */
+/**
+ * Rede ou servidor: o item fica e espera mais a cada falha, só naquela O.S. (Q6, Q7). Conta a partir do que está
+ * gravado: um passo aceito no meio do item já zerou a espera.
+ */
 async function wait({ db, clock }: QueueDeps, item: QueueItem, failure: ApiError): Promise<void> {
-  const delay = Math.min(FIRST_WAIT_MS * 2 ** item.attempts, MAX_WAIT_MS);
-  await db.queue.update(item.id as number, {
-    attempts: item.attempts + 1,
-    nextAttemptAt: clock.now() + delay,
-    lastError: failure.message,
-  });
+  const id = item.id as number;
+  await db.queue
+    .where('id')
+    .equals(id)
+    .modify((current) => {
+      current.nextAttemptAt = clock.now() + Math.min(FIRST_WAIT_MS * 2 ** current.attempts, MAX_WAIT_MS);
+      current.attempts += 1;
+      current.lastError = failure.message;
+    });
 }
 
 async function execute(deps: QueueDeps, item: QueueItem): Promise<void> {
