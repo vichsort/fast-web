@@ -102,12 +102,10 @@ export type QueueRefusal = {
   orderId: string;
   /** Código do catálogo (errors.md do backend). */
   code: string;
+  /** Texto atual do servidor no `conflict` de materiais (`details.current`); senão `null`. */
+  current: string | null;
   createdAt: string;
-} & (
-  | { type: 'start'; payload: StartPayload }
-  /** `current`: texto atual do servidor no `conflict` (`details.current`); senão `null`. */
-  | { type: 'materials'; payload: MaterialsPayload; current: string | null }
-);
+} & ({ type: 'start'; payload: StartPayload } | { type: 'materials'; payload: MaterialsPayload });
 
 export class FastDb extends Dexie {
   drafts!: EntityTable<Draft, 'id'>;

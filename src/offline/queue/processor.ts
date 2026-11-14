@@ -1,5 +1,5 @@
 // Processador da fila (docs/queue.md): escolhe o próximo item, executa e trata a resposta pela classe de erro.
-import type { FastDb, QueueItem } from '../db';
+import type { FastDb, MaterialsPayload, QueueItem } from '../db';
 import type { Clock, QueueApi, QueueLock } from './api';
 import { ApiError } from './errors';
 
@@ -129,8 +129,14 @@ async function refuse({ db, clock }: QueueDeps, item: QueueItem, failure: ApiErr
     await db.queue.delete(id);
     switch (current.type) {
       case 'start':
-        await db.refusals.add({ ...refusal, type: 'start', payload: current.payload });
+        await db.refusals.add({ ...refusal, type: 'start', payload: current.payload, current: null });
         return;
+      case 'materials': {
+        const details = failure.details as { current?: unknown } | null;
+        const serverText = typeof details?.current === 'string' ? details.current : null;
+        await db.refusals.add({ ...refusal, type: 'materials', payload: current.payload, current: serverText });
+        return;
+      }
       default:
         throw new Error(`not implemented: ${current.type}`);
     }
@@ -152,14 +158,40 @@ async function wait({ db, clock }: QueueDeps, item: QueueItem, failure: ApiError
   });
 }
 
-async function execute({ db, api }: QueueDeps, item: QueueItem): Promise<void> {
+async function execute(deps: QueueDeps, item: QueueItem): Promise<void> {
   const id = item.id as number;
   switch (item.type) {
     case 'start':
-      await api.startExecution({ p_order_id: item.orderId, p_client_started_at: item.payload.clientStartedAt });
-      await db.queue.delete(id);
+      await deps.api.startExecution({ p_order_id: item.orderId, p_client_started_at: item.payload.clientStartedAt });
+      await deps.db.queue.delete(id);
+      return;
+    case 'materials':
+      await sendMaterials(deps, id, item.orderId, item.payload);
       return;
     default:
       throw new Error(`not implemented: ${item.type}`);
   }
+}
+
+/**
+ * Materiais (03). Aceito: o item sai, a menos que a tela tenha trocado o texto enquanto a chamada estava no ar;
+ * aí o item fica, com o texto que o servidor acabou de gravar como o `expected` da próxima tentativa.
+ */
+async function sendMaterials(
+  { db, api }: QueueDeps,
+  id: number,
+  orderId: string,
+  sent: MaterialsPayload,
+): Promise<void> {
+  const saved = await api.updateMaterialsNotes({
+    p_order_id: orderId,
+    p_text: sent.text ?? undefined,
+    p_expected: sent.expected ?? undefined,
+  });
+  await db.transaction('rw', db.queue, async () => {
+    const current = await db.queue.get(id);
+    if (current?.type !== 'materials') return;
+    if (current.payload.text === sent.text) await db.queue.delete(id);
+    else await db.queue.update(id, { payload: { text: current.payload.text, expected: saved.materials_notes } });
+  });
 }

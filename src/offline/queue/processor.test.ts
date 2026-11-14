@@ -1,5 +1,5 @@
-import type { StartExecutionArgs } from './api';
-import { enqueueStart } from './enqueue';
+import type { StartExecutionArgs, UpdateMaterialsNotesArgs } from './api';
+import { enqueueMaterials, enqueueStart } from './enqueue';
 import { ApiError, type ErrorClass } from './errors';
 import { processQueue } from './processor';
 import { fakeApi, fakeClock, newDb, noLock } from './testing';
@@ -222,5 +222,71 @@ describe('processQueue', () => {
       { userId: 'u1', orderId: 'o1', type: 'start', code: 'order_closed' },
     ]);
     expect(status).toEqual({ kind: 'idle' });
+  });
+
+  describe('materials', () => {
+    it('Q1: a materials item calls update_materials_notes and leaves the queue', async () => {
+      const db = newDb();
+      const { api, calls } = fakeApi();
+      await enqueueMaterials(db, { userId: 'u1', orderId: 'o1', text: '2 cabos', expected: '1 cabo' });
+      await enqueueMaterials(db, { userId: 'u1', orderId: 'o2', text: null, expected: null });
+
+      await processQueue({ db, api, lock: noLock, clock: fakeClock(), userId: 'u1' });
+
+      expect(calls.map((c) => c.args[0])).toEqual([
+        { p_order_id: 'o1', p_text: '2 cabos', p_expected: '1 cabo' },
+        { p_order_id: 'o2' },
+      ]);
+      expect(await db.queue.count()).toBe(0);
+    });
+
+    it('Q1: an edit made while the item was in flight is sent next, against the text now on the server', async () => {
+      const db = newDb();
+      let first = true;
+      const { api, calls } = fakeApi({
+        updateMaterialsNotes: async (args: UpdateMaterialsNotesArgs) => {
+          if (first) {
+            first = false;
+            await enqueueMaterials(db, { userId: 'u1', orderId: 'o1', text: '3 cabos', expected: '1 cabo' });
+          }
+          return { materials_notes: args.p_text ?? null };
+        },
+      });
+      await enqueueMaterials(db, { userId: 'u1', orderId: 'o1', text: '2 cabos', expected: '1 cabo' });
+
+      await processQueue({ db, api, lock: noLock, clock: fakeClock(), userId: 'u1' });
+
+      expect(calls.map((c) => c.args[0])).toEqual([
+        { p_order_id: 'o1', p_text: '2 cabos', p_expected: '1 cabo' },
+        { p_order_id: 'o1', p_text: '3 cabos', p_expected: '2 cabos' },
+      ]);
+      expect(await db.queue.count()).toBe(0);
+    });
+
+    it('Q6: a conflict drops the item and keeps the latest text with the one on the server', async () => {
+      const db = newDb();
+      const { api } = fakeApi({
+        updateMaterialsNotes: async () => {
+          await enqueueMaterials(db, { userId: 'u1', orderId: 'o1', text: '3 cabos', expected: '1 cabo' });
+          throw new ApiError('rule', 'conflict', 'conflict', { current: 'cabo e conector' });
+        },
+      });
+      await enqueueMaterials(db, { userId: 'u1', orderId: 'o1', text: '2 cabos', expected: '1 cabo' });
+
+      const status = await processQueue({ db, api, lock: noLock, clock: fakeClock(), userId: 'u1' });
+
+      expect(await db.queue.count()).toBe(0);
+      expect(await db.refusals.toArray()).toMatchObject([
+        {
+          userId: 'u1',
+          orderId: 'o1',
+          type: 'materials',
+          code: 'conflict',
+          payload: { text: '3 cabos', expected: '1 cabo' },
+          current: 'cabo e conector',
+        },
+      ]);
+      expect(status).toEqual({ kind: 'idle' });
+    });
   });
 });
