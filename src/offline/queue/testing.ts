@@ -1,5 +1,6 @@
 // Fábricas para os testes da fila: banco novo por teste, rascunhos e fotos.
 import { type Draft, type DraftPhoto, FastDb } from '../db';
+import type { Clock, QueueApi, QueueLock } from './api';
 
 export function newDb(): FastDb {
   return new FastDb(`test-${crypto.randomUUID()}`);
@@ -43,3 +44,42 @@ export async function addPhoto(db: FastDb, draft: Draft, fields: Partial<DraftPh
   await db.photos.add(photo);
   return photo;
 }
+
+type Call = { method: keyof QueueApi; args: unknown[] };
+
+/** API falsa: tudo dá certo, salvo o que `overrides` trocar. `calls` guarda cada chamada, na ordem. */
+export function fakeApi(overrides: Partial<QueueApi> = {}): { api: QueueApi; calls: Call[] } {
+  const calls: Call[] = [];
+  const impl: QueueApi = {
+    startExecution: async () => {},
+    submitExecution: async () => {},
+    updateMaterialsNotes: async (args) => ({ materials_notes: args.p_text ?? null }),
+    requestPhotoUpload: async (photo) => ({ already_uploaded: false, upload_url: `https://r2.test/${photo.photo_id}` }),
+    uploadPhoto: async () => {},
+    confirmPhotoUpload: async () => {},
+    refreshSession: async () => true,
+    ...overrides,
+  };
+  const api = Object.fromEntries(
+    Object.entries(impl).map(([method, fn]) => [
+      method,
+      (...args: unknown[]) => {
+        calls.push({ method: method as keyof QueueApi, args });
+        return (fn as (...a: unknown[]) => unknown)(...args);
+      },
+    ]),
+  ) as unknown as QueueApi;
+  return { api, calls };
+}
+
+export function fakeClock(start = 1_000_000): Clock & { advance(ms: number): void } {
+  let now = start;
+  return {
+    now: () => now,
+    advance: (ms) => {
+      now += ms;
+    },
+  };
+}
+
+export const noLock: QueueLock = (fn) => fn();
