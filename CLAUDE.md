@@ -27,6 +27,7 @@ Regras de trabalho neste repositório. O backend (Supabase) fica no repositório
 - **Playwright (`tests/e2e`):** poucos fluxos críticos de ponta a ponta contra o stack local do backend (`npm run db:start` em `../fast`), com o seed dele. Celular emulado e `context.setOffline` no fluxo do técnico.
 - Tela simples, sem regra própria, não tem teste de componente.
 - Cada regra é testada num lugar só.
+- O teste dos textos confere as chaves de erro contra o catálogo do backend, lendo `../fast/docs/errors.md`: código novo lá quebra o teste aqui até ganhar texto.
 - Nada de rede real nos testes `unit` e `browser`: a fila recebe a API por injeção e o teste passa uma falsa.
 
 ## Convenções

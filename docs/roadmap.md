@@ -16,7 +16,7 @@ Ordem de trabalho do front. Cada item é um comportamento: teste vermelho (quand
 ## 2. Base do app
 
 - [x] Cliente Supabase com a sessão num storage do IndexedDB (a página e o service worker leem a mesma sessão).
-- [ ] Textos pt-BR (`t()`) com as chaves de erro do backend.
+- [x] Textos pt-BR (`t()`) com as chaves de erro do backend.
 - [ ] Rotas (TanStack Router), login, recuperar e definir senha, layout por papel.
 - [ ] shadcn/ui e tema.
 - [ ] Service worker: fila no Background Sync, atualização do app.
