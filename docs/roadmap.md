@@ -20,6 +20,7 @@ Ordem de trabalho do front. Cada item é um comportamento: teste vermelho (quand
 - [ ] Rotas (TanStack Router), login, recuperar e definir senha, layout por papel.
 - [ ] shadcn/ui e tema.
 - [ ] Service worker: fila no Background Sync, atualização do app.
+- [ ] Membro removido: conferir o vínculo ativo ao abrir com sinal e a cada recusa por regra; sem vínculo, `clearUser` e logout.
 - [ ] Playwright contra o stack local do backend.
 
 ## 3. Técnico
