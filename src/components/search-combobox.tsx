@@ -136,7 +136,11 @@ export function SearchCombobox(props: SearchComboboxProps) {
               </span>
             ))}
         </span>
-        {loading ? <Spinner /> : <ChevronsUpDown className="text-muted-foreground" />}
+        {loading ? (
+          <Spinner aria-label={t('ui.states.loading')} />
+        ) : (
+          <ChevronsUpDown className="text-muted-foreground" />
+        )}
       </PopoverTrigger>
       <PopoverContent align="start" className="w-(--anchor-width) min-w-64 p-0">
         <Command>

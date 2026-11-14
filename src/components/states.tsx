@@ -87,7 +87,7 @@ export function ErrorState({
   const text = message ?? (code ? errorMessage(code) : offline ? t('ui.states.offlineDescription') : null);
   const retry = onRetry && (
     <Button variant="outline" size={layout === 'inline' ? 'sm' : 'default'} onClick={onRetry} disabled={retrying}>
-      {retrying ? <Spinner /> : <RotateCw />}
+      {retrying ? <Spinner aria-hidden /> : <RotateCw />}
       {retrying ? t('ui.states.retrying') : t('ui.actions.retry')}
     </Button>
   );
@@ -215,7 +215,7 @@ export function LoadingDetail({ className }: { className?: string }) {
 export function LoadingInline({ label, className }: { label?: string; className?: string }) {
   return (
     <div role="status" className={cn('flex items-center gap-2 text-sm text-muted-foreground', className)}>
-      <Spinner />
+      <Spinner aria-hidden />
       {label ?? t('ui.states.loading')}
     </div>
   );

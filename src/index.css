@@ -111,6 +111,8 @@
   /* Texto sobre o tom sólido. */
   --tone-contrast: oklch(0.99 0 0);
   --tone-contrast-warning: oklch(0.22 0.04 60);
+  /* Botão do WhatsApp. */
+  --whatsapp: oklch(0.55 0.14 152);
 }
 
 .dark {
@@ -157,6 +159,7 @@
   --tone-text-mix: 72%;
   --tone-contrast: oklch(0.16 0.03 262);
   --tone-contrast-warning: oklch(0.16 0.03 262);
+  --whatsapp: oklch(0.74 0.15 152);
 }
 
 /*
