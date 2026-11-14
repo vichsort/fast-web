@@ -1,4 +1,4 @@
-import { clearUser, pendingCount } from './device';
+import { clearUser, dismissRefusal, listRefusals, pendingCount, retryBlocked } from './device';
 import { enqueueMaterials, enqueueStart, enqueueSubmit } from './enqueue';
 import { addDraft, addPhoto, newDb } from './testing';
 
@@ -40,5 +40,38 @@ describe('device', () => {
 
     expect(await pendingCount(db, 'u1')).toBe(2);
     expect(await pendingCount(db, 'u3')).toBe(0);
+  });
+
+  it('Q6: a blocked item goes back to the queue when the technician asks', async () => {
+    const db = newDb();
+    await enqueueStart(db, { userId: 'u1', orderId: 'o1', clientStartedAt: at });
+    await db.queue.toCollection().modify({ state: 'blocked', lastError: '42501', attempts: 3, nextAttemptAt: 99 });
+    const [item] = await db.queue.toArray();
+
+    await retryBlocked(db, item?.id as number);
+
+    expect(await db.queue.toArray()).toMatchObject([
+      { state: 'pending', lastError: null, attempts: 0, nextAttemptAt: 0 },
+    ]);
+  });
+
+  it('Q6: refusals are listed for their user until the technician dismisses them', async () => {
+    const db = newDb();
+    const refusal = {
+      orderId: 'o1',
+      type: 'start' as const,
+      payload: { clientStartedAt: at },
+      current: null,
+      createdAt: at,
+    };
+    await db.refusals.add({ ...refusal, userId: 'u1', code: 'order_closed' });
+    await db.refusals.add({ ...refusal, userId: 'u2', code: 'order_closed' });
+    await db.refusals.add({ ...refusal, userId: 'u1', code: 'not_assigned' });
+
+    const listed = await listRefusals(db, 'u1');
+    expect(listed.map((r) => r.code)).toEqual(['order_closed', 'not_assigned']);
+
+    await dismissRefusal(db, listed[0]?.id as number);
+    expect((await listRefusals(db, 'u1')).map((r) => r.code)).toEqual(['not_assigned']);
   });
 });
