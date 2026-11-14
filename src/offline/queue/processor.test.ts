@@ -102,4 +102,28 @@ describe('processQueue', () => {
     expect(await db.queue.toArray()).toMatchObject([{ userId: 'u2', orderId: 'o1', attempts: 0 }]);
     expect(status).toEqual({ kind: 'idle' });
   });
+
+  it('Q6: a bug blocks the item with the error, never drops it, and the other orders go on', async () => {
+    const db = newDb();
+    const { api, calls } = fakeApi({
+      startExecution: async (args: StartExecutionArgs) => {
+        if (args.p_order_id === 'o1') throw new ApiError('bug', '42501', '403 42501 permission denied');
+        if (args.p_order_id === 'o2') throw new TypeError('unexpected');
+      },
+    });
+    await enqueueStart(db, { userId: 'u1', orderId: 'o1', clientStartedAt: at });
+    await enqueueStart(db, { userId: 'u1', orderId: 'o1', clientStartedAt: at });
+    await enqueueStart(db, { userId: 'u1', orderId: 'o2', clientStartedAt: at });
+    await enqueueStart(db, { userId: 'u1', orderId: 'o3', clientStartedAt: at });
+
+    const status = await processQueue({ db, api, lock: noLock, clock: fakeClock(), userId: 'u1' });
+
+    expect(calls.map((c) => (c.args[0] as StartExecutionArgs).p_order_id)).toEqual(['o1', 'o2', 'o3']);
+    expect(await db.queue.orderBy('id').toArray()).toMatchObject([
+      { orderId: 'o1', state: 'blocked', attempts: 0, lastError: '403 42501 permission denied' },
+      { orderId: 'o1', state: 'pending' },
+      { orderId: 'o2', state: 'blocked', lastError: 'TypeError: unexpected' },
+    ]);
+    expect(status).toEqual({ kind: 'idle' });
+  });
 });

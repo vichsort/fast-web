@@ -32,8 +32,15 @@ async function run(input: QueueDeps): Promise<QueueStatus> {
     try {
       await execute(deps, item);
     } catch (error) {
-      const failure = error instanceof ApiError ? error : new ApiError('bug', null, String(error));
-      await wait(deps, item, failure);
+      const failure = asApiError(error);
+      switch (failure.errorClass) {
+        case 'network':
+        case 'server':
+          await wait(deps, item, failure);
+          break;
+        default:
+          await block(deps, item, failure);
+      }
     }
   }
 }
@@ -72,6 +79,17 @@ async function headsByOrder({ db, userId }: QueueDeps): Promise<QueueItem[]> {
 function statusOf(heads: QueueItem[]): QueueStatus {
   const waiting = heads.filter((i) => i.state === 'pending').map((i) => i.nextAttemptAt);
   return waiting.length ? { kind: 'waiting', retryAt: Math.min(...waiting) } : { kind: 'idle' };
+}
+
+/** Qualquer exceção que não veio classificada da API é bug. */
+function asApiError(error: unknown): ApiError {
+  if (error instanceof ApiError) return error;
+  return new ApiError('bug', null, error instanceof Error ? `${error.name}: ${error.message}` : String(error));
+}
+
+/** Bug: o item para com o erro até o técnico pedir de novo; nunca é descartado (Q6). */
+async function block({ db }: QueueDeps, item: QueueItem, failure: ApiError): Promise<void> {
+  await db.queue.update(item.id as number, { state: 'blocked', lastError: failure.message });
 }
 
 /** Rede ou servidor: o item fica e espera mais a cada falha, só naquela O.S. (Q6, Q7). */
