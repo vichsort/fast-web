@@ -1,0 +1,11 @@
+node_modules
+dist
+dev-dist
+coverage
+test-results
+playwright-report
+.vitest-attachments
+__screenshots__
+.env*
+!.env.example
+*.local
