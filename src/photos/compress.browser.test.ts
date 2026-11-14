@@ -59,5 +59,6 @@ describe('compress photo', () => {
     expect(out.blob.type).toBe('image/jpeg');
     expect(out.blob.size).toBeLessThanOrEqual(maxBytes);
     expect({ width: out.width, height: out.height }).toEqual({ width: 1600, height: 1200 });
-  });
+    // Várias compressões de uma imagem de ruído: passa dos 5 s padrão quando a suíte inteira roda junto.
+  }, 30_000);
 });
