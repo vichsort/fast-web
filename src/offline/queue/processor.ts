@@ -22,7 +22,8 @@ export function processQueue(deps: QueueDeps): Promise<QueueStatus> {
   return deps.lock(() => run(deps));
 }
 
-async function run(deps: QueueDeps): Promise<QueueStatus> {
+async function run(input: QueueDeps): Promise<QueueStatus> {
+  const deps = { ...input, api: resettingWaitsOnSuccess(input) };
   for (;;) {
     const heads = await headsByOrder(deps);
     const now = deps.clock.now();
@@ -35,6 +36,28 @@ async function run(deps: QueueDeps): Promise<QueueStatus> {
       await wait(deps, item, failure);
     }
   }
+}
+
+/**
+ * Q7: "online" é um request que deu certo. Cada sucesso zera a espera dos itens do usuário que esperavam por rede
+ * ou servidor, que voltam a ser tentados nesta mesma passada.
+ */
+function resettingWaitsOnSuccess({ db, api, userId }: QueueDeps): QueueApi {
+  const wrapped = {} as Record<string, unknown>;
+  for (const [method, fn] of Object.entries(api) as [keyof QueueApi, (...args: unknown[]) => Promise<unknown>][]) {
+    wrapped[method] = async (...args: unknown[]) => {
+      const result = await fn.apply(api, args);
+      if (method !== 'refreshSession') {
+        await db.queue
+          .where('userId')
+          .equals(userId)
+          .filter((i) => i.state === 'pending' && i.attempts > 0)
+          .modify({ attempts: 0, nextAttemptAt: 0, lastError: null });
+      }
+      return result;
+    };
+  }
+  return wrapped as unknown as QueueApi;
 }
 
 /** Q2: de cada O.S., só o item mais antigo do usuário (Q3) pode ser tentado. Em ordem de chegada. */

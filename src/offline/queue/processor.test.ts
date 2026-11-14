@@ -35,7 +35,8 @@ describe('processQueue', () => {
 
       const status = await processQueue({ db, api, lock: noLock, clock, userId: 'u1' });
 
-      expect(calls.map((c) => (c.args[0] as StartExecutionArgs).p_order_id)).toEqual(['o1', 'o2']);
+      // o2 deu certo: a espera de o1 zera (Q7) e o1 é tentado de novo.
+      expect(calls.map((c) => (c.args[0] as StartExecutionArgs).p_order_id)).toEqual(['o1', 'o2', 'o1']);
       expect(await db.queue.orderBy('id').toArray()).toMatchObject([
         { orderId: 'o1', state: 'pending', attempts: 1, nextAttemptAt: clock.now() + 5_000, lastError: 'offline' },
         { orderId: 'o1', state: 'pending', attempts: 0, nextAttemptAt: 0 },
@@ -43,4 +44,49 @@ describe('processQueue', () => {
       expect(status).toEqual({ kind: 'waiting', retryAt: clock.now() + 5_000 });
     },
   );
+
+  it('Q7: the wait doubles at each failure, from 5 s up to 5 min', async () => {
+    const db = newDb();
+    const clock = fakeClock();
+    const { api } = fakeApi({
+      startExecution: async () => {
+        throw new ApiError('network', null, 'offline');
+      },
+    });
+    await enqueueStart(db, { userId: 'u1', orderId: 'o1', clientStartedAt: at });
+    const waits: number[] = [];
+
+    for (let i = 0; i < 8; i++) {
+      const status = await processQueue({ db, api, lock: noLock, clock, userId: 'u1' });
+      if (status.kind !== 'waiting') throw new Error(status.kind);
+      waits.push((status.retryAt - clock.now()) / 1000);
+      clock.advance(status.retryAt - clock.now());
+    }
+
+    expect(waits).toEqual([5, 10, 20, 40, 80, 160, 300, 300]);
+  });
+
+  it('Q7: a success on any item clears the wait of the items waiting for the network', async () => {
+    const db = newDb();
+    const clock = fakeClock();
+    let online = false;
+    const { api, calls } = fakeApi({
+      startExecution: async (args: StartExecutionArgs) => {
+        if (!online || args.p_order_id === 'o2') throw new ApiError('network', null, 'offline');
+      },
+    });
+    await enqueueStart(db, { userId: 'u1', orderId: 'o1', clientStartedAt: at });
+    await processQueue({ db, api, lock: noLock, clock, userId: 'u1' });
+    clock.advance(1_000);
+    online = true;
+    await enqueueStart(db, { userId: 'u1', orderId: 'o2', clientStartedAt: at });
+    await enqueueStart(db, { userId: 'u1', orderId: 'o3', clientStartedAt: at });
+    calls.length = 0;
+
+    const status = await processQueue({ db, api, lock: noLock, clock, userId: 'u1' });
+
+    expect(calls.map((c) => (c.args[0] as StartExecutionArgs).p_order_id)).toEqual(['o2', 'o3', 'o1', 'o2']);
+    expect(await db.queue.toArray()).toMatchObject([{ orderId: 'o2', attempts: 1 }]);
+    expect(status).toEqual({ kind: 'waiting', retryAt: clock.now() + 5_000 });
+  });
 });
