@@ -27,7 +27,7 @@ Ordem de trabalho do front. Cada item é um comportamento: teste vermelho (quand
 
 Esboço da estrutura visual do sistema inteiro, antes da integração real. Regras em [CLAUDE.md](../CLAUDE.md#scratch-visual). Os itens que faltam da etapa 2 (service worker com a fila, conferência do vínculo nas recusas da fila, Playwright) ficam para depois do scratch, junto com as etapas 3 e 4 de verdade.
 
-- [ ] Componentes reutilizáveis, dados de exemplo compartilhados e a vitrine em `/dev/components`.
+- [x] Componentes reutilizáveis, dados de exemplo compartilhados e a vitrine em `/dev/components`.
 - [ ] Telas do técnico (etapa 3) em scratch.
 - [ ] Telas do escritório (etapa 4) em scratch.
 
