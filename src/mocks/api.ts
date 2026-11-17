@@ -357,6 +357,13 @@ export function getSyncState(): Promise<SyncState> {
 
 // ---------------------------------------------------------------- utilidades das telas
 
+/** Ids dos usuários de exemplo por papel (para simular a sessão sem chamar getSessionUser). */
+export const MOCK_USER_IDS = {
+  owner: sessionUsers.owner.id,
+  manager: sessionUsers.manager.id,
+  technician: sessionUsers.technician.id,
+} as const;
+
 /** Fuso da empresa de exemplo, para as funções de src/lib/format.ts. */
 export const MOCK_TIME_ZONE = TIME_ZONE;
 

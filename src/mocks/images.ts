@@ -94,8 +94,8 @@ function escapeXml(text: string): string {
 export function samplePhotoUrl(scene: PhotoScene, seed: string, caption?: string): string {
   const [top, bottom] = palettes[hash(seed) % palettes.length] ?? ['#3b4a5f', '#1d2633'];
   const label = caption
-    ? `<rect x="0" y="268" width="400" height="32" fill="#000" opacity=".45"/>
-       <text x="12" y="289" fill="#fff" font-family="system-ui, sans-serif" font-size="13">${escapeXml(caption)}</text>`
+    ? `<rect x="0" y="0" width="400" height="30" fill="#000" opacity=".45"/>
+       <text x="200" y="20" fill="#fff" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13">${escapeXml(caption)}</text>`
     : '';
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="1600" height="1200">
     <defs>
