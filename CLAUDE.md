@@ -6,7 +6,7 @@ Regras de trabalho neste repositório. O backend (Supabase) fica no repositório
 
 - **Contrato no backend, tela aqui.** Regra de negócio, payload, código de erro e comportamento offline estão nos docs do backend; aqui só se documenta o que é do aparelho: telas, navegação, a fila, as fotos. Nada é copiado de lá: aponte com link.
 - **A doc manda.** Antes de implementar, leia o doc daqui e os do backend que ele cita. Se a implementação mostrar que a doc está errada ou incompleta, pare e pergunte. A correção vai no mesmo commit do código. Erro no contrato do backend é corrigido lá.
-- **Docs daqui:** [docs/screens.md](docs/screens.md) (telas por papel), [docs/queue.md](docs/queue.md) (fila offline), [docs/photos.md](docs/photos.md) (fotos), [docs/roadmap.md](docs/roadmap.md) (ordem e o que já foi feito).
+- **Docs daqui:** [docs/screens.md](docs/screens.md) (telas por papel), [docs/queue.md](docs/queue.md) (fila offline), [docs/photos.md](docs/photos.md) (fotos), [docs/components.md](docs/components.md) (componentes, tema e dados de exemplo), [docs/roadmap.md](docs/roadmap.md) (ordem e o que já foi feito).
 - **Sem bloat.** Tabela em vez de texto corrido, sem introdução.
 - **Decisão nova** entra em "Decisões" do doc, com data e o porquê. Decisão de arquitetura do sistema vai na spec do backend.
 - **Roadmap:** marque o item no mesmo commit do comportamento.
