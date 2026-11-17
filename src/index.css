@@ -237,9 +237,9 @@
 
 /* Selos e destaques por tom. Defina --tone (ex.: [--tone:var(--status-open)]) e use uma destas classes. */
 @utility tone-soft {
-  background-color: color-mix(in oklch, var(--tone) var(--tone-soft-mix), var(--card));
-  color: color-mix(in oklch, var(--tone) var(--tone-text-mix), var(--foreground));
-  border-color: color-mix(in oklch, var(--tone) 30%, transparent);
+  background-color: color-mix(in oklab, var(--tone) var(--tone-soft-mix), var(--card));
+  color: color-mix(in oklab, var(--tone) var(--tone-text-mix), var(--foreground));
+  border-color: color-mix(in oklab, var(--tone) 30%, transparent);
 }
 @utility tone-solid {
   background-color: var(--tone);
@@ -248,11 +248,11 @@
 }
 @utility tone-outline {
   background-color: transparent;
-  color: color-mix(in oklch, var(--tone) var(--tone-text-mix), var(--foreground));
-  border-color: color-mix(in oklch, var(--tone) 50%, transparent);
+  color: color-mix(in oklab, var(--tone) var(--tone-text-mix), var(--foreground));
+  border-color: color-mix(in oklab, var(--tone) 50%, transparent);
 }
 @utility tone-text {
-  color: color-mix(in oklch, var(--tone) var(--tone-text-mix), var(--foreground));
+  color: color-mix(in oklab, var(--tone) var(--tone-text-mix), var(--foreground));
 }
 @utility tone-fill {
   background-color: var(--tone);
@@ -261,7 +261,7 @@
   border-color: var(--tone);
 }
 @utility tone-wash {
-  background-color: color-mix(in oklch, var(--tone) calc(var(--tone-soft-mix) / 2), var(--card));
+  background-color: color-mix(in oklab, var(--tone) calc(var(--tone-soft-mix) / 2), var(--card));
 }
 
 @layer base {

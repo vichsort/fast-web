@@ -76,7 +76,7 @@ export function StatCard({
         'group/stat relative flex flex-col gap-2 rounded-xl border bg-card text-card-foreground shadow-xs transition-colors',
         size === 'sm' ? 'p-3' : 'p-4',
         toneClass ?? toneVar[tone],
-        highlight && 'tone-wash border-[color-mix(in_oklch,var(--tone)_35%,var(--border))]',
+        highlight && 'tone-wash border-[color-mix(in_oklab,var(--tone)_35%,var(--border))]',
         interactive && 'hover:bg-accent/40',
         className,
       )}

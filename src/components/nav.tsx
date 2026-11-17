@@ -169,7 +169,7 @@ export function OfficeSidebar({ groups, footer, collapsed, className, ...props }
                   key={item.id}
                   item={item}
                   className={cn(
-                    'relative flex h-9 items-center gap-2.5 rounded-lg text-sm font-medium outline-none transition-colors',
+                    'relative flex h-9 w-full items-center gap-2.5 rounded-lg text-left text-sm font-medium outline-none transition-colors',
                     'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring',
                     'data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground',
                     collapsed ? 'justify-center' : 'px-2.5',

@@ -103,9 +103,9 @@ export function SyncIndicator({
       <span className={cn('relative flex shrink-0', kind === 'syncing' && 'animate-pulse')}>
         <Icon aria-hidden className={variant === 'pill' ? 'size-3.5' : 'size-4'} />
       </span>
-      <span className="truncate font-medium">{main}</span>
+      <span className={cn('font-medium', variant === 'banner' ? 'shrink-0' : 'truncate')}>{main}</span>
       {variant === 'banner' && secondary.length > 0 && (
-        <span className="truncate opacity-80">· {secondary.join(' · ')}</span>
+        <span className="min-w-0 truncate opacity-80">· {secondary.join(' · ')}</span>
       )}
       {variant === 'banner' && interactive && <ChevronRight aria-hidden className="ml-auto size-4 shrink-0" />}
     </>
@@ -195,7 +195,7 @@ export function PendingItemCard({
       data-state={item.state}
       className={cn(
         'flex flex-col gap-3 rounded-xl border bg-card p-(--space-card) text-card-foreground shadow-xs',
-        problem && 'tone-wash border-[color-mix(in_oklch,var(--tone)_35%,var(--border))]',
+        problem && 'tone-wash border-[color-mix(in_oklab,var(--tone)_35%,var(--border))]',
         state.toneClass,
         className,
       )}

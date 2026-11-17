@@ -70,7 +70,7 @@ export function PhotoThumb({
         size === 'sm' && 'w-24',
         size === 'lg' && 'w-56',
         hasAlert &&
-          'border-[color-mix(in_oklch,var(--tone-warning)_70%,transparent)] ring-1 ring-[color-mix(in_oklch,var(--tone-warning)_40%,transparent)]',
+          'border-[color-mix(in_oklab,var(--tone-warning)_70%,transparent)] ring-1 ring-[color-mix(in_oklab,var(--tone-warning)_40%,transparent)]',
         className,
       )}
     >
@@ -93,7 +93,7 @@ export function PhotoThumb({
           <span
             className={cn(
               'pointer-events-none absolute top-1.5 left-1.5 flex size-6 items-center justify-center rounded-md text-white shadow-sm',
-              photo.source === 'camera' ? 'bg-black/55' : 'bg-[color-mix(in_oklch,var(--tone-warning)_85%,black)]',
+              photo.source === 'camera' ? 'bg-black/55' : 'bg-[color-mix(in_oklab,var(--tone-warning)_85%,black)]',
             )}
             title={t(`ui.photoSource.${photo.source}`)}
           >
@@ -232,8 +232,9 @@ export function PhotoLightbox({ photos, timeZone, index, open, onOpenChange, onI
       if (event.key === 'ArrowRight') go(1);
       if (event.key === 'ArrowLeft') go(-1);
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    // Captura: o diálogo do Base UI trata as teclas antes da fase de bolha.
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
   }, [open, go]);
 
   if (!photo) return null;

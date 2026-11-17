@@ -17,7 +17,7 @@ function toneFor(seed: string): Tone {
 }
 
 const avatarSize = {
-  xs: 'size-5 text-[0.5625rem]',
+  xs: 'size-6 text-[0.5625rem] tracking-tighter',
   sm: 'size-7 text-[0.6875rem]',
   md: 'size-9 text-xs',
   lg: 'size-12 text-base',
@@ -58,14 +58,23 @@ export interface UserChipProps extends React.ComponentProps<'div'> {
   seed?: string;
   /** Linha de baixo (email, telefone, "Enviada há 2 h"). */
   subtitle?: React.ReactNode;
-  role?: MemberRole;
+  memberRole?: MemberRole;
   /** Marca "Você". */
   isSelf?: boolean;
   size?: 'sm' | 'md' | 'lg';
 }
 
 /** Avatar, nome e uma linha de apoio (e o papel, se vier). */
-export function UserChip({ name, seed, subtitle, role, isSelf, size = 'md', className, ...props }: UserChipProps) {
+export function UserChip({
+  name,
+  seed,
+  subtitle,
+  memberRole,
+  isSelf,
+  size = 'md',
+  className,
+  ...props
+}: UserChipProps) {
   return (
     <div data-slot="user-chip" className={cn('flex min-w-0 items-center gap-2.5', className)} {...props}>
       <UserAvatar name={name} seed={seed} size={size === 'lg' ? 'lg' : size === 'sm' ? 'sm' : 'md'} decorative />
@@ -73,7 +82,7 @@ export function UserChip({ name, seed, subtitle, role, isSelf, size = 'md', clas
         <div className="flex min-w-0 items-center gap-1.5">
           <span className={cn('truncate font-medium', size === 'sm' ? 'text-xs' : 'text-sm')}>{name}</span>
           {isSelf && <span className="shrink-0 text-xs text-muted-foreground">({t('ui.badge.you')})</span>}
-          {role && <RoleBadge role={role} size="sm" />}
+          {memberRole && <RoleBadge role={memberRole} size="sm" />}
         </div>
         {subtitle && <span className="truncate text-xs text-muted-foreground">{subtitle}</span>}
       </div>
@@ -117,7 +126,7 @@ export function AvatarStack({
         }
       >
         <span className="sr-only">{names}</span>
-        <span aria-hidden className="flex -space-x-1.5">
+        <span aria-hidden className="flex -space-x-1">
           {shown.map((p) => (
             <UserAvatar key={p.id} name={p.full_name} seed={p.id} size={size} decorative className="ring-2 ring-card" />
           ))}
