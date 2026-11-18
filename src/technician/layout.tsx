@@ -1,25 +1,62 @@
-import { Outlet } from '@tanstack/react-router';
-import { useAuth } from '@/app/auth-context';
-import { LogoutButton } from '@/app/logout-button';
+import { Link, Outlet, useRouterState } from '@tanstack/react-router';
+import { ClipboardList, ListTodo, UserRound } from 'lucide-react';
 import { RequireAccess } from '@/app/pages/gate';
+import { TechnicianShell } from '@/components/app-shell';
+import type { NavItem } from '@/components/nav';
+import { ScratchBanner } from '@/components/states';
+import { SyncIndicator } from '@/components/sync';
 import { t } from '@/lib/i18n';
+import { TZ, useMyOrders, usePendingItems, useSyncStatus } from './mocks';
 
-/** Interface do técnico: celular, uma coluna, offline-first (docs/screens.md). */
+/** Interface do técnico: celular, uma coluna, offline-first (docs/screens.md, docs/screens-technician.md). */
 export function TechnicianLayout() {
-  const { session } = useAuth();
+  return <RequireAccess kind="technician">{() => <TechnicianFrame />}</RequireAccess>;
+}
+
+function TechnicianFrame() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const sync = useSyncStatus();
+  const orders = useMyOrders().data;
+  const pending = usePendingItems().data;
+  const section = pathname.startsWith('/technician/pending')
+    ? 'pending'
+    : pathname.startsWith('/technician/profile')
+      ? 'profile'
+      : 'orders';
+
+  const navItems: NavItem[] = [
+    {
+      id: 'orders',
+      label: t('ui.nav.myOrders'),
+      icon: ClipboardList,
+      badge: orders?.filter((o) => o.is_new).length,
+      active: section === 'orders',
+      render: <Link to="/technician" />,
+    },
+    {
+      id: 'pending',
+      label: t('ui.nav.pending'),
+      icon: ListTodo,
+      badge: pending?.length,
+      active: section === 'pending',
+      render: <Link to="/technician/pending" />,
+    },
+    {
+      id: 'profile',
+      label: t('ui.nav.profile'),
+      icon: UserRound,
+      active: section === 'profile',
+      render: <Link to="/technician/profile" />,
+    },
+  ];
+
   return (
-    <RequireAccess kind="technician">
-      {() => (
-        <div className="mx-auto flex min-h-svh max-w-md flex-col">
-          <header className="sticky top-0 z-10 flex items-center justify-between border-b bg-background px-4 py-2">
-            <span className="font-semibold">{t('common.appName')}</span>
-            {session && <LogoutButton userId={session.user.id} />}
-          </header>
-          <main className="flex-1 p-4">
-            <Outlet />
-          </main>
-        </div>
-      )}
-    </RequireAccess>
+    <TechnicianShell
+      navItems={navItems}
+      sync={sync && <SyncIndicator status={sync} timeZone={TZ} render={<Link to="/technician/pending" />} />}
+      banner={<ScratchBanner />}
+    >
+      <Outlet />
+    </TechnicianShell>
   );
 }
