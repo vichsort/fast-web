@@ -1,0 +1,863 @@
+// Dados do escritório no scratch visual: uma cópia em memória dos dados de exemplo do kit (lidos pelas funções de
+// @/mocks), para as ações (criar, aprovar, excluir…) mostrarem o efeito em todas as telas até recarregar a página.
+// As leituras têm a forma das consultas reais; as ações imitam as RPCs e Edge Functions (03, 04, 02, 01, 06), inclusive
+// os erros de regra que o banco devolveria. Nada sai do navegador. Na integração, cada função vira a chamada real.
+import { ACTIVE_ORDER_STATUSES, type MemberRole, type OrderPriority, type ServiceType } from '@/lib/enums';
+import { calendarDay } from '@/lib/format';
+import {
+  type AuditView,
+  type ClientAddress,
+  type ClientDetail,
+  type ClientListItem,
+  type Company,
+  type DashboardCounts,
+  type ExecutionView,
+  getClient,
+  getCompany,
+  getOrder,
+  getSessionUser,
+  type HistoryView,
+  type LateSupplementItem,
+  listAudit,
+  listClients,
+  listMembers,
+  listOrders,
+  type MemberView,
+  MOCK_USER_IDS,
+  type OrderDetail,
+  type OrderFilters,
+  type PersonRef,
+  type Profile,
+} from '@/mocks';
+
+const LATENCY = 150;
+const wait = <T>(value: T): Promise<T> =>
+  new Promise((resolve) => setTimeout(() => resolve(structuredClone(value)), LATENCY));
+
+/** Erro de regra, com o código do catálogo (errors.md), como o banco devolveria. */
+export class RuleError extends Error {
+  constructor(public code: string) {
+    super(code);
+  }
+}
+const fail = (code: string): never => {
+  throw new RuleError(code);
+};
+
+// ---------------------------------------------------------------- a cópia em memória
+
+interface Store {
+  company: Company;
+  orders: OrderDetail[];
+  clients: Omit<ClientDetail, 'orders'>[];
+  members: MemberView[];
+  audit: AuditView[];
+}
+
+let loading: Promise<Store> | null = null;
+const store = () => {
+  loading ??= load();
+  return loading;
+};
+
+async function load(): Promise<Store> {
+  const [company, orderList, clientList, members, audit, owner, manager] = await Promise.all([
+    getCompany(),
+    listOrders(),
+    listClients({ includeDeleted: true }),
+    listMembers({ includeRemoved: true }),
+    listAudit(),
+    getSessionUser('owner'),
+    getSessionUser('manager'),
+  ]);
+  const orders = (await Promise.all(orderList.map((o) => getOrder(o.id)))).filter((o) => o !== null);
+  const clients = (await Promise.all(clientList.map((c) => getClient(c.id))))
+    .filter((c) => c !== null)
+    .map(({ orders: _orders, ...client }) => client);
+  profiles.set(owner.profile.id, owner.profile);
+  profiles.set(manager.profile.id, manager.profile);
+  return { company, orders, clients, members, audit };
+}
+
+const profiles = new Map<string, Profile>();
+const now = () => new Date().toISOString();
+const ref = (p: PersonRef): PersonRef => ({ id: p.id, full_name: p.full_name });
+
+/** Texto do endereço copiado na O.S. (03, R3). */
+export function addressText(
+  a: Pick<ClientAddress, 'street' | 'number' | 'complement' | 'district' | 'city' | 'state' | 'zip_code' | 'reference'>,
+): string {
+  const clean = (v: string | null) => (v && v.trim() !== '' ? v.trim() : null);
+  const zip = clean(a.zip_code);
+  const parts = [
+    [clean(a.street), clean(a.number), clean(a.complement)].filter(Boolean).join(', '),
+    clean(a.district),
+    `${a.city}/${a.state.toUpperCase()}`,
+    zip ? `CEP ${zip.slice(0, 5)}-${zip.slice(5)}` : null,
+  ].filter(Boolean);
+  const reference = clean(a.reference);
+  return parts.join(' - ') + (reference ? ` (${reference})` : '');
+}
+
+/** 03, R6. */
+function isOverdue(o: OrderDetail): boolean {
+  return (
+    o.due_at !== null && Date.parse(o.due_at) < Date.now() && ['open', 'in_progress', 'rejected'].includes(o.status)
+  );
+}
+
+/** Recalcula os campos derivados (técnicos ativos, atrasada, tardios, cliente embutido). */
+function view(s: Store, o: OrderDetail): OrderDetail {
+  const client = s.clients.find((c) => c.id === o.client_id);
+  return {
+    ...o,
+    client: client
+      ? { ...o.client, name: client.name, phone: client.phone, notes: client.notes, deleted_at: client.deleted_at }
+      : o.client,
+    assignees: o.assignments.filter((a) => a.unassigned_at === null).map((a) => a.user),
+    overdue: isOverdue(o),
+    late_supplements_unseen: o.attempts.flatMap((a) => a.supplements).filter((x) => x.is_late && !x.acknowledged_at)
+      .length,
+  };
+}
+
+function findOrder(s: Store, id: string): OrderDetail {
+  return s.orders.find((o) => o.id === id || String(o.order_number) === id) ?? fail('not_found');
+}
+
+function pushHistory(
+  s: Store,
+  o: OrderDetail,
+  actor: PersonRef,
+  event_type: string,
+  metadata: Record<string, unknown>,
+) {
+  const event: HistoryView = {
+    id: crypto.randomUUID(),
+    company_id: s.company.id,
+    service_order_id: o.id,
+    actor_id: actor.id,
+    actor: ref(actor),
+    event_type,
+    metadata: metadata as HistoryView['metadata'],
+    created_at: now(),
+  };
+  o.history.push(event);
+  o.updated_at = event.created_at;
+}
+
+/** 03, R9: approved → invalid_status; cancelled → order_closed. */
+function ensureEditable(o: OrderDetail) {
+  if (o.status === 'approved') fail('invalid_status');
+  if (o.status === 'cancelled') fail('order_closed');
+}
+
+// ---------------------------------------------------------------- leituras: O.S.
+
+function matches(o: OrderDetail, f: OrderFilters, timeZone: string): boolean {
+  if (f.search) {
+    const q = f.search.trim().toLowerCase().replace(/^#/, '');
+    const hay =
+      `${o.order_number} ${String(o.order_number).padStart(4, '0')} ${o.title} ${o.client.name}`.toLowerCase();
+    if (q && !hay.includes(q)) return false;
+  }
+  if (f.status?.length && !f.status.includes(o.status)) return false;
+  if (f.priority?.length && !f.priority.includes(o.priority)) return false;
+  if (f.service_type?.length && !f.service_type.includes(o.service_type)) return false;
+  if (f.technician_id && !o.assignees.some((a) => a.id === f.technician_id)) return false;
+  if (f.client_id && o.client_id !== f.client_id) return false;
+  if (f.due_from || f.due_to) {
+    if (!o.due_at) return false;
+    const day = calendarDay(o.due_at, timeZone);
+    if (f.due_from && day < f.due_from) return false;
+    if (f.due_to && day > f.due_to) return false;
+  }
+  if (f.overdue && !o.overdue) return false;
+  if (f.unassigned && (o.assignees.length > 0 || !ACTIVE_ORDER_STATUSES.includes(o.status))) return false;
+  return true;
+}
+
+/** Lista de O.S. com cliente e técnicos, filtrada (03, "Filtrar"). Mais nova primeiro. */
+export async function officeListOrders(filters: OrderFilters = {}): Promise<OrderDetail[]> {
+  const s = await store();
+  return wait(
+    s.orders
+      .map((o) => view(s, o))
+      .filter((o) => matches(o, filters, s.company.timezone))
+      .sort((a, b) => b.order_number - a.order_number),
+  );
+}
+
+/** Detalhe da O.S. (por id ou número). */
+export async function officeGetOrder(id: string): Promise<OrderDetail | null> {
+  const s = await store();
+  const o = s.orders.find((x) => x.id === id || String(x.order_number) === id);
+  return wait(o ? view(s, o) : null);
+}
+
+/** get_dashboard (05). */
+export async function officeDashboard(): Promise<DashboardCounts> {
+  const s = await store();
+  const items = s.orders.map((o) => view(s, o));
+  const month = calendarDay(new Date(), s.company.timezone).slice(0, 7);
+  const count = (status: string) => items.filter((o) => o.status === status).length;
+  return wait({
+    open: count('open'),
+    unassigned: items.filter((o) => ACTIVE_ORDER_STATUSES.includes(o.status) && o.assignees.length === 0).length,
+    in_progress: count('in_progress'),
+    pending_approval: count('pending_approval'),
+    rejected: count('rejected'),
+    overdue: items.filter((o) => o.overdue).length,
+    approved_this_month: items
+      .flatMap((o) => o.attempts)
+      .filter(
+        (a) =>
+          a.review_status === 'approved' &&
+          a.reviewed_at &&
+          calendarDay(a.reviewed_at, s.company.timezone).startsWith(month),
+      ).length,
+    late_supplements_unseen: items.reduce((sum, o) => sum + o.late_supplements_unseen, 0),
+  });
+}
+
+/** Lista "complementos tardios" (04, R11): `is_late` sem ciência, mais recente primeiro. */
+export async function officeLateSupplements(): Promise<LateSupplementItem[]> {
+  const s = await store();
+  const items = s.orders.flatMap((raw) => {
+    const o = view(s, raw);
+    return o.attempts
+      .flatMap((a) => a.supplements)
+      .filter((x) => x.is_late && !x.acknowledged_at)
+      .map((supplement) => ({ order: o, supplement }));
+  });
+  return wait(items.sort((a, b) => b.supplement.received_at.localeCompare(a.supplement.received_at)));
+}
+
+// ---------------------------------------------------------------- leituras: clientes, membros, empresa
+
+function clientListItem(s: Store, c: Store['clients'][number]): ClientListItem {
+  const active = c.addresses.filter((a) => a.deleted_at === null);
+  return {
+    ...c,
+    primary_address: active.find((a) => a.is_primary) ?? null,
+    address_count: active.length,
+    open_orders: s.orders.filter((o) => o.client_id === c.id && ACTIVE_ORDER_STATUSES.includes(o.status)).length,
+  };
+}
+
+export async function officeListClients(
+  filters: { search?: string; includeDeleted?: boolean } = {},
+): Promise<ClientListItem[]> {
+  const s = await store();
+  const q = filters.search?.trim().toLowerCase() ?? '';
+  const digits = q.replace(/\D/g, '');
+  return wait(
+    s.clients
+      .filter((c) => filters.includeDeleted || c.deleted_at === null)
+      .filter((c) => !q || c.name.toLowerCase().includes(q) || (digits.length > 0 && (c.phone ?? '').includes(digits)))
+      .map((c) => clientListItem(s, c))
+      .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')),
+  );
+}
+
+export async function officeGetClient(id: string): Promise<(ClientDetail & { open_orders: number }) | null> {
+  const s = await store();
+  const c = s.clients.find((x) => x.id === id);
+  if (!c) return wait(null);
+  const orders = s.orders
+    .filter((o) => o.client_id === c.id)
+    .map((o) => view(s, o))
+    .sort((a, b) => b.order_number - a.order_number);
+  return wait({ ...c, orders, open_orders: clientListItem(s, c).open_orders });
+}
+
+export async function officeListMembers(filters: { includeRemoved?: boolean } = {}): Promise<MemberView[]> {
+  const s = await store();
+  return wait(s.members.filter((m) => filters.includeRemoved || m.deleted_at === null));
+}
+
+/** Técnicos ativos (para atribuir e filtrar). */
+export async function officeTechnicians(): Promise<PersonRef[]> {
+  const s = await store();
+  return wait(
+    s.members
+      .filter((m) => m.role === 'technician' && m.deleted_at === null)
+      .map((m) => ({ id: m.user_id, full_name: m.profile.full_name }))
+      .sort((a, b) => a.full_name.localeCompare(b.full_name, 'pt-BR')),
+  );
+}
+
+export async function officeAudit(): Promise<AuditView[]> {
+  const s = await store();
+  return wait([...s.audit].sort((a, b) => b.created_at.localeCompare(a.created_at)));
+}
+
+export async function officeCompany(): Promise<Company> {
+  const s = await store();
+  return wait(s.company);
+}
+
+/** Usuário "logado" nos dados de exemplo, pelo papel do acesso real. */
+export async function officeSessionUser(role: 'owner' | 'manager'): Promise<Profile> {
+  await store();
+  return wait(profiles.get(MOCK_USER_IDS[role]) ?? fail('not_found'));
+}
+
+// ---------------------------------------------------------------- ações: O.S. (03)
+
+export interface OrderInput {
+  client_id: string;
+  client_address_id: string | null;
+  service_type: ServiceType;
+  title: string;
+  instructions: string | null;
+  priority: OrderPriority;
+  /** AAAA-MM-DD (03, R5). */
+  due_date: string | null;
+  materials_notes: string | null;
+  assignee_ids: string[];
+}
+
+const blankToNull = (v: string | null | undefined) => (v && v.trim() !== '' ? v.trim() : null);
+/** Fim do dia no fuso da empresa (03, R5). O fuso de exemplo (São Paulo) não tem horário de verão. */
+const dueAt = (date: string | null) => (date ? new Date(`${date}T23:59:59.999-03:00`).toISOString() : null);
+
+function addressOf(s: Store, clientId: string, addressId: string | null): ClientAddress | null {
+  if (!addressId) return null;
+  const client = s.clients.find((c) => c.id === clientId && c.deleted_at === null) ?? fail('not_found');
+  return client.addresses.find((a) => a.id === addressId && a.deleted_at === null) ?? fail('not_found');
+}
+
+/** create_order. */
+export async function createOrder(input: OrderInput & { id: string }, actor: PersonRef) {
+  const s = await store();
+  const existing = s.orders.find((o) => o.id === input.id);
+  if (existing) return wait({ id: existing.id, order_number: existing.order_number });
+  if (!blankToNull(input.title)) fail('invalid_input');
+  const client = s.clients.find((c) => c.id === input.client_id && c.deleted_at === null) ?? fail('not_found');
+  const address = addressOf(s, client.id, input.client_address_id);
+  const created = now();
+  const order: OrderDetail = {
+    id: input.id,
+    company_id: s.company.id,
+    order_number: s.company.next_order_number,
+    client_id: client.id,
+    client_address_id: address?.id ?? null,
+    address: address ? addressText(address) : null,
+    title: input.title.trim(),
+    service_type: input.service_type,
+    priority: input.priority,
+    instructions: blankToNull(input.instructions),
+    due_at: dueAt(input.due_date),
+    status: 'open',
+    materials_notes: blankToNull(input.materials_notes),
+    created_by: actor.id,
+    created_at: created,
+    updated_at: created,
+    cancelled_at: null,
+    cancelled_by: null,
+    cancel_reason: null,
+    client: { ...client },
+    client_address: address,
+    assignees: [],
+    assignments: [],
+    attempts: [],
+    history: [],
+    overdue: false,
+    late_supplements_unseen: 0,
+    created_by_ref: ref(actor),
+  };
+  s.company.next_order_number += 1;
+  pushHistory(s, order, actor, 'created', {});
+  applyAssignees(s, order, input.assignee_ids, actor, 'unassigned');
+  s.orders.push(order);
+  return wait({ id: order.id, order_number: order.order_number });
+}
+
+/** update_order: substitui os campos editáveis; evento só do que mudou. */
+export async function updateOrder(
+  id: string,
+  input: Omit<OrderInput, 'client_id' | 'materials_notes' | 'assignee_ids'>,
+  actor: PersonRef,
+) {
+  const s = await store();
+  const o = findOrder(s, id);
+  ensureEditable(o);
+  if (!blankToNull(input.title)) fail('invalid_input');
+  const next = {
+    title: input.title.trim(),
+    instructions: blankToNull(input.instructions),
+    priority: input.priority,
+    due_at: dueAt(input.due_date),
+    service_type: input.service_type,
+  };
+  const changes: Record<string, { from: unknown; to: unknown }> = {};
+  for (const field of Object.keys(next) as (keyof typeof next)[]) {
+    const from = o[field];
+    const to = next[field];
+    const same =
+      field === 'due_at'
+        ? from && to
+          ? calendarDay(from, s.company.timezone) === calendarDay(to, s.company.timezone)
+          : from === to
+        : from === to;
+    if (!same) changes[field] = { from, to };
+  }
+  if (input.client_address_id !== o.client_address_id) {
+    const address = addressOf(s, o.client_id, input.client_address_id);
+    const to = { client_address_id: address?.id ?? null, address: address ? addressText(address) : null };
+    pushHistory(s, o, actor, 'address_changed', {
+      from: { client_address_id: o.client_address_id, address: o.address },
+      to,
+    });
+    o.client_address_id = to.client_address_id;
+    o.address = to.address;
+    o.client_address = address;
+  }
+  if (Object.keys(changes).length > 0) {
+    Object.assign(o, Object.fromEntries(Object.entries(changes).map(([k, v]) => [k, v.to])));
+    pushHistory(s, o, actor, 'updated', { changes });
+  }
+  return wait(view(s, o));
+}
+
+function applyAssignees(s: Store, o: OrderDetail, ids: string[], actor: PersonRef, cause: string) {
+  const at = now();
+  const wanted = new Set(ids);
+  for (const a of o.assignments) {
+    if (a.unassigned_at === null && !wanted.has(a.user_id)) {
+      a.unassigned_at = at;
+      a.unassigned_by = actor.id;
+      pushHistory(s, o, actor, 'assignee_removed', { user_id: a.user_id, cause });
+    }
+  }
+  for (const userId of wanted) {
+    if (o.assignments.some((a) => a.user_id === userId && a.unassigned_at === null)) continue;
+    const member =
+      s.members.find((m) => m.user_id === userId && m.role === 'technician' && m.deleted_at === null) ??
+      fail('invalid_input');
+    o.assignments.push({
+      id: crypto.randomUUID(),
+      company_id: s.company.id,
+      service_order_id: o.id,
+      user_id: userId,
+      user: { id: userId, full_name: member.profile.full_name },
+      assigned_by: actor.id,
+      assigned_at: at,
+      created_at: at,
+      unassigned_at: null,
+      unassigned_by: null,
+    });
+    pushHistory(s, o, actor, 'assignee_added', { user_id: userId });
+  }
+}
+
+/** set_assignees: conjunto final dos técnicos. */
+export async function setAssignees(id: string, ids: string[], actor: PersonRef) {
+  const s = await store();
+  const o = findOrder(s, id);
+  ensureEditable(o);
+  applyAssignees(s, o, ids, actor, 'unassigned');
+  return wait(view(s, o));
+}
+
+/** update_materials_notes com detecção de conflito (03, R11). */
+export async function updateMaterials(id: string, text: string | null, expected: string | null, actor: PersonRef) {
+  const s = await store();
+  const o = findOrder(s, id);
+  ensureEditable(o);
+  const next = blankToNull(text);
+  if (o.materials_notes === next) return wait(view(s, o));
+  if (o.materials_notes !== blankToNull(expected)) fail('conflict');
+  pushHistory(s, o, actor, 'materials_updated', { from: o.materials_notes, to: next });
+  o.materials_notes = next;
+  return wait(view(s, o));
+}
+
+/** cancel_order: motivo obrigatório; tentativa pendente vira `voided` (03, R10). */
+export async function cancelOrder(id: string, reason: string, actor: PersonRef) {
+  const s = await store();
+  const o = findOrder(s, id);
+  if (!reason.trim()) fail('reason_required');
+  ensureEditable(o);
+  const at = now();
+  o.status = 'cancelled';
+  o.cancelled_at = at;
+  o.cancelled_by = actor.id;
+  o.cancel_reason = reason.trim();
+  for (const a of o.attempts) if (a.review_status === 'pending') a.review_status = 'voided';
+  pushHistory(s, o, actor, 'cancelled', { reason: reason.trim() });
+  return wait(view(s, o));
+}
+
+// ---------------------------------------------------------------- ações: revisão (04)
+
+/** Maior `received_at` entre os complementos da tentativa (o `p_seen_until` da revisão). */
+export function seenUntil(supplements: Pick<ExecutionView, 'received_at'>[]): string | null {
+  return supplements.reduce<string | null>(
+    (max, x) => (max === null || x.received_at > max ? x.received_at : max),
+    null,
+  );
+}
+
+/** review_execution. `simulateStale` imita a chegada de um complemento depois do carregamento da tela. */
+export async function reviewExecution(
+  input: {
+    orderId: string;
+    executionId: string;
+    decision: 'approved' | 'rejected';
+    comment: string | null;
+    seenUntil: string | null;
+    simulateStale?: boolean;
+  },
+  actor: PersonRef,
+) {
+  const s = await store();
+  const o = findOrder(s, input.orderId);
+  const pending = o.attempts.find((a) => a.review_status === 'pending') ?? fail('no_pending_execution');
+  if (pending.id !== input.executionId) fail('not_latest_execution');
+  const latest = seenUntil(pending.supplements);
+  if (input.simulateStale || (latest && (!input.seenUntil || latest > input.seenUntil))) fail('stale_review');
+  const comment = blankToNull(input.comment);
+  if (input.decision === 'rejected' && !comment) fail('comment_required');
+  pending.review_status = input.decision;
+  pending.review_comment = comment;
+  pending.reviewed_at = now();
+  pending.reviewed_by = actor.id;
+  pending.reviewer = ref(actor);
+  o.status = input.decision;
+  pushHistory(s, o, actor, input.decision, { execution_id: pending.id, ...(comment ? { comment } : {}) });
+  return wait(view(s, o));
+}
+
+/** acknowledge_supplements: marca os tardios não vistos até `seenUntil`. Devolve quantos. */
+export async function acknowledgeSupplements(orderId: string, until: string, actor: PersonRef) {
+  const s = await store();
+  const o = findOrder(s, orderId);
+  const at = now();
+  let count = 0;
+  for (const x of o.attempts.flatMap((a) => a.supplements)) {
+    if (x.is_late && !x.acknowledged_at && x.received_at <= until) {
+      x.acknowledged_at = at;
+      x.acknowledged_by = actor.id;
+      x.acknowledger = ref(actor);
+      count += 1;
+    }
+  }
+  if (count > 0) pushHistory(s, o, actor, 'supplements_acknowledged', { count });
+  return wait(count);
+}
+
+// ---------------------------------------------------------------- ações: clientes (02)
+
+export interface AddressInput {
+  label: string | null;
+  zip_code: string | null;
+  street: string;
+  number: string | null;
+  complement: string | null;
+  district: string | null;
+  city: string;
+  state: string;
+  reference: string | null;
+}
+
+function newAddress(s: Store, clientId: string, input: AddressInput, primary: boolean): ClientAddress {
+  if (!input.street.trim() || !input.city.trim() || !/^[A-Za-z]{2}$/.test(input.state.trim())) fail('invalid_input');
+  return {
+    id: crypto.randomUUID(),
+    company_id: s.company.id,
+    client_id: clientId,
+    label: blankToNull(input.label),
+    zip_code: blankToNull(input.zip_code?.replace(/\D/g, '') ?? null),
+    street: input.street.trim(),
+    number: blankToNull(input.number),
+    complement: blankToNull(input.complement),
+    district: blankToNull(input.district),
+    city: input.city.trim(),
+    state: input.state.trim().toUpperCase(),
+    reference: blankToNull(input.reference),
+    is_primary: primary,
+    created_at: now(),
+    deleted_at: null,
+    deleted_by: null,
+    delete_reason: null,
+  };
+}
+
+function activeClient(s: Store, id: string) {
+  return s.clients.find((c) => c.id === id && c.deleted_at === null) ?? fail('not_found');
+}
+
+/** create_client (também o cadastro rápido do formulário da O.S.). */
+export async function createClient(input: {
+  id: string;
+  name: string;
+  phone: string | null;
+  notes: string | null;
+  address: AddressInput | null;
+}) {
+  const s = await store();
+  const existing = s.clients.find((c) => c.id === input.id);
+  if (existing)
+    return wait({ client_id: existing.id, address_id: existing.addresses.find((a) => a.is_primary)?.id ?? null });
+  if (!input.name.trim()) fail('invalid_input');
+  const address = input.address ? newAddress(s, input.id, input.address, true) : null;
+  s.clients.push({
+    id: input.id,
+    company_id: s.company.id,
+    name: input.name.trim(),
+    phone: blankToNull(input.phone?.replace(/\D/g, '') ?? null),
+    notes: blankToNull(input.notes),
+    created_at: now(),
+    deleted_at: null,
+    deleted_by: null,
+    delete_reason: null,
+    addresses: address ? [address] : [],
+  });
+  return wait({ client_id: input.id, address_id: address?.id ?? null });
+}
+
+/** Update direto de `clients` (nome, telefone, observações). */
+export async function updateClient(id: string, input: { name: string; phone: string | null; notes: string | null }) {
+  const s = await store();
+  const c = activeClient(s, id);
+  if (!input.name.trim()) fail('invalid_input');
+  c.name = input.name.trim();
+  c.phone = blankToNull(input.phone?.replace(/\D/g, '') ?? null);
+  c.notes = blankToNull(input.notes);
+  return wait(c);
+}
+
+/** add_client_address: vira principal se pedido ou se não há principal ativo (02, R3). */
+export async function addAddress(clientId: string, input: AddressInput, makePrimary: boolean) {
+  const s = await store();
+  const c = activeClient(s, clientId);
+  const hasPrimary = c.addresses.some((a) => a.is_primary && a.deleted_at === null);
+  const primary = makePrimary || !hasPrimary;
+  if (primary) for (const a of c.addresses) a.is_primary = false;
+  const address = newAddress(s, clientId, input, primary);
+  c.addresses.push(address);
+  return wait(address.id);
+}
+
+/** Update direto de `client_addresses`. */
+export async function updateAddress(addressId: string, input: AddressInput) {
+  const s = await store();
+  const c = s.clients.find((x) => x.addresses.some((a) => a.id === addressId)) ?? fail('not_found');
+  if (c.deleted_at) fail('not_found');
+  const a = c.addresses.find((x) => x.id === addressId && x.deleted_at === null) ?? fail('not_found');
+  const next = newAddress(s, c.id, input, a.is_primary);
+  Object.assign(a, { ...next, id: a.id, created_at: a.created_at });
+  return wait(a);
+}
+
+/** set_primary_address. */
+export async function setPrimaryAddress(addressId: string) {
+  const s = await store();
+  const c =
+    s.clients.find(
+      (x) => x.deleted_at === null && x.addresses.some((a) => a.id === addressId && a.deleted_at === null),
+    ) ?? fail('not_found');
+  for (const a of c.addresses) a.is_primary = a.id === addressId;
+  return wait(addressId);
+}
+
+/** delete_client_address: não promove outro principal (02, R4). */
+export async function deleteAddress(addressId: string, reason: string, actor: PersonRef) {
+  const s = await store();
+  if (!reason.trim()) fail('reason_required');
+  const c =
+    s.clients.find(
+      (x) => x.deleted_at === null && x.addresses.some((a) => a.id === addressId && a.deleted_at === null),
+    ) ?? fail('not_found');
+  const a = c.addresses.find((x) => x.id === addressId) ?? fail('not_found');
+  Object.assign(a, { deleted_at: now(), deleted_by: actor.id, delete_reason: reason.trim(), is_primary: false });
+  return wait(a);
+}
+
+/** delete_client: recusa com O.S. em andamento (02, R7). */
+export async function deleteClient(id: string, reason: string, actor: PersonRef) {
+  const s = await store();
+  const c = activeClient(s, id);
+  if (!reason.trim()) fail('reason_required');
+  if (s.orders.some((o) => o.client_id === id && ACTIVE_ORDER_STATUSES.includes(o.status)))
+    fail('client_has_open_orders');
+  Object.assign(c, { deleted_at: now(), deleted_by: actor.id, delete_reason: reason.trim() });
+  return wait(c);
+}
+
+// ---------------------------------------------------------------- ações: empresa, membros e perfil (01, 06)
+
+function audit(
+  s: Store,
+  actor: PersonRef,
+  action: string,
+  entity: { type: string; id: string; name: string },
+  metadata: Record<string, unknown>,
+) {
+  s.audit.push({
+    id: crypto.randomUUID(),
+    company_id: s.company.id,
+    actor_id: actor.id,
+    actor: ref(actor),
+    action,
+    entity_type: entity.type,
+    entity_id: entity.id,
+    target_name: entity.name,
+    metadata: metadata as AuditView['metadata'],
+    ip_address: null,
+    created_at: now(),
+  });
+}
+
+/** Update direto de `companies` (owner); o trigger grava `company_updated`. */
+export async function updateCompany(
+  input: Pick<Company, 'name' | 'document' | 'phone' | 'email' | 'timezone'>,
+  actor: PersonRef,
+) {
+  const s = await store();
+  if (!input.name.trim()) fail('invalid_input');
+  const next = {
+    ...input,
+    name: input.name.trim(),
+    document: blankToNull(input.document),
+    phone: blankToNull(input.phone),
+    email: blankToNull(input.email),
+  };
+  const changes: Record<string, { from: unknown; to: unknown }> = {};
+  for (const key of Object.keys(next) as (keyof typeof next)[]) {
+    if (s.company[key] !== next[key]) changes[key] = { from: s.company[key], to: next[key] };
+  }
+  if (Object.keys(changes).length > 0) {
+    Object.assign(s.company, next);
+    audit(s, actor, 'company_updated', { type: 'company', id: s.company.id, name: s.company.name }, { changes });
+  }
+  return wait(s.company);
+}
+
+/** Fecha as atribuições ativas de quem deixa de ser técnico (06, R4), em O.S. não encerradas. */
+function closeAssignments(
+  s: Store,
+  userId: string,
+  actor: PersonRef,
+  cause: 'member_removed' | 'role_changed',
+): number {
+  let closed = 0;
+  for (const o of s.orders) {
+    if (!ACTIVE_ORDER_STATUSES.includes(o.status)) continue;
+    const a = o.assignments.find((x) => x.user_id === userId && x.unassigned_at === null);
+    if (!a) continue;
+    a.unassigned_at = now();
+    a.unassigned_by = actor.id;
+    pushHistory(s, o, actor, 'assignee_removed', { user_id: userId, cause });
+    closed += 1;
+  }
+  return closed;
+}
+
+const isLastOwner = (s: Store, m: MemberView) =>
+  m.role === 'owner' && s.members.filter((x) => x.role === 'owner' && x.deleted_at === null).length === 1;
+
+/** Edge Function invite_member: membro ativo devolve o vínculo sem mudar nada; removido é reativado. */
+export async function inviteMember(input: { email: string; full_name: string; role: MemberRole }, actor: PersonRef) {
+  const s = await store();
+  const email = input.email.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !input.full_name.trim()) fail('invalid_input');
+  const existing = s.members.find((m) => m.email.toLowerCase() === email);
+  if (existing && existing.deleted_at === null) return wait({ member: existing, reactivated: false, already: true });
+  if (existing) {
+    Object.assign(existing, { deleted_at: null, deleted_by: null, delete_reason: null, role: input.role });
+    audit(
+      s,
+      actor,
+      'member_invited',
+      { type: 'company_member', id: existing.id, name: existing.profile.full_name },
+      { user_id: existing.user_id, role: input.role, reactivated: true },
+    );
+    return wait({ member: existing, reactivated: true, already: false });
+  }
+  const userId = crypto.randomUUID();
+  const at = now();
+  const member: MemberView = {
+    id: crypto.randomUUID(),
+    company_id: s.company.id,
+    user_id: userId,
+    role: input.role,
+    created_at: at,
+    deleted_at: null,
+    deleted_by: null,
+    delete_reason: null,
+    email,
+    profile: {
+      id: userId,
+      full_name: input.full_name.trim(),
+      phone: null,
+      is_platform_admin: false,
+      created_at: at,
+      updated_at: at,
+    },
+  };
+  s.members.push(member);
+  audit(
+    s,
+    actor,
+    'member_invited',
+    { type: 'company_member', id: member.id, name: member.profile.full_name },
+    { user_id: userId, role: input.role, reactivated: false },
+  );
+  return wait({ member, reactivated: false, already: false });
+}
+
+/** Edge Function update_member_role. */
+export async function updateMemberRole(memberId: string, role: MemberRole, actor: PersonRef) {
+  const s = await store();
+  const m = s.members.find((x) => x.id === memberId && x.deleted_at === null) ?? fail('not_found');
+  if (m.role === role) return wait({ closed_assignments: 0 });
+  if (isLastOwner(s, m)) fail('last_owner');
+  const closed = m.role === 'technician' ? closeAssignments(s, m.user_id, actor, 'role_changed') : 0;
+  audit(
+    s,
+    actor,
+    'member_role_changed',
+    { type: 'company_member', id: m.id, name: m.profile.full_name },
+    { from: m.role, to: role, closed_assignments: closed },
+  );
+  m.role = role;
+  return wait({ closed_assignments: closed });
+}
+
+/** Edge Function remove_member. */
+export async function removeMember(memberId: string, reason: string, actor: PersonRef) {
+  const s = await store();
+  const m = s.members.find((x) => x.id === memberId && x.deleted_at === null) ?? fail('not_found');
+  if (!reason.trim()) fail('reason_required');
+  if (isLastOwner(s, m)) fail('last_owner');
+  const closed = m.role === 'technician' ? closeAssignments(s, m.user_id, actor, 'member_removed') : 0;
+  Object.assign(m, { deleted_at: now(), deleted_by: actor.id, delete_reason: reason.trim() });
+  audit(
+    s,
+    actor,
+    'member_removed',
+    { type: 'company_member', id: m.id, name: m.profile.full_name },
+    { reason: reason.trim(), closed_assignments: closed },
+  );
+  return wait({ closed_assignments: closed });
+}
+
+/** Update direto de `profiles` (o próprio usuário). */
+export async function updateProfile(id: string, input: { full_name: string; phone: string | null }) {
+  const s = await store();
+  if (!input.full_name.trim()) fail('invalid_input');
+  const current = profiles.get(id) ?? fail('not_found');
+  const next = {
+    ...current,
+    full_name: input.full_name.trim(),
+    phone: blankToNull(input.phone?.replace(/\D/g, '') ?? null),
+    updated_at: now(),
+  };
+  profiles.set(id, next);
+  const member = s.members.find((m) => m.user_id === id);
+  if (member) member.profile = next;
+  return wait(next);
+}
