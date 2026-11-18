@@ -1,5 +1,5 @@
-import { getRouteApi, Link, useNavigate } from '@tanstack/react-router';
-import { ClockExclamationPoint, Plus } from 'lucide-react';
+import { getRouteApi, useNavigate } from '@tanstack/react-router';
+import { ClockExclamationPoint } from 'lucide-react';
 import { FilterBar, FilterSelect, MultiFilter, SearchInput } from '@/components/filter-bar';
 import { OrderTable } from '@/components/order-table';
 import { PageHeader } from '@/components/page-header';
@@ -101,12 +101,6 @@ export function OrdersPage() {
         title={t('office.orders.title')}
         description={
           orders.data ? t('office.orders.description', { count: formatNumber(orders.data.length) }) : undefined
-        }
-        actions={
-          <Button render={<Link to="/office/orders/new" />} nativeButton={false}>
-            <Plus />
-            {t('office.nav.newOrder')}
-          </Button>
         }
       />
       <FilterBar
