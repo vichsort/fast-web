@@ -61,9 +61,12 @@ export function OrderDetailPage() {
   return <OrderDetailView order={order.data} />;
 }
 
-/** URL de "Enviar pelo WhatsApp" (03): abre o WhatsApp de quem clicou, sem destinatário, com a mensagem e o link. */
+/**
+ * URL de "Enviar pelo WhatsApp" (03): abre o WhatsApp de quem clicou, sem destinatário, com a mensagem e o link.
+ * O link é o da O.S. na interface do técnico, que é quem recebe a mensagem.
+ */
 function shareUrl(o: OrderDetail): string {
-  const link = `${window.location.origin}/office/orders/${o.id}`;
+  const link = `${window.location.origin}/technician/orders/${o.id}`;
   const text = t('office.orderDetail.whatsappMessage', {
     number: formatOrderNumber(o.order_number),
     title: o.title,

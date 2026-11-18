@@ -60,10 +60,10 @@ O texto é sempre o do catálogo ([errors.md](../../fast/docs/errors.md), `error
 | `stale_review` | interruptor "Cenário do scratch" na revisão | chega de verdade quando um complemento entra depois do carregamento |
 | Fotos | SVGs locais | `get_photo_urls` (URL expira em 5 min) |
 | Importação | prévia fixa de 9 linhas | `import_clients` com `p_dry_run`, formato do CSV real |
-| Link do "Enviar pelo WhatsApp" | `/office/orders/<id>` | definir o link que o técnico abre |
 
 ## Decisões
 
+- **2026-11-17** — O link do "Enviar pelo WhatsApp" é o da O.S. na interface do técnico (`/technician/orders/<id>`). *Por quê:* quem recebe a mensagem é a dupla; o link do escritório barraria o técnico no guarda e o levaria à lista, sem a O.S.
 - **2026-11-17** — Revisão em tela própria, fila mais antiga primeiro e "Próxima O.S." depois de decidir. *Por quê:* as fotos precisam de largura; quem revisa várias seguidas não volta à lista a cada uma.
 - **2026-11-17** — Erros que pedem ação (`stale_review`, `client_has_open_orders`, `last_owner`, `conflict`) ficam numa faixa na tela, não só no aviso que some. *Por quê:* o usuário precisa do próximo passo (recarregar, ver as O.S., promover outro dono).
 - **2026-11-17** — Editar a O.S. num formulário só (dados, endereço, materiais e técnicos), com reatribuir e materiais também no detalhe. *Por quê:* a criação já tem todos os campos; trocar a dupla ou anotar material é frequente e não precisa abrir o formulário.
