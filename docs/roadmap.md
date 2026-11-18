@@ -29,7 +29,7 @@ Esboço da estrutura visual do sistema inteiro, antes da integração real. Regr
 
 - [x] Componentes reutilizáveis, dados de exemplo compartilhados e a vitrine em `/dev/components`.
 - [x] Telas do técnico (etapa 3) em scratch ([screens-technician.md](screens-technician.md)).
-- [ ] Telas do escritório (etapa 4) em scratch.
+- [x] Telas do escritório (etapa 4) em scratch ([screens-office.md](screens-office.md)).
 
 ## 3. Técnico
 

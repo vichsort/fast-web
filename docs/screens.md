@@ -1,6 +1,6 @@
 # Telas
 
-Um PWA, duas interfaces escolhidas pelo papel depois do login ([spec](../../fast/docs/spec.md#decisões-de-arquitetura)). O que cada tela pode fazer e os erros possíveis estão nos módulos do backend; aqui fica o que existe, para quem e como se navega. Rascunho inicial: cada tela ganha detalhe (campos, estados, offline) quando entrar no [roadmap](roadmap.md).
+Um PWA, duas interfaces escolhidas pelo papel depois do login ([spec](../../fast/docs/spec.md#decisões-de-arquitetura)). O que cada tela pode fazer e os erros possíveis estão nos módulos do backend; aqui fica o que existe, para quem e como se navega. Rascunho inicial: cada tela ganha detalhe (campos, estados, offline) quando entrar no [roadmap](roadmap.md). O mapa detalhado do scratch visual está em [screens-technician.md](screens-technician.md) e [screens-office.md](screens-office.md).
 
 ## Comum
 
