@@ -8,7 +8,7 @@ import { createOrder, users } from '../support/backend';
 
 test.use({ serviceWorkers: 'allow' });
 
-/** O cache das leituras gravado no aparelho (a gravação é espaçada), como texto. */
+/** O cache das leituras gravado no aparelho, como texto (a gravação segue a mudança do cache, não é na hora). */
 async function cachedText(page: Page) {
   const rows = await readStore<{ value: string }>(page, 'cache');
   return rows.map((row) => row.value).join();
