@@ -34,7 +34,7 @@ async function companyOf(client: Client, userId: string) {
 }
 
 /** O.S. nova da Fast, criada pelo escritório, com cliente próprio e atribuída aos técnicos dados. */
-export async function createOrder(assignees: string[]) {
+export async function createOrder(assignees: string[], { dueDate }: { dueDate?: string } = {}) {
   const { client, userId } = await signIn(users.manager);
   const companyId = await companyOf(client, userId);
   const assigneeIds = await Promise.all(assignees.map(async (email) => (await signIn(email)).userId));
@@ -57,6 +57,7 @@ export async function createOrder(assignees: string[]) {
     p_service_type: 'installation',
     p_title: title,
     p_assignee_ids: assigneeIds,
+    p_due_date: dueDate,
   });
   if (order.error) throw order.error;
   const { id, order_number } = order.data as { id: string; order_number: number };
@@ -66,7 +67,7 @@ export async function createOrder(assignees: string[]) {
 /** O que o servidor tem da O.S., visto pelo escritório. */
 export async function serverOrder(orderId: string) {
   const { client } = await signIn(users.manager);
-  const order = await client.from('service_orders').select('status').eq('id', orderId).single();
+  const order = await client.from('service_orders').select('status, due_at').eq('id', orderId).single();
   if (order.error) throw order.error;
   const executions = await client
     .from('service_order_executions')
@@ -79,7 +80,7 @@ export async function serverOrder(orderId: string) {
     .select('id, execution_id, source')
     .eq('service_order_id', orderId);
   if (photos.error) throw photos.error;
-  return { status: order.data.status, executions: executions.data, photos: photos.data };
+  return { status: order.data.status, dueAt: order.data.due_at, executions: executions.data, photos: photos.data };
 }
 
 /** O escritório cancela a O.S. (03, `cancel_order`). */
@@ -132,4 +133,16 @@ export async function submitSupplement(orderId: string, executionId: string, ema
     p_client_submitted_at: new Date().toISOString(),
   });
   if (error) throw error;
+}
+
+/** Fuso da empresa da Fast (`companies.timezone`), o que as telas usam para datas. */
+export async function companyTimeZone(): Promise<string> {
+  const { client, userId } = await signIn(users.manager);
+  const { data, error } = await client
+    .from('companies')
+    .select('timezone')
+    .eq('id', await companyOf(client, userId))
+    .single();
+  if (error) throw error;
+  return data.timezone;
 }

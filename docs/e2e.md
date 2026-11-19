@@ -30,6 +30,7 @@ O que mais custa se falhar, onde está no código, o que já é testado e como t
 | [`technician/logout-pending`](../tests/e2e/technician/logout-pending.spec.ts) | P2: início e envio na fila sem sinal; sair pede confirmação com a contagem de Pendências (2), cancelar não apaga nada, e o envio chega quando o sinal volta |
 | [`office/stale-review`](../tests/e2e/office/stale-review.spec.ts) | E2: com a revisão aberta, chega um complemento (pelo banco); aprovar mostra o aviso de recarregar, os botões travam e nada muda no banco; depois de recarregar, o complemento aparece e a aprovação sai |
 | [`office/create-order`](../tests/e2e/office/create-order.spec.ts) | E3: o escritório cadastra o cliente com endereço pela tela, abre a O.S. a partir dele (cliente e endereço principal já escolhidos), atribui o técnico e cria; o técnico vê a O.S. em Minhas O.S., com o cliente e o endereço |
+| [`office/time-zone`](../tests/e2e/office/time-zone.spec.ts) | E4: o navegador num fuso que está agora em outro dia que o da empresa (UTC+14 ou UTC−11, pela hora em São Paulo); no detalhe da O.S., o prazo de hoje e o de ontem aparecem com o dia da empresa, e só o de ontem fica atrasado |
 | [`technician/refused-submission`](../tests/e2e/technician/refused-submission.spec.ts) | P5: envio feito sem sinal numa O.S. que o escritório cancela. Com o sinal, o rascunho fica em "Precisam de você" com o motivo e o texto, continua ao reabrir, nada chega ao servidor e só sai quando o técnico apaga |
 
 ## Perda da prova
@@ -78,7 +79,7 @@ O pior caso do produto: serviço feito que nunca chega ao escritório.
 | E1 | Ciclo de revisão: rejeitar, o técnico vê o motivo e refaz, aprovar | fecha a O.S. entre as duas interfaces | `office/review`, telas do técnico | E2E desde 2026-11-19 | coberto |
 | E2 | Complemento chegando durante a revisão | o backend recusa com `stale_review` (04, R10); a tela trata pela classe de erro | `office/review` | backend; E2E desde 2026-11-19 | coberto |
 | E3 | Criar cliente e O.S. pela tela e atribuir | hoje o teste cria direto no banco | `office/clients`, `office/orders` | E2E desde 2026-11-19 | coberto |
-| E4 | Fuso do navegador diferente do fuso da empresa | prazo é o fim do dia no fuso da empresa (03, R5); "atrasada" depende dele | `lib/format.ts` | unit | E2E barato: `timezoneId` diferente do fuso da empresa, mesmo prazo na tela |
+| E4 | Fuso do navegador diferente do fuso da empresa | prazo é o fim do dia no fuso da empresa (03, R5); "atrasada" depende dele | `lib/format.ts` | unit; E2E desde 2026-11-19 | coberto |
 
 ## Dados no aparelho e acesso
 
@@ -117,7 +118,7 @@ Revisado em 2026-11-19, com a ordem antiga (P5, S1, E1, P3, P6, P7) toda feita. 
 | # | Item | Teste | Por quê |
 | --- | --- | --- | --- |
 | 9 | ~~E3, cadastro pela tela~~ (feito) | criar cliente e O.S., atribuir; o técnico vê a O.S. em Minhas O.S. | os E2E criam tudo direto no banco: o formulário real nunca roda |
-| 10 | E4, fuso | `timezoneId` diferente do fuso da empresa; o mesmo prazo e o mesmo "atrasada" na tela | prazo é fim do dia no fuso da empresa (03, R5) |
+| 10 | ~~E4, fuso~~ (feito) | `timezoneId` diferente do fuso da empresa; o mesmo prazo e o mesmo "atrasada" na tela | prazo é fim do dia no fuso da empresa (03, R5) |
 
 ### 4. Medir e decidir
 
