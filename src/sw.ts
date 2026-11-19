@@ -7,7 +7,15 @@ import { NavigationRoute, registerRoute } from 'workbox-routing';
 import { createAuthStorage } from '@/lib/auth-storage';
 import type { Database } from '@/lib/database.types';
 import { db } from '@/offline/db';
-import { createSupabaseQueueApi, QUEUE_CHANNEL, runPass, SYNC_TAG, syncInWorker, webLock } from '@/offline/queue';
+import {
+  createSupabaseQueueApi,
+  QUEUE_CHANNEL,
+  runPass,
+  SYNC_TAG,
+  syncInWorker,
+  wakeNetworkWaits,
+  webLock,
+} from '@/offline/queue';
 
 declare const self: ServiceWorkerGlobalScope;
 
@@ -48,6 +56,7 @@ self.addEventListener('sync', (event) => {
   sync.waitUntil(
     syncInWorker({
       sessionUserId,
+      wake: (userId) => wakeNetworkWaits(db, userId),
       pass: (userId) => runPass({ db, api, lock, clock, userId }),
       post: (message) => channel.postMessage(message),
     }).finally(() => channel.close()),

@@ -43,17 +43,21 @@ export async function runPass(deps: QueueDeps, repeat: () => boolean = () => fal
 export interface WorkerSyncDeps {
   /** O usuário da sessão guardada (a mesma da página); `null` sem login. */
   sessionUserId(): Promise<string | null>;
+  /** Indício de conexão (Q7): o navegador só dispara o `sync` quando acha que há rede. */
+  wake(userId: string): Promise<unknown>;
   pass(userId: string): Promise<PassResult>;
   post(message: QueueMessage): void;
 }
 
 /**
- * O evento `sync` do worker. Com itens esperando a rede, falha de propósito: o navegador agenda outra tentativa
- * (o worker não tem timer que sobreviva). Sem login, termina: só a página entra de novo.
+ * O evento `sync` do worker. É indício de conexão: o que espera por rede é tentado já, em vez de gastar a tentativa
+ * do navegador. Com itens ainda esperando, falha de propósito: o navegador agenda outra tentativa (o worker não tem
+ * timer que sobreviva). Sem login, termina: só a página entra de novo.
  */
-export async function syncInWorker({ sessionUserId, pass, post }: WorkerSyncDeps): Promise<void> {
+export async function syncInWorker({ sessionUserId, wake, pass, post }: WorkerSyncDeps): Promise<void> {
   const userId = await sessionUserId();
   if (!userId) return;
+  await wake(userId);
   const result = await pass(userId);
   post({ type: 'pass', ...result });
   if (result.status.kind === 'waiting') throw new Error('fila esperando a rede; o Background Sync tenta de novo');

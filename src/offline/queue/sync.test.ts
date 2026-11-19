@@ -1,6 +1,6 @@
 import { enqueueStart } from './enqueue';
 import { ApiError } from './errors';
-import type { QueueStatus } from './processor';
+import { type QueueStatus, wakeNetworkWaits } from './processor';
 import { type PassResult, runPass, syncInWorker } from './sync';
 import { fakeApi, fakeClock, newDb, noLock } from './testing';
 
@@ -45,12 +45,39 @@ describe('runPass', () => {
 
 describe('syncInWorker', () => {
   const result = (status: QueueStatus): PassResult => ({ status, sent: true, refused: false });
+  const noWake = async () => 0;
+
+  it('Q7: the sync event is a hint of connectivity: what waits for the network is tried in this pass', async () => {
+    const db = newDb();
+    const clock = fakeClock();
+    let online = false;
+    const { api, calls } = fakeApi({
+      startExecution: async () => {
+        if (!online) throw new ApiError('network', null, 'offline');
+      },
+    });
+    const deps = { db, api, lock: noLock, clock, userId: 'u1' };
+    await enqueueStart(db, { userId: 'u1', orderId: 'o1', clientStartedAt: at });
+    await runPass(deps);
+    online = true;
+    calls.length = 0;
+
+    await syncInWorker({
+      sessionUserId: async () => 'u1',
+      wake: (userId) => wakeNetworkWaits(db, userId),
+      pass: (userId) => runPass({ ...deps, userId }),
+      post: vi.fn(),
+    });
+
+    expect(calls.map((c) => c.method)).toEqual(['startExecution']);
+    expect(await db.queue.count()).toBe(0);
+  });
 
   it('Q3: without a stored session it does nothing', async () => {
     const pass = vi.fn();
     const post = vi.fn();
 
-    await syncInWorker({ sessionUserId: async () => null, pass, post });
+    await syncInWorker({ wake: noWake, sessionUserId: async () => null, pass, post });
 
     expect(pass).not.toHaveBeenCalled();
     expect(post).not.toHaveBeenCalled();
@@ -60,7 +87,7 @@ describe('syncInWorker', () => {
     const pass = vi.fn(async () => result({ kind: 'idle' }));
     const post = vi.fn();
 
-    await syncInWorker({ sessionUserId: async () => 'u1', pass, post });
+    await syncInWorker({ wake: noWake, sessionUserId: async () => 'u1', pass, post });
 
     expect(pass).toHaveBeenCalledWith('u1');
     expect(post).toHaveBeenCalledWith({ type: 'pass', ...result({ kind: 'idle' }) });
@@ -70,13 +97,17 @@ describe('syncInWorker', () => {
     const post = vi.fn();
     const waiting = result({ kind: 'waiting', retryAt: 5_000 });
 
-    await expect(syncInWorker({ sessionUserId: async () => 'u1', pass: async () => waiting, post })).rejects.toThrow();
+    await expect(
+      syncInWorker({ wake: noWake, sessionUserId: async () => 'u1', pass: async () => waiting, post }),
+    ).rejects.toThrow();
     expect(post).toHaveBeenCalledWith({ type: 'pass', ...waiting });
   });
 
   it('a lost login ends the sync event: only the page can sign in again', async () => {
     const pass = async () => result({ kind: 'needs_login' });
 
-    await expect(syncInWorker({ sessionUserId: async () => 'u1', pass, post: vi.fn() })).resolves.toBeUndefined();
+    await expect(
+      syncInWorker({ wake: noWake, sessionUserId: async () => 'u1', pass, post: vi.fn() }),
+    ).resolves.toBeUndefined();
   });
 });
