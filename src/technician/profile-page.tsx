@@ -3,6 +3,7 @@ import { FlaskConical, LogOut, Save, WifiOff } from 'lucide-react';
 import * as React from 'react';
 import { useAuth } from '@/app/auth-context';
 import { signOutAndWipe } from '@/app/session';
+import { AppVersion } from '@/components/app-version';
 import { RoleBadge } from '@/components/badges';
 import { ConfirmDialog } from '@/components/dialogs';
 import { PageHeader } from '@/components/page-header';
@@ -148,6 +149,7 @@ function Profile({ data }: { data: NonNullable<ReturnType<typeof useTechSession>
           await navigate({ to: '/login' });
         }}
       />
+      <AppVersion />
     </div>
   );
 }

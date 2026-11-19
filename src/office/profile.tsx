@@ -2,6 +2,7 @@
 import * as React from 'react';
 import { useAuth } from '@/app/auth-context';
 import { LogoutButton } from '@/app/logout-button';
+import { AppVersion } from '@/components/app-version';
 import { RoleBadge } from '@/components/badges';
 import { PageHeader } from '@/components/page-header';
 import { DetailItem, DetailList, Section } from '@/components/section';
@@ -101,6 +102,7 @@ export function ProfilePage() {
           </div>
         )}
       </Section>
+      <AppVersion />
     </div>
   );
 }

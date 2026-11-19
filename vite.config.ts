@@ -1,10 +1,25 @@
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath, URL } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { buildVersion } from './src/lib/version';
+
+/** O commit do build: o do Cloudflare Pages, senão o do git local; sem nenhum, a versão vai sem ele. */
+function commit(): string | null {
+  const sha = process.env.CF_PAGES_COMMIT_SHA;
+  if (sha) return sha.slice(0, 7);
+  try {
+    return execFileSync('git', ['rev-parse', '--short', 'HEAD'], { encoding: 'utf8' }).trim() || null;
+  } catch {
+    return null;
+  }
+}
 
 export default defineConfig({
+  // Versão do app (src/lib/version.ts), a mesma na página e no service worker.
+  define: { __APP_VERSION__: JSON.stringify(buildVersion(new Date(), commit())) },
   // Porta do site_url do Auth local (../fast/supabase/config.toml): os links do convite e da senha abrem aqui.
   server: { host: '127.0.0.1', port: 3000, strictPort: true },
   preview: { host: '127.0.0.1', port: 3000, strictPort: true },

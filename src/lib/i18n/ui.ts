@@ -301,6 +301,8 @@ export const uiTexts = {
     approveConfirm: 'Aprovar',
   },
 
+  appVersion: 'Versão {version}',
+
   nav: {
     myOrders: 'Minhas O.S.',
     pending: 'Pendências',

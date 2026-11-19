@@ -23,7 +23,7 @@ Mapa das telas da interface do técnico ([screens.md](screens.md#técnico-celula
 | — (painel) | Revisão do envio | fotos, texto, participantes, alertas que o escritório vai ver (fotos da galeria, entregue com atraso, antes da rejeição) e o aviso da fila | enviar para aprovação | com sinal: "sobe uma foto por vez"; sem sinal: "entra na fila" |
 | `/technician/orders/$orderId/supplement?attempt=` | Complemento | tentativa somada (número, revisão, quando, fotos); aviso de tardio se já revisada; fotos, texto, participantes | enviar complemento | sem texto e sem foto: botão desligado (R3); O.S. cancelada ou sem tentativa: aviso e voltar |
 | `/technician/pending` | Pendências | indicador em faixa; **Precisam de você** (recusados com o motivo, bloqueados com o erro) e **Na fila** (enviando com o progresso das fotos, na fila, esperando rede); o texto e as fotos de cada envio | entrar de novo, com a fila parada pedindo login (só a sessão deste aparelho sai, nada é apagado); tentar agora (esperando rede, bloqueado); apagar rascunho recusado (confirma); dispensar recusa de início; abrir a O.S. (no `conflict`, para escolher o texto) | carregando, erro, tudo enviado |
-| `/technician/profile` | Meu perfil | avatar, papel, empresa, email do login | editar nome (obrigatório) e telefone; sair (confirma; com itens na fila, avisa quantos se perdem) | sem sinal: salvar desligado |
+| `/technician/profile` | Meu perfil | avatar, papel, empresa, email do login, versão do app | editar nome (obrigatório) e telefone; sair (confirma; com itens na fila, avisa quantos se perdem) | sem sinal: salvar desligado |
 
 **Ação principal do detalhe:**
 

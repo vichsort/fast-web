@@ -30,7 +30,7 @@ O papel vem do `RequireAccess`; tela de owner aberta por manager mostra `forbidd
 | `/office/company` | nome, CNPJ, telefone, email, fuso; próxima O.S. e desde quando | salvar | só owner | [01](../../fast/docs/modules/01-foundation.md), 05 (auditoria) |
 | `/office/members` | membros (sem email), "Você", papel, desde, situação; removidos com motivo | convidar (nome, email, papel), trocar papel (aviso de atribuições fechadas), remover com motivo | `last_owner`: faixa; convite de membro ativo avisa que nada mudou; reativação avisa | [06](../../fast/docs/modules/06-members.md) |
 | `/office/audit` | quando, quem, ação e alvo, detalhes (papel, de → para, motivo, campos mudados, atribuições fechadas) | buscar, filtrar por ação, autor e período | sem resultado | 05 |
-| `/office/profile` | nome, telefone, email (só leitura), papel, empresa | salvar, sair (logout real) | — | 01 |
+| `/office/profile` | nome, telefone, email (só leitura), papel, empresa, versão do app | salvar, sair (logout real) | — | 01 |
 
 ## Erros de regra na tela
 
