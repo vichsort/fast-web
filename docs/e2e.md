@@ -50,7 +50,7 @@ O pior caso do produto: serviço feito que nunca chega ao escritório.
 | P6 | Upload interrompido no meio do envio | a retomada não pode reenviar foto confirmada nem duplicar (Q4) | `sendSubmit` | unit, com API falsa; E2E desde 2026-11-19 | coberto |
 | P7 | Dupla enviando sem sinal | o segundo envio vira complemento (04, R4); nenhuma prova pode ficar presa | backend; fila daqui | backend; E2E desde 2026-11-19 | coberto |
 | P8 | App atualizado com itens na fila | a versão nova lê prova gravada pela velha: schema do Dexie ou formato do item. Nada foi publicado ainda; a partir do primeiro deploy, cada versão e cada formato de item têm de ler o anterior | `offline/db.ts`, tipos dos itens da fila | versões 1 a 3 do Dexie juntadas na 1 em 2026-11-19 ([Decisões](#decisões)); o resto do [Versionamento](#versionamento) está por fazer | unit de cada upgrade do Dexie a partir de dados da versão anterior |
-| P9 | Contrato do backend mudando com itens de versões antigas na fila | uma RPC com assinatura nova responde `PGRST202` e o item fica `blocked`: não perde, mas trava até o técnico atualizar e tocar em "Tentar agora" | contrato do backend | sem regra | sugestão para a spec do backend: RPC usada pela fila muda de forma retrocompatível por pelo menos o prazo offline (3 dias) mais o ciclo de atualização |
+| P9 | Contrato do backend mudando com itens de versões antigas na fila | uma RPC com assinatura nova responde `PGRST202` e o item fica `blocked`: não perde, mas trava até o técnico atualizar e tocar em "Tentar agora" | contrato do backend | regra na spec do backend desde 2026-11-19 ([princípio "A fila não quebra"](../../fast/docs/spec.md#princípios)) | — |
 
 ## Fila parada ou atrasada
 
@@ -106,7 +106,7 @@ Revisado com o usuário em 2026-11-19. Mapa e estimativa; as correções ficam p
 | --- | --- | --- | --- |
 | 1 | P8, versionamento do app e do backend | dados de hoje são descartáveis: juntar as versões 1 a 3 do Dexie numa só, sem migração (apagar os dados do site nos aparelhos de teste) | squash feito em 2026-11-19; depois, o mapa abaixo ([Versionamento](#versionamento)) vira itens, e cada mudança do Dexie ou do formato de item da fila ganha teste de upgrade (unit, `fake-indexeddb`) |
 | 2 | D4, D5, D6, listas do escritório | opção A agora; a B continua de pé para quando o volume pedir ([Decisões](#decisões), 2026-11-19) | opção A feita em 2026-11-19 ([Listas do escritório](#listas-do-escritório)) |
-| 3 | P9, retrocompatibilidade das RPCs da fila | aprovado: vai como regra na spec do backend (`../fast/docs/spec.md`) | escrever a regra lá; faz parte do [Versionamento](#versionamento) |
+| 3 | P9, retrocompatibilidade das RPCs da fila | aprovado: vai como regra na spec do backend (`../fast/docs/spec.md`) | regra escrita em 2026-11-19 ([princípios](../../fast/docs/spec.md#princípios)); a versão mínima do [Versionamento](#versionamento) continua por fazer |
 | 4 | Campo em Android emulado | depois (usuário, 2026-11-19): por enquanto, só corrigir o que está pela metade | plano guardado em [Android emulado](#android-emulado) |
 | 5 | E2E no CI | depois (usuário, 2026-11-19) | GitHub Actions: `supabase start` do `../fast`, build, `npm run test:e2e` a cada push |
 
@@ -119,7 +119,7 @@ Mapa do que falta para app e backend evoluírem cada um no seu ritmo, com celula
 | Versão do app | não existe; o PWA só avisa que há versão nova ("Atualizar", [queue.md](queue.md#service-worker)) | número de versão no build (`define` do Vite), mostrado no Perfil do técnico e do escritório |
 | Versão nas chamadas | o backend não sabe qual app chama | header `x-client-version` no cliente do Supabase (página e worker); as Edge Functions e os logs passam a ver a versão |
 | Versão mínima | não existe | o backend publica a versão mínima aceita (tabela de configuração ou RPC); abaixo dela, o app mostra "Atualize o app" e força a atualização do worker, sem apagar a fila |
-| Mudança de RPC usada pela fila | `PGRST202` deixa o item `blocked` | P9: mudança só aditiva; mudança que quebra vira função nova (`_v2`) e a antiga fica pelo prazo offline (3 dias) mais o ciclo de atualização; aí sobe a versão mínima |
+| Mudança de RPC usada pela fila | regra na spec do backend (P9); sem ela, `PGRST202` deixaria o item `blocked` | P9: mudança só aditiva; mudança que quebra vira função nova (`_v2`) e a antiga fica pelo prazo offline (3 dias) mais o ciclo de atualização; aí sobe a versão mínima |
 | Formato dos itens da fila e do Dexie | sem versão | campo de versão no item; upgrade do Dexie com teste a partir dos dados da versão anterior |
 | No celular | só o aviso de versão nova | Perfil com a versão; aviso de atualização obrigatória quando abaixo da mínima |
 

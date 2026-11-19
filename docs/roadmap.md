@@ -71,7 +71,7 @@ Esboço visual do sistema inteiro antes da integração real, pedido em 2026-11-
 - [ ] Antes do deploy: etapa 1 dos [próximos passos do e2e.md](e2e.md#1-antes-da-produção).
   - [x] Squash do Dexie: versões 1 a 3 numa só, sem migração (P8).
   - [x] Listas do escritório, opção A (D4, D5, D6): select enxuto e leitura em blocos de 1000 ([order-volume.spec.ts](../tests/e2e/office/order-volume.spec.ts)).
-  - [ ] Regra de retrocompatibilidade da fila na spec do backend (P9).
+  - [x] Regra de retrocompatibilidade da fila na spec do backend (P9).
   - [ ] Resto do [versionamento](e2e.md#versionamento).
   - [ ] Android emulado.
   - [ ] E2E no CI.
