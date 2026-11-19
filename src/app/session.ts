@@ -16,7 +16,10 @@ export function useSession(): { session: Session | null; ready: boolean } {
   return state;
 }
 
-/** Vínculos ativos (mais antigo primeiro) e a flag de platform admin. O RLS esconde os vínculos de quem foi removido. */
+/**
+ * Vínculos ativos (mais antigo primeiro) e a flag de platform admin. O RLS esconde os vínculos de quem foi removido.
+ * Sem as repetições do postgrest-js (1 + 2 + 4 s em falha de rede): sem resposta, o acesso guardado decide na hora.
+ */
 async function lookupAccess(userId: string): Promise<AccessLookup> {
   const [members, profile] = await Promise.all([
     supabase
@@ -24,8 +27,9 @@ async function lookupAccess(userId: string): Promise<AccessLookup> {
       .select('company_id, role')
       .eq('user_id', userId)
       .is('deleted_at', null)
-      .order('created_at'),
-    supabase.from('profiles').select('is_platform_admin').eq('id', userId).maybeSingle(),
+      .order('created_at')
+      .retry(false),
+    supabase.from('profiles').select('is_platform_admin').eq('id', userId).maybeSingle().retry(false),
   ]);
   if (members.error) return { ok: false, errorClass: classifyRpcError(members.error, members.status).errorClass };
   if (profile.error) return { ok: false, errorClass: classifyRpcError(profile.error, profile.status).errorClass };

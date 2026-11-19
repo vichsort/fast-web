@@ -20,6 +20,7 @@ O que mais custa se falhar, onde está no código, o que já é testado e como t
 | [`office/login`](../tests/e2e/office/login.spec.ts) | o gerente entra e cai no dashboard |
 | [`technician/login`](../tests/e2e/technician/login.spec.ts) | o técnico entra e cai em Minhas O.S. |
 | [`technician/offline-execution`](../tests/e2e/technician/offline-execution.spec.ts) | início e envio sem sinal, com foto da câmera e da galeria. Depois de uma espera longa, o sinal volta e o envio chega em até 5 s: uma execução, 2 fotos, nada repetido ao reabrir |
+| [`technician/offline-open`](../tests/e2e/technician/offline-open.spec.ts) | S1: login e lista com sinal; sem sinal, recarregar direto numa O.S. mostra a O.S. em até 5 s, e a lista também abre |
 | [`technician/refused-submission`](../tests/e2e/technician/refused-submission.spec.ts) | P5: envio feito sem sinal numa O.S. que o escritório cancela. Com o sinal, o rascunho fica em "Precisam de você" com o motivo e o texto, continua ao reabrir, nada chega ao servidor e só sai quando o técnico apaga |
 
 ## Perda da prova
@@ -73,7 +74,7 @@ O pior caso do produto: serviço feito que nunca chega ao escritório.
 
 | ID | Ponto | Por que pesa | Onde | Hoje | Teste |
 | --- | --- | --- | --- | --- | --- |
-| S1 | Abrir o app sem sinal | precache, `NavigationRoute`, acesso guardado e cache de 3 dias; é o começo do dia em campo. Passado 3 dias sem sinal, o cache vence e a lista abre vazia, mas os rascunhos ficam (premissa do backend) | `sw.ts`, `session.ts`, `persist.ts` | sem teste | E2E: login com sinal, sem sinal, recarregar direto numa O.S. |
+| S1 | Abrir o app sem sinal | precache, `NavigationRoute`, acesso guardado e cache de 3 dias; é o começo do dia em campo. Passado 3 dias sem sinal, o cache vence e a lista abre vazia, mas os rascunhos ficam (premissa do backend) | `sw.ts`, `session.ts`, `persist.ts` | E2E desde 2026-11-19. O teste achou ~7 s de "Carregando…": o postgrest-js repetia a consulta do acesso 3 vezes (1, 2 e 4 s) antes de cair no acesso guardado; corrigido ([screens.md](screens.md#decisões)) | coberto |
 | S2 | Relógio do aparelho errado | `client_started_at`, `client_submitted_at` e `captured_at` vêm dele e mudam os alertas (`late_delivery`, `gallery_before_start`) | 04 | aceito (os horários do servidor vão junto) | — |
 | S3 | Isolamento entre empresas e técnicos | o RLS é a única barreira; o front usa a chave anon | backend | pgTAP no backend | não repetir aqui |
 | S4 | Aparelho compartilhado | cache, fila e fotos por usuário (Q3, Q10) | `clearUser`, `persist.ts` | unit | E2E barato: o técnico 1 sai, o técnico 2 entra e não vê nada do 1 |
@@ -83,7 +84,7 @@ O pior caso do produto: serviço feito que nunca chega ao escritório.
 | # | E2E | Por quê |
 | --- | --- | --- |
 | 1 | ~~P5, recusa por regra~~ (feito) | é o exemplo do offline.md, e a prova não pode sumir |
-| 2 | S1, abrir sem sinal | é o começo do dia em campo |
+| 2 | ~~S1, abrir sem sinal~~ (feito) | é o começo do dia em campo |
 | 3 | E1, ciclo de revisão | fecha a O.S. |
 | 4 | P3, sessão perdida com fila | garante que o caminho que mantém a fila continua assim |
 | 5 | P6, upload interrompido | retomada sem duplicar |
