@@ -104,7 +104,7 @@ Revisado com o usuário em 2026-11-19. Mapa e estimativa; as correções ficam p
 | # | Item | Decisão | O que fazer |
 | --- | --- | --- | --- |
 | 1 | P8, versionamento do app e do backend | dados de hoje são descartáveis: juntar as versões 1 a 3 do Dexie numa só, sem migração (apagar os dados do site nos aparelhos de teste) | o squash; depois, o mapa abaixo ([Versionamento](#versionamento)) vira itens, e cada mudança do Dexie ou do formato de item da fila ganha teste de upgrade (unit, `fake-indexeddb`) |
-| 2 | D4, D5, D6, listas do escritório | recomendada a opção A agora e a B quando o volume pedir; falta o ok do usuário | ver [Listas do escritório](#listas-do-escritório) |
+| 2 | D4, D5, D6, listas do escritório | opção A agora; a B continua de pé para quando o volume pedir ([Decisões](#decisões), 2026-11-19) | ver [Listas do escritório](#listas-do-escritório) |
 | 3 | P9, retrocompatibilidade das RPCs da fila | aprovado: vai como regra na spec do backend (`../fast/docs/spec.md`) | escrever a regra lá; faz parte do [Versionamento](#versionamento) |
 | 4 | Campo em Android emulado | depois (usuário, 2026-11-19): por enquanto, só corrigir o que está pela metade | plano guardado em [Android emulado](#android-emulado) |
 | 5 | E2E no CI | depois (usuário, 2026-11-19) | GitHub Actions: `supabase start` do `../fast`, build, `npm run test:e2e` a cada push |
@@ -134,8 +134,8 @@ Volume informado: ~500 clientes; no mínimo 4 O.S. por dia (~120 por mês). Revi
 
 | Opção | O que muda | Resolve | Tamanho |
 | --- | --- | --- | --- |
-| **A, só front (recomendada para agora)** | a lista de O.S. pede só as colunas da linha (detalhe, revisão e dashboard seguem com o select completo); uma leitura em blocos de 1000 com ordem fixa (`range`), usada pelas listas de O.S., clientes e auditoria | o corte nas três listas; o peso cai para ~300 bytes por O.S. (~450 KB por ano); filtros, busca e paginação seguem na tela | ~1 a 2 h de agente |
-| B, view no backend | view enxuta `security_invoker` da lista (cliente e técnicos juntos), filtros, busca e paginação no banco; tabela paginada pelo servidor | qualquer escala | ~3 a 4 h, nos dois repositórios; quando o volume pedir (dezenas de milhares de O.S.) |
+| **A, só front (decidida para agora)** | a lista de O.S. pede só as colunas da linha (detalhe, revisão e dashboard seguem com o select completo); uma leitura em blocos de 1000 com ordem fixa (`range`), usada pelas listas de O.S., clientes e auditoria | o corte nas três listas; o peso cai para ~300 bytes por O.S. (~450 KB por ano); filtros, busca e paginação seguem na tela | ~1 a 2 h de agente |
+| B, view no backend | view enxuta `security_invoker` da lista (cliente e técnicos juntos), filtros, busca e paginação no banco; tabela paginada pelo servidor | qualquer escala | ~3 a 4 h, nos dois repositórios; quando o volume pedir (dezenas de milhares de O.S.); não descartada |
 
 Descartado: filtros "em dois passos" só no front (ids na URL). O `postgrest-js` corta a URL em ~8000 caracteres; com ~200 O.S. de um técnico, o filtro quebraria.
 
@@ -225,3 +225,4 @@ Não é loucura: o emulador do Android roda o Chrome de verdade, com o service w
 ## Decisões
 
 - **2026-11-19** — E2E só para o que cruza camadas (tela, fila, worker, banco). Regra isolada fica no unit, e o isolamento do RLS, no pgTAP do backend. *Por quê:* cada regra é testada num lugar só (CLAUDE.md); o E2E custa o stack inteiro e é o único que pega erro de ligação, como a fila parada com o sinal de volta.
+- **2026-11-19** — Listas do escritório (D4, D5, D6): opção A agora (lista de O.S. com select enxuto e leitura em blocos de 1000 com ordem fixa nas listas de O.S., clientes e auditoria), sem mudar o backend. A opção B (view no backend com filtros, busca e paginação no banco) não foi descartada: é o caminho quando o volume crescer. *Por quê:* com ~500 clientes e ~120 O.S. por mês, a A tira o corte silencioso de 1000 e o peso da lista por anos com o menor custo; a B só compensa em escala.
