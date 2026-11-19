@@ -1,5 +1,7 @@
 // Acesso direto ao stack local do backend para preparar e conferir os testes, com os usuários do seed
 // (../fast/supabase/seed.sql). Nada aqui passa pelo app.
+import { execFileSync } from 'node:child_process';
+import { resolve } from 'node:path';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { loadEnv } from 'vite';
 import type { Database } from '../../../src/lib/database.types';
@@ -91,10 +93,15 @@ export async function cancelOrder(orderId: string, reason: string) {
 }
 
 /** Técnico novo, só do teste, na empresa da Fast: usuário pela chave de serviço, vínculo pelo convite do owner (06). */
-export async function createTechnician(): Promise<{ email: string; userId: string; memberId: string }> {
+/** Cliente com a chave de serviço (passa por cima do RLS), só para preparar o que a tela não cria. */
+function adminClient(): Client {
   const serviceKey = process.env.E2E_SERVICE_ROLE_KEY;
   if (!serviceKey) throw new Error('E2E_SERVICE_ROLE_KEY ausente: o globalSetup não leu a chave do stack local.');
-  const admin = createClient<Database>(supabaseUrl, serviceKey, { auth: { persistSession: false } });
+  return createClient<Database>(supabaseUrl, serviceKey, { auth: { persistSession: false } });
+}
+
+export async function createTechnician(): Promise<{ email: string; userId: string; memberId: string }> {
+  const admin = adminClient();
   const tag = crypto.randomUUID().slice(0, 8);
   const email = `e2e-${tag}@fast.test`;
   const fullName = `Técnico E2E ${tag}`;
@@ -152,4 +159,78 @@ export async function signOutEverywhere(email: string) {
   const { client } = await signIn(email);
   const { error } = await client.auth.signOut();
   if (error) throw error;
+}
+
+/**
+ * Empresa própria do teste, com um owner novo e `count` O.S. de um cliente, gravadas direto pela chave de serviço
+ * (sem as RPCs, para caber no tempo do teste). A O.S. nº 1, a mais antiga, tem título próprio. Isolada do seed: as
+ * outras empresas e os outros testes não a veem. `remove` apaga as O.S. e o cliente no fim, para o banco local não
+ * crescer a cada rodada e atrasar os outros testes.
+ */
+export async function createCompanyWithOrders(count: number) {
+  const admin = adminClient();
+  const tag = crypto.randomUUID().slice(0, 8);
+  const email = `e2e-owner-${tag}@fast.test`;
+  const user = await admin.auth.admin.createUser({
+    email,
+    password: PASSWORD,
+    email_confirm: true,
+    user_metadata: { full_name: `Dono E2E ${tag}` },
+  });
+  if (user.error) throw user.error;
+  const ownerId = user.data.user.id;
+
+  const company = await admin
+    .from('companies')
+    .insert({ name: `Volume E2E ${tag}`, next_order_number: count + 1 })
+    .select('id')
+    .single();
+  if (company.error) throw company.error;
+  const companyId = company.data.id;
+
+  const member = await admin.from('company_members').insert({ company_id: companyId, user_id: ownerId, role: 'owner' });
+  if (member.error) throw member.error;
+  const client = await admin
+    .from('clients')
+    .insert({ company_id: companyId, name: `Cliente volume ${tag}` })
+    .select('id')
+    .single();
+  if (client.error) throw client.error;
+
+  const oldestTitle = `Mais antiga ${tag}`;
+  const orders = Array.from({ length: count }, (_, i) => ({
+    company_id: companyId,
+    order_number: i + 1,
+    client_id: client.data.id,
+    service_type: 'installation' as const,
+    title: i === 0 ? oldestTitle : `Volume ${tag} ${i + 1}`,
+    created_by: ownerId,
+  }));
+  const inserted = await admin.from('service_orders').insert(orders);
+  if (inserted.error) throw inserted.error;
+  analyze('companies', 'company_members', 'clients', 'service_orders');
+
+  const remove = async () => {
+    for (const table of ['service_order_history', 'service_orders', 'clients'] as const) {
+      const { error } = await admin.from(table).delete().eq('company_id', companyId);
+      if (error) throw error;
+    }
+  };
+  return { email, oldestTitle, remove };
+}
+
+/**
+ * Atualiza as estatísticas do Postgres local. Logo depois de gravar centenas de linhas de uma vez, antes do autoanalyze,
+ * o planejador estima uma linha para a empresa nova e a lista de O.S. passa do `statement_timeout` de 8 s (57014). Na
+ * produção as O.S. chegam aos poucos (docs/e2e.md, D4).
+ */
+function analyze(...tables: string[]) {
+  execFileSync(
+    'npx',
+    ['supabase', 'db', 'query', '--local', `analyze ${tables.map((t) => `public.${t}`).join(', ')}`],
+    {
+      cwd: resolve(process.cwd(), '../fast'),
+      stdio: ['ignore', 'ignore', 'pipe'],
+    },
+  );
 }

@@ -29,6 +29,7 @@ import {
   toOrderListItem,
 } from '../derive';
 import type { AddressInput, OrderInput } from '../mocks';
+import { readAll } from './read-all';
 import type { OfficeApi } from './types';
 import { createZipLookup } from './viacep';
 
@@ -112,19 +113,24 @@ const ORDER_LIST_SELECT = `id, order_number, title, status, priority, service_ty
  * e prazo no fuso da empresa ficam no `orderMatches`, o mesmo dos dados de exemplo. Mais nova primeiro.
  */
 async function officeListOrders(filters: OrderFilters = {}): Promise<OfficeOrderListItem[]> {
-  let query = supabase
-    .from('service_orders')
-    .select(ORDER_LIST_SELECT)
-    .eq('company_id', current().companyId)
-    // Só os complementos tardios sem ciência (04, R11): o selo da linha, sem trazer as execuções.
-    .eq('late.is_late', true)
-    .is('late.acknowledged_at', null);
-  if (filters.status?.length) query = query.in('status', filters.status);
-  if (filters.priority?.length) query = query.in('priority', filters.priority);
-  if (filters.service_type?.length) query = query.in('service_type', filters.service_type);
-  if (filters.client_id) query = query.eq('client_id', filters.client_id);
-  if (filters.overdue) query = query.lt('due_at', new Date().toISOString()).in('status', [...OVERDUE_STATUSES]);
-  const found = await rows(query.order('order_number', { ascending: false }));
+  const overdueBefore = new Date().toISOString();
+  const query = () => {
+    let q = supabase
+      .from('service_orders')
+      .select(ORDER_LIST_SELECT)
+      .eq('company_id', current().companyId)
+      // Só os complementos tardios sem ciência (04, R11): o selo da linha, sem trazer as execuções.
+      .eq('late.is_late', true)
+      .is('late.acknowledged_at', null);
+    if (filters.status?.length) q = q.in('status', filters.status);
+    if (filters.priority?.length) q = q.in('priority', filters.priority);
+    if (filters.service_type?.length) q = q.in('service_type', filters.service_type);
+    if (filters.client_id) q = q.eq('client_id', filters.client_id);
+    if (filters.overdue) q = q.lt('due_at', overdueBefore).in('status', [...OVERDUE_STATUSES]);
+    // O número é único na empresa: a ordem dos blocos é fixa.
+    return q.order('order_number', { ascending: false });
+  };
+  const found = await readAll(async (from, to) => rows(query().range(from, to)));
   const now = Date.now();
   return (found as unknown as OrderListRow[])
     .map((row) => toOrderListItem(row, now))
@@ -289,7 +295,12 @@ function clientQuery() {
 
 /** Clientes por nome; os excluídos só quando pedidos (api.md: "ativos" filtram no front). Busca no front. */
 async function officeListClients(filters: { search?: string; includeDeleted?: boolean } = {}) {
-  const found = await clientRows((q) => (filters.includeDeleted ? q : q.is('deleted_at', null)));
+  const found = await readAll((from, to) =>
+    clientRows((q) =>
+      // Nome e id: ordem fixa entre os blocos (a ordem da tela, pt-BR, é a de baixo).
+      (filters.includeDeleted ? q : q.is('deleted_at', null)).order('name').order('id').range(from, to),
+    ),
+  );
   return found
     .filter((c) => clientMatches(c, filters.search ?? ''))
     .map(toClientListItem)
@@ -394,12 +405,16 @@ async function officeListMembers(filters: { includeRemoved?: boolean } = {}): Pr
 
 async function officeAudit(): Promise<AuditView[]> {
   const [logs, members, company] = await Promise.all([
-    rows(
-      supabase
-        .from('audit_logs')
-        .select(`*, actor:profiles!audit_logs_actor_id_fkey(${PERSON})`)
-        .eq('company_id', current().companyId)
-        .order('created_at', { ascending: false }),
+    readAll((from, to) =>
+      rows(
+        supabase
+          .from('audit_logs')
+          .select(`*, actor:profiles!audit_logs_actor_id_fkey(${PERSON})`)
+          .eq('company_id', current().companyId)
+          .order('created_at', { ascending: false })
+          .order('id')
+          .range(from, to),
+      ),
     ),
     officeListMembers({ includeRemoved: true }),
     officeCompany(),
