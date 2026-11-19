@@ -27,6 +27,7 @@ O que mais custa se falhar, onde está no código, o que já é testado e como t
 | [`technician/pair-offline`](../tests/e2e/technician/pair-offline.spec.ts) | P7: a dupla envia sem sinal, cada um no seu celular (dois contextos), e os dois voltam ao sinal juntos. No banco: uma tentativa e um complemento dela, 2 fotos; as Pendências dos dois ficam vazias |
 | [`technician/removed-member`](../tests/e2e/technician/removed-member.spec.ts) | P4: técnico próprio do teste (usuário pela chave de serviço, vínculo pelo `invite_member`), com um envio na fila sem sinal; o owner o remove. Ao abrir com sinal, vai ao login com o aviso, nada dele fica no Dexie e nada chega ao servidor |
 | [`technician/shared-device`](../tests/e2e/technician/shared-device.spec.ts) | S4: o técnico 1 (próprio do teste) deixa um rascunho com foto e sai; o técnico 2 entra no mesmo contexto, não vê a O.S. do 1 (nem pelo link) e nada do 1 fica no Dexie |
+| [`technician/logout-pending`](../tests/e2e/technician/logout-pending.spec.ts) | P2: início e envio na fila sem sinal; sair pede confirmação com a contagem de Pendências (2), cancelar não apaga nada, e o envio chega quando o sinal volta |
 | [`technician/refused-submission`](../tests/e2e/technician/refused-submission.spec.ts) | P5: envio feito sem sinal numa O.S. que o escritório cancela. Com o sinal, o rascunho fica em "Precisam de você" com o motivo e o texto, continua ao reabrir, nada chega ao servidor e só sai quando o técnico apaga |
 
 ## Perda da prova
@@ -36,7 +37,7 @@ O pior caso do produto: serviço feito que nunca chega ao escritório.
 | ID | Ponto | Por que pesa | Onde | Hoje | Teste |
 | --- | --- | --- | --- | --- | --- |
 | P1 | IndexedDB sem `navigator.storage.persist()` | sem o pedido, o armazenamento é "best-effort": com o celular cheio, o Chrome pode apagar a origem inteira (rascunhos, fotos, fila) sem aviso | `offline/persistence.ts`, runtime do técnico | corrigido em 2026-11-19 ([queue.md](queue.md), Q12): pede ao abrir e avisa em Minhas O.S. se negado | unit; o despejo em si só em campo |
-| P2 | Logout com itens na fila apaga a prova | decisão do contrato (Q10); o aviso com a contagem é a única proteção | `logout-button.tsx`, `profile-page.tsx` | aceito | E2E barato: o aviso mostra a contagem certa e cancelar não apaga nada |
+| P2 | Logout com itens na fila apaga a prova | decisão do contrato (Q10); o aviso com a contagem é a única proteção | `logout-button.tsx`, `profile-page.tsx` | aceito; E2E desde 2026-11-19 | coberto |
 | P3 | "Entre de novo para enviar" sem botão de login | verificado em 2026-11-19 no auth-js 2.119: com a renovação recusada e o token de acesso vencido, ele apaga a sessão, a guarda da rota (`gate.tsx`) leva ao login, e entrar com o mesmo usuário mantém a fila (Q3). Sobra uma janela de até 1 h: com o token de acesso ainda válido pelo relógio do aparelho, a sessão fica, e a única saída visível é o logout, que apaga a fila (P2) | `components/sync.tsx`, `app/pages/gate.tsx` | unit; E2E desde 2026-11-19 (o caminho que mantém a fila); a janela de 1 h segue como risco menor | coberto; a janela, decisão em [Próximos passos](#próximos-passos) |
 | P4 | Remoção do membro apaga tudo, inclusive envios não mandados | remoção por engano antes do sinal perde a prova (offline.md, proteção dos dados) | `app/pages/gate.tsx`, `clearUser` | aceito; E2E desde 2026-11-19 | coberto |
 | P5 | Recusa por regra ao voltar o sinal (O.S. cancelada, técnico tirado da O.S.) | o rascunho tem de ficar `refused`, com o motivo, até o técnico apagar (offline.md, recusa definitiva) | `processor.ts` (`refuse`), Pendências | unit; E2E desde 2026-11-19 | coberto |
@@ -104,7 +105,7 @@ Revisado em 2026-11-19, com a ordem antiga (P5, S1, E1, P3, P6, P7) toda feita. 
 
 | # | Item | Teste | Por quê |
 | --- | --- | --- | --- |
-| 5 | P2, logout com fila | o aviso mostra a contagem certa; cancelar não apaga nada | é a única proteção do caminho que apaga a prova de propósito |
+| 5 | ~~P2, logout com fila~~ (feito) | o aviso mostra a contagem certa; cancelar não apaga nada | é a única proteção do caminho que apaga a prova de propósito |
 | 6 | ~~P4, membro removido~~ (feito) | removido pelo `remove_member` no banco; ao abrir com sinal, o aparelho limpa e vai ao login com o aviso | confere a ligação gate → `clearUser` → login, que hoje só tem unit |
 | 7 | ~~S4, aparelho compartilhado~~ (feito) | o técnico 1 sai, o técnico 2 entra no mesmo contexto e não vê O.S., rascunho nem fila do 1 | o cache e a fila são por usuário só por convenção do código |
 | 8 | E2, `stale_review` | abrir a revisão, chegar um complemento (pelo banco), aprovar: aviso de recarregar, e a aprovação sai depois de recarregar | o escritório aprovaria sem ver a prova nova |
