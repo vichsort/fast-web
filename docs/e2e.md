@@ -1,0 +1,101 @@
+# E2E e pontos críticos
+
+O que mais custa se falhar, onde está no código, o que já é testado e como testar o resto. Análise de 2026-11-19, do código daqui e dos docs do backend. **⚠️** = achado ainda sem correção; **(verificar)** = suspeita que o primeiro teste confirma ou descarta.
+
+## Como roda
+
+| Parte | Como |
+| --- | --- |
+| Testes | `tests/e2e`, `npm run test:e2e`; configuração em [`playwright.config.ts`](../playwright.config.ts) |
+| Backend | stack local (`npm run db:start` em `../fast`) com o seed; preparo e conferência direto no banco por [`support/backend.ts`](../tests/e2e/support/backend.ts) |
+| App | build e `vite preview` na 4173, com o service worker |
+| Projetos | `office` (Desktop Chrome) e `technician` (Pixel 7) |
+| Worker | bloqueado por padrão ([queue.md](queue.md#service-worker)); liberado nos testes do offline |
+| Quando | fora do `npm run check`; antes de commitar o que mexe num fluxo coberto |
+
+## Cobertos
+
+| Teste | Prova |
+| --- | --- |
+| [`office/login`](../tests/e2e/office/login.spec.ts) | o gerente entra e cai no dashboard |
+| [`technician/login`](../tests/e2e/technician/login.spec.ts) | o técnico entra e cai em Minhas O.S. |
+| [`technician/offline-execution`](../tests/e2e/technician/offline-execution.spec.ts) | início e envio sem sinal, com foto da câmera e da galeria. Depois de uma espera longa, o sinal volta e o envio chega em até 5 s: uma execução, 2 fotos, nada repetido ao reabrir |
+
+## Perda da prova
+
+O pior caso do produto: serviço feito que nunca chega ao escritório.
+
+| ID | Ponto | Por que pesa | Onde | Hoje | Teste |
+| --- | --- | --- | --- | --- | --- |
+| P1 | ⚠️ IndexedDB sem `navigator.storage.persist()` | sem o pedido, o armazenamento é "best-effort": com o celular cheio, o Chrome pode apagar a origem inteira (rascunhos, fotos, fila) sem aviso | nenhum código pede | lacuna | campo (o Playwright não reproduz despejo). Correção sugerida: pedir ao abrir a interface do técnico (PWA instalado costuma ganhar) e mostrar no perfil se foi negado |
+| P2 | Logout com itens na fila apaga a prova | decisão do contrato (Q10); o aviso com a contagem é a única proteção | `logout-button.tsx`, `profile-page.tsx` | aceito | E2E barato: o aviso mostra a contagem certa e cancelar não apaga nada |
+| P3 | (verificar) "Entre de novo para enviar" sem botão de login | o indicador pede login, mas a única saída visível é o logout, que apaga a fila (P2). Se o supabase-js removeu a sessão, o app vai ao login e a fila do mesmo usuário fica (Q3); se não, o técnico fica entre esperar e apagar | `components/sync.tsx`, `session.ts` | sem teste | E2E: com itens na fila, estragar a sessão guardada, entrar de novo com o mesmo usuário; a fila precisa sair |
+| P4 | Remoção do membro apaga tudo, inclusive envios não mandados | remoção por engano antes do sinal perde a prova (offline.md, proteção dos dados) | `gate.tsx`, `clearUser` | aceito | E2E: removido, ao abrir com sinal o aparelho limpa e vai ao login com o aviso |
+| P5 | Recusa por regra ao voltar o sinal (O.S. cancelada, técnico tirado da O.S.) | o rascunho tem de ficar `refused`, com o motivo, até o técnico apagar (offline.md, recusa definitiva) | `processor.ts` (`refuse`), Pendências | unit | E2E: o escritório cancela enquanto o técnico está sem sinal |
+| P6 | Upload interrompido no meio do envio | a retomada não pode reenviar foto confirmada nem duplicar (Q4) | `sendSubmit` | unit, com API falsa | E2E: abortar uma vez o PUT da 2ª foto (`context.route`, worker bloqueado); 1 execução, e a 1ª foto não sobe de novo |
+| P7 | Dupla enviando sem sinal | o segundo envio vira complemento (04, R4); nenhuma prova pode ficar presa | backend; fila daqui | backend | E2E com dois contextos (dois celulares): nada fica `blocked` nem `refused` |
+| P8 | App atualizado com itens na fila | a versão nova lê prova gravada pela velha: schema do Dexie ou formato do item. Ex.: itens anteriores ao `waitingFor` (2026-11-19) ficam sem o campo e só voltam pelo timer | `offline/db.ts` | sem regra | unit de cada upgrade do Dexie a partir de dados da versão anterior |
+| P9 | Contrato do backend mudando com itens de versões antigas na fila | uma RPC com assinatura nova responde `PGRST202` e o item fica `blocked`: não perde, mas trava até o técnico atualizar e tocar em "Tentar agora" | contrato do backend | sem regra | sugestão para a spec do backend: RPC usada pela fila muda de forma retrocompatível por pelo menos o prazo offline (3 dias) mais o ciclo de atualização |
+
+## Fila parada ou atrasada
+
+| ID | Ponto | Por que pesa | Onde | Hoje | Teste |
+| --- | --- | --- | --- | --- | --- |
+| T1 | Sinal de volta sem tentar nada | envio parado com sinal no celular | `wakeNetworkWaits` (Q7) | corrigido em 2026-11-19 | E2E (`online`); unit (`sync` e respostas HTTP) |
+| T2 | ⚠️ `refreshSession` da fila sem timeout | RPC, Edge Function e PUT têm timeout; a renovação não. Com a conexão pendurada, a passada não termina: a página fica `running` e ignora as novas acordadas até recarregar, e o lock segura o `sync` do worker | `supabase-api.ts` | lacuna | unit: renovação que nunca responde vira Rede no timeout |
+| T3 | Um item por vez no aparelho (Q2) | uma O.S. com 20 fotos em 2G segura as outras | `processor.ts` | por design | medir em campo |
+| T4 | Background Sync com o app fechado | o Chrome tenta o `sync` poucas vezes, com espera própria; esgotado, só a página manda (o app tem de abrir) | `sw.ts` | unit | campo; o Playwright não simula |
+| T5 | Aba congelada pelo Android em segundo plano | a fila da página para; só o `sync` do worker cobre | `runner.ts` | — | campo |
+| T6 | Celular "conectado" sem dados | o `online` não dispara; só a resposta HTTP e o timer (até 1 min) acordam a fila | `response-signal.ts` | unit | — |
+
+## Gargalos
+
+| ID | Ponto | Por que pesa | Onde | Hoje | Teste |
+| --- | --- | --- | --- | --- | --- |
+| D1 | Cada foto custa 3 idas e voltas em série (2 Edge Functions e o PUT), mais o cold start da função | com o RTT alto do 2G, o custo fixo por foto pesa tanto quanto o arquivo | `sendSubmit`; 04 | por design | medir com `Network.emulateNetworkConditions` (CDP do Chromium). Melhoria possível: pedir as URLs de várias fotos numa chamada (contrato do backend) |
+| D2 | Compressão no thread principal | sem worker ([photos.md](photos.md#decisões)); várias fotos de 12 MP da galeria travam a tela em celular fraco | `photos/compress` | por design | aparelho real |
+| D3 | Cache do técnico gravado como um JSON só a cada mudança | cresce com as execuções e fotos de todas as O.S. da lista | `persist.ts` | aceito no volume esperado | observar |
+| D4 | ⚠️ Lista de O.S. do escritório sem paginação | traz todas as O.S. da empresa, com execuções e fotos embutidas; busca, técnico e prazo filtram no front. Cresce com o histórico e, passado `max_rows = 1000` (PostgREST), corta em silêncio: ficam as 1000 mais novas, e a busca não acha as antigas | `officeListOrders` | lacuna | unit do recorte ou E2E com seed volumoso. Correção: paginação e busca no banco |
+| D5 | ⚠️ Lista de clientes sem ordem no banco e sem paginação | passado 1000 clientes, o PostgREST devolve 1000 quaisquer; a ordenação e a busca são no front. Cliente some do seletor da O.S. nova e da busca. Pesa se a base da Fast for importada | `officeListClients` | lacuna | idem D4 |
+| D6 | Auditoria sem paginação | só os 1000 eventos mais recentes aparecem | `audit_logs` no `supabase.ts` | lacuna menor | — |
+
+## Escritório
+
+| ID | Ponto | Por que pesa | Onde | Hoje | Teste |
+| --- | --- | --- | --- | --- | --- |
+| E1 | Ciclo de revisão: rejeitar, o técnico vê o motivo e refaz, aprovar | fecha a O.S. entre as duas interfaces | `office/review`, telas do técnico | sem teste | E2E com os dois projetos |
+| E2 | Complemento chegando durante a revisão | o backend recusa com `stale_review` (04, R10); a tela trata pela classe de erro | `office/review` | backend | E2E: complemento entre abrir e aprovar |
+| E3 | Criar cliente e O.S. pela tela e atribuir | hoje o teste cria direto no banco | `office/clients`, `office/orders` | sem teste | E2E |
+| E4 | Fuso do navegador diferente do fuso da empresa | prazo é o fim do dia no fuso da empresa (03, R5); "atrasada" depende dele | `lib/format.ts` | unit | E2E barato: `timezoneId` diferente do fuso da empresa, mesmo prazo na tela |
+
+## Dados no aparelho e acesso
+
+| ID | Ponto | Por que pesa | Onde | Hoje | Teste |
+| --- | --- | --- | --- | --- | --- |
+| S1 | Abrir o app sem sinal | precache, `NavigationRoute`, acesso guardado e cache de 3 dias; é o começo do dia em campo. Passado 3 dias sem sinal, o cache vence e a lista abre vazia, mas os rascunhos ficam (premissa do backend) | `sw.ts`, `session.ts`, `persist.ts` | sem teste | E2E: login com sinal, sem sinal, recarregar direto numa O.S. |
+| S2 | Relógio do aparelho errado | `client_started_at`, `client_submitted_at` e `captured_at` vêm dele e mudam os alertas (`late_delivery`, `gallery_before_start`) | 04 | aceito (os horários do servidor vão junto) | — |
+| S3 | Isolamento entre empresas e técnicos | o RLS é a única barreira; o front usa a chave anon | backend | pgTAP no backend | não repetir aqui |
+| S4 | Aparelho compartilhado | cache, fila e fotos por usuário (Q3, Q10) | `clearUser`, `persist.ts` | unit | E2E barato: o técnico 1 sai, o técnico 2 entra e não vê nada do 1 |
+
+## Ordem sugerida
+
+| # | E2E | Por quê |
+| --- | --- | --- |
+| 1 | P5, recusa por regra | é o exemplo do offline.md, e a prova não pode sumir |
+| 2 | S1, abrir sem sinal | é o começo do dia em campo |
+| 3 | E1, ciclo de revisão | fecha a O.S. |
+| 4 | P3, sessão perdida com fila | confirma ou descarta um caminho de perda |
+| 5 | P6, upload interrompido | retomada sem duplicar |
+| 6 | P7, dupla | dois celulares voltando ao sinal juntos |
+
+Correções fora do E2E, por decisão do usuário: P1, T2, D4, D5.
+
+## Fora do Playwright
+
+| O que | Como |
+| --- | --- |
+| Background Sync com o app fechado, despejo do armazenamento, aba congelada, câmera e GPS reais, 2G de verdade | roteiro num Android real antes da produção |
+
+## Decisões
+
+- **2026-11-19** — E2E só para o que cruza camadas (tela, fila, worker, banco). Regra isolada fica no unit, e o isolamento do RLS, no pgTAP do backend. *Por quê:* cada regra é testada num lugar só (CLAUDE.md); o E2E custa o stack inteiro e é o único que pega erro de ligação, como a fila parada com o sinal de volta.

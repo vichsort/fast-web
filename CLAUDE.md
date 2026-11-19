@@ -6,7 +6,7 @@ Regras de trabalho neste repositório. O backend (Supabase) fica no repositório
 
 - **Contrato no backend, tela aqui.** Regra de negócio, payload, código de erro e comportamento offline estão nos docs do backend; aqui só se documenta o que é do aparelho: telas, navegação, a fila, as fotos. Nada é copiado de lá: aponte com link.
 - **A doc manda.** Antes de implementar, leia o doc daqui e os do backend que ele cita. Se a implementação mostrar que a doc está errada ou incompleta, pare e pergunte. A correção vai no mesmo commit do código. Erro no contrato do backend é corrigido lá.
-- **Docs daqui:** [docs/screens.md](docs/screens.md) (telas por papel), [docs/queue.md](docs/queue.md) (fila offline), [docs/photos.md](docs/photos.md) (fotos), [docs/components.md](docs/components.md) (componentes, tema e dados de exemplo), [docs/roadmap.md](docs/roadmap.md) (ordem e o que já foi feito).
+- **Docs daqui:** [docs/screens.md](docs/screens.md) (telas por papel), [docs/queue.md](docs/queue.md) (fila offline), [docs/photos.md](docs/photos.md) (fotos), [docs/components.md](docs/components.md) (componentes, tema e dados de exemplo), [docs/e2e.md](docs/e2e.md) (pontos críticos e plano de E2E), [docs/roadmap.md](docs/roadmap.md) (ordem e o que já foi feito).
 - **Sem bloat.** Tabela em vez de texto corrido, sem introdução.
 - **Decisão nova** entra em "Decisões" do doc, com data e o porquê. Decisão de arquitetura do sistema vai na spec do backend.
 - **Roadmap:** marque o item no mesmo commit do comportamento.
@@ -24,7 +24,7 @@ Regras de trabalho neste repositório. O backend (Supabase) fica no repositório
 
 - **Vitest, projeto `unit` (Node):** lógica sem DOM: fila, classificação de erros, alertas, limpeza do aparelho. IndexedDB pelo `fake-indexeddb` (já carregado no setup). Arquivos `*.test.ts`.
 - **Vitest, projeto `browser` (Chromium):** o que precisa de canvas, `Blob` de imagem ou APIs do navegador (compressão de foto). Arquivos `*.browser.test.ts`.
-- **Playwright (`tests/e2e`, `npm run test:e2e`):** poucos fluxos críticos de ponta a ponta contra o stack local do backend (`npm run db:start` em `../fast`), com o seed dele, e o app do build (`vite preview` na 4173). Projeto `office` (desktop) e `technician` (celular emulado, `context.setOffline` no offline); preparo e conferência direto no banco por [`tests/e2e/support/backend.ts`](tests/e2e/support/backend.ts). Fora do `npm run check`: roda antes de commitar o que mexe no fluxo coberto.
+- **Playwright (`tests/e2e`, `npm run test:e2e`, plano em [docs/e2e.md](docs/e2e.md)):** poucos fluxos críticos de ponta a ponta contra o stack local do backend (`npm run db:start` em `../fast`), com o seed dele, e o app do build (`vite preview` na 4173). Projeto `office` (desktop) e `technician` (celular emulado, `context.setOffline` no offline); preparo e conferência direto no banco por [`tests/e2e/support/backend.ts`](tests/e2e/support/backend.ts). Fora do `npm run check`: roda antes de commitar o que mexe no fluxo coberto.
 - Tela simples, sem regra própria, não tem teste de componente.
 - Cada regra é testada num lugar só.
 - O teste dos textos confere as chaves de erro contra o catálogo do backend, lendo `../fast/docs/errors.md`: código novo lá quebra o teste aqui até ganhar texto.
