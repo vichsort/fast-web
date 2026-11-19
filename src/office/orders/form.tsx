@@ -19,7 +19,7 @@ import { ORDER_PRIORITIES, type OrderPriority, SERVICE_TYPES, type ServiceType }
 import { calendarDay, formatOrderNumber, formatPhone } from '@/lib/format';
 import { errorMessage, t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
-import type { OrderDetail } from '@/mocks';
+import type { OrderDetail } from '@/lib/views';
 import { addressText, createOrder, setAssignees, updateMaterials, updateOrder } from '../api';
 import { AddressDialog } from '../clients/address-form';
 import { QuickClientDialog } from '../clients/client-form';

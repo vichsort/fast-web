@@ -2,27 +2,6 @@
 // filtros, get_dashboard), para as telas trocarem pela integração sem refazer. Ações não gravam nada.
 import { ACTIVE_ORDER_STATUSES, type MemberRole } from '@/lib/enums';
 import { calendarDay } from '@/lib/format';
-import { executionAlerts, photoAlerts } from '@/photos/alerts';
-import {
-  addresses,
-  assignments,
-  auditLogs,
-  clients,
-  company,
-  executions,
-  history,
-  members,
-  NOW,
-  orders,
-  pendingItems,
-  photos,
-  photoUrls,
-  profiles,
-  seenOnDevice,
-  sessionUsers,
-  syncState,
-  TIME_ZONE,
-} from './data';
 import type {
   AttemptView,
   AuditView,
@@ -44,7 +23,28 @@ import type {
   Profile,
   ServiceOrder,
   SyncState,
-} from './types';
+} from '@/lib/views';
+import { executionAlerts, photoAlerts } from '@/photos/alerts';
+import {
+  addresses,
+  assignments,
+  auditLogs,
+  clients,
+  company,
+  executions,
+  history,
+  members,
+  NOW,
+  orders,
+  pendingItems,
+  photos,
+  photoUrls,
+  profiles,
+  seenOnDevice,
+  sessionUsers,
+  syncState,
+  TIME_ZONE,
+} from './data';
 
 /** Latência simulada (ms). 0 nos testes; a vitrine usa o padrão para mostrar os estados de carregando. */
 let latency = 250;

@@ -1,7 +1,7 @@
 // Leituras do escritório (TanStack Query), com a chave 'office' para as ações recarregarem tudo de uma vez.
 import { useQuery } from '@tanstack/react-query';
 import * as React from 'react';
-import type { OrderFilters } from '@/mocks';
+import type { OrderFilters } from '@/lib/views';
 import {
   officeAudit,
   officeDashboard,

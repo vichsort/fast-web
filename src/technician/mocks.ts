@@ -7,6 +7,7 @@ import * as React from 'react';
 import type { AttemptData, ExecutionData } from '@/components/execution-card';
 import type { PhotoData } from '@/components/photos';
 import type { OrderStatus, PhotoSource } from '@/lib/enums';
+import type { OrderDetail, PendingItem, PersonRef, SyncState } from '@/lib/views';
 import {
   getOrder,
   getPerson,
@@ -16,10 +17,6 @@ import {
   listPendingItems,
   MOCK_TIME_ZONE,
   MOCK_USER_IDS,
-  type OrderDetail,
-  type PendingItem,
-  type PersonRef,
-  type SyncState,
   samplePhotoUrl,
 } from '@/mocks';
 import { executionAlerts } from '@/photos/alerts';

@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import * as React from 'react';
 import { HISTORY_SELECT, ORDER_SELECT, photoUrls } from '@/lib/orders-query';
 import { supabase } from '@/lib/supabase';
-import type { OrderDetail, PendingItem, SyncState } from '@/mocks';
+import type { OrderDetail, PendingItem, SyncState } from '@/lib/views';
 import { type OrderRow, toOrderDetail } from '@/office/derive';
 import { db } from '@/offline/db';
 import { ApiError, classifyFunctionError, classifyRpcError } from '@/offline/queue/errors';

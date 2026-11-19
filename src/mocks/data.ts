@@ -3,7 +3,6 @@
 
 import type { OrderPriority, OrderStatus, PhotoSource, ReviewStatus, ServiceType } from '@/lib/enums';
 import { calendarDay } from '@/lib/format';
-import { type PhotoScene, samplePhotoUrl } from './images';
 import type {
   Assignment,
   AuditLog,
@@ -18,7 +17,8 @@ import type {
   Profile,
   ServiceOrder,
   SyncState,
-} from './types';
+} from '@/lib/views';
+import { type PhotoScene, samplePhotoUrl } from './images';
 
 export const TIME_ZONE = 'America/Sao_Paulo';
 export const NOW = Date.now();

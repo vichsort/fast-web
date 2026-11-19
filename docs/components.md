@@ -4,7 +4,7 @@ Biblioteca visual das duas interfaces: componentes do domínio em [`src/componen
 
 ## Convenções
 
-- **Sem rota e sem dado próprio.** Componente recebe dados por props, com tipos estruturais (`OrderCardData`, `PhotoData`, `AttemptData`…) que as views de `src/mocks/types.ts` satisfazem; a consulta real devolve a mesma forma.
+- **Sem rota e sem dado próprio.** Componente recebe dados por props, com tipos estruturais (`OrderCardData`, `PhotoData`, `AttemptData`…) que as views de `src/lib/views.ts` satisfazem; a consulta real devolve a mesma forma.
 - **Navegação por `render`.** Cartões, contadores, itens de menu e "voltar" recebem o elemento de navegação (`render={<Link to="..." />}`), ou `href`/`onClick`. O componente não importa o router.
 - **Controlados.** Filtros, seletores e diálogos recebem `value`/`onValueChange` e `open`/`onOpenChange`. Diálogos também aceitam `trigger`. `onConfirm`/`onSubmit` podem devolver Promise: o botão mostra o envio e o diálogo fecha quando resolve.
 - **Fuso.** Todo componente que mostra data recebe `timeZone` (o `companies.timezone`) e, opcionalmente, `now`.
@@ -111,7 +111,7 @@ Tudo em [`src/index.css`](../src/index.css), claro em `:root` e escuro em `.dark
 
 ## Dados de exemplo (`src/mocks/`)
 
-Linhas tipadas por `database.types.ts` em `data.ts` (datas relativas ao carregamento, para "atrasada" e "há 5 min" valerem em qualquer dia), views em `types.ts`, fotos SVG locais em `images.ts`. As telas importam só de `@/mocks`.
+Linhas tipadas por `database.types.ts` em `data.ts` (datas relativas ao carregamento, para "atrasada" e "há 5 min" valerem em qualquer dia), fotos SVG locais em `images.ts`; os tipos são as views de `src/lib/views.ts`. Só as implementações de exemplo das áreas (`src/office/mocks.ts`, `src/technician/api/mock.ts`) e a vitrine `/dev` importam de `@/mocks`; as telas usam a API da área.
 
 | Conjunto | Conteúdo |
 | --- | --- |

@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { formatNumber, formatPhone, shortAddress } from '@/lib/format';
 import { t } from '@/lib/i18n';
-import type { ClientListItem } from '@/mocks';
+import type { ClientListItem } from '@/lib/views';
 import { addressText } from '../api';
 import { useClients } from '../queries';
 import { NewClientPanel } from './client-form';

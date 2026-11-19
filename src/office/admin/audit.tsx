@@ -10,7 +10,7 @@ import { UserAvatar } from '@/components/user';
 import type { MemberRole } from '@/lib/enums';
 import { calendarDay, formatDateTime, formatRelative } from '@/lib/format';
 import { t } from '@/lib/i18n';
-import type { AuditView } from '@/mocks';
+import type { AuditView } from '@/lib/views';
 import { useAudit } from '../queries';
 import { useOffice } from '../session';
 import { OwnerOnly } from '../shared';

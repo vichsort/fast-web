@@ -11,7 +11,7 @@ import { EmptyState, ErrorState, LoadingList } from '@/components/states';
 import { Button } from '@/components/ui/button';
 import { formatNumber, formatOrderNumber, formatRelative } from '@/lib/format';
 import { t } from '@/lib/i18n';
-import type { OfficeOrderListItem, OrderDetail } from '@/mocks';
+import type { OfficeOrderListItem, OrderDetail } from '@/lib/views';
 import { useDashboard, useLateSupplements, useOrders, usePendingOrders } from './queries';
 import { useOffice } from './session';
 

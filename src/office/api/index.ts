@@ -1,5 +1,5 @@
-// Ponto único de dados do escritório: as telas importam daqui, nunca de ../mocks nem do Supabase direto.
-// A fonte sai de src/lib/data-source.ts (VITE_DATA_SOURCE=mock liga os dados de exemplo).
+// Ponto único de dados do escritório: as telas importam daqui, nunca de ../mocks nem do Supabase direto. As duas
+// implementações cumprem `OfficeApi` (./types.ts); a fonte sai de src/lib/data-source.ts (VITE_DATA_SOURCE=mock).
 import { usingMocks } from '@/lib/data-source';
 import * as mock from '../mocks';
 import { bindOfficeSession, supabaseApi } from './supabase';
@@ -47,4 +47,4 @@ export const {
 export const bindSession = usingMocks ? () => {} : bindOfficeSession;
 
 export { addressText, seenUntil } from '../derive';
-export type { AddressInput, OrderInput } from '../mocks';
+export type { AddressInput, OrderInput } from './types';

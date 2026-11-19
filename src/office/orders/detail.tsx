@@ -45,7 +45,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { UserChip } from '@/components/user';
 import { formatDate, formatDateTime, formatOrderNumber, formatRelative } from '@/lib/format';
 import { t } from '@/lib/i18n';
-import type { OrderDetail } from '@/mocks';
+import type { OrderDetail } from '@/lib/views';
 import { acknowledgeSupplements, cancelOrder, seenUntil, setAssignees, updateMaterials } from '../api';
 import { useOrder, usePersonName, useTechnicians } from '../queries';
 import { useOffice, useOfficeAction } from '../session';

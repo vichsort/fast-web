@@ -1,7 +1,7 @@
 // Funções puras do técnico: juntam o que veio do servidor com o que está no aparelho (rascunhos, fila e recusas
 // no Dexie) no formato que as telas leem (docs/screens-technician.md, queue.md).
 import type { PhotoData } from '@/components/photos';
-import type { OrderDetail, PendingItem } from '@/mocks';
+import type { OrderDetail, PendingItem } from '@/lib/views';
 import { isOverdue } from '@/office/derive';
 import type { Draft, DraftPhoto, QueueItem, QueueRefusal } from '@/offline/db';
 import { photoAlerts } from '@/photos/alerts';

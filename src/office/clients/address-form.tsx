@@ -11,7 +11,7 @@ import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/spinner';
 import { formatZipCode } from '@/lib/format';
 import { t } from '@/lib/i18n';
-import type { ClientAddress } from '@/mocks';
+import type { ClientAddress } from '@/lib/views';
 import { type AddressInput, addAddress, lookupZip, updateAddress } from '../api';
 import { useOfficeAction } from '../session';
 import { useCreateId, useStayOpen } from '../shared';

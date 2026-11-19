@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { scratchToast } from '@/components/states';
 import { usingMocks } from '@/lib/data-source';
 import { errorMessage, t } from '@/lib/i18n';
-import type { Company, PersonRef, Profile } from '@/mocks';
+import type { Company, PersonRef, Profile } from '@/lib/views';
 import { ApiError } from '@/offline/queue/errors';
 import { actionErrorCode } from './derive';
 

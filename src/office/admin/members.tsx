@@ -23,7 +23,7 @@ import { UserChip } from '@/components/user';
 import { MEMBER_ROLES, type MemberRole } from '@/lib/enums';
 import { formatDate, formatRelative } from '@/lib/format';
 import { errorMessage, t } from '@/lib/i18n';
-import type { MemberView } from '@/mocks';
+import type { MemberView } from '@/lib/views';
 import { inviteMember, removeMember, updateMemberRole } from '../api';
 import { useMembers } from '../queries';
 import { useOffice, useOfficeAction } from '../session';

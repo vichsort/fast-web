@@ -17,7 +17,7 @@ import type {
   PersonRef,
   Photo,
   ServiceOrder,
-} from '@/mocks';
+} from '@/lib/views';
 import { ApiError, classifyRpcError, type RpcError } from '@/offline/queue/errors';
 import { executionAlerts, photoAlerts } from '@/photos/alerts';
 

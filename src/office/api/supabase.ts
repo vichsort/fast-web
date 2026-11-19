@@ -15,7 +15,7 @@ import type {
   OrderDetail,
   OrderFilters,
   PersonRef,
-} from '@/mocks';
+} from '@/lib/views';
 import { ApiError, classifyFunctionError, classifyRpcError } from '@/offline/queue/errors';
 import {
   type ClientRow,
@@ -28,9 +28,8 @@ import {
   toOrderDetail,
   toOrderListItem,
 } from '../derive';
-import type { AddressInput, OrderInput } from '../mocks';
 import { readAll } from './read-all';
-import type { OfficeApi } from './types';
+import type { AddressInput, OfficeApi, OrderInput } from './types';
 import { createZipLookup } from './viacep';
 
 type Functions = Database['public']['Functions'];

@@ -5,7 +5,7 @@ import type * as React from 'react';
 import type { AttemptData } from '@/components/execution-card';
 import type { PhotoData } from '@/components/photos';
 import type { MemberRole } from '@/lib/enums';
-import type { Company, OrderDetail, OrderListItem, PendingItem, PersonRef, Profile, SyncState } from '@/mocks';
+import type { Company, OrderDetail, OrderListItem, PendingItem, PersonRef, Profile, SyncState } from '@/lib/views';
 import type { StorageProtection } from '@/offline/persistence';
 import type { PhotoInput } from '@/photos/process';
 

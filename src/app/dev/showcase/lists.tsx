@@ -27,8 +27,8 @@ import { UserChip } from '@/components/user';
 import { ORDER_PRIORITIES, ORDER_STATUSES, type OrderPriority, type OrderStatus } from '@/lib/enums';
 import { formatDate, formatDateTime, formatOrderNumber, formatPhone } from '@/lib/format';
 import { t } from '@/lib/i18n';
+import type { AuditView, MemberView, OrderListItem } from '@/lib/views';
 import {
-  type AuditView,
   getDashboard,
   getOrder,
   getPerson,
@@ -38,9 +38,7 @@ import {
   listMyOrders,
   listOrders,
   listTechnicians,
-  type MemberView,
   MOCK_USER_IDS,
-  type OrderListItem,
 } from '@/mocks';
 import { Demo, ShowcaseSection, TZ } from './frame';
 

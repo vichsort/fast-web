@@ -1,4 +1,4 @@
-import type { OrderDetail } from '@/mocks';
+import type { OrderDetail } from '@/lib/views';
 import type { Draft, DraftPhoto, QueueItem, QueueRefusal } from '@/offline/db';
 import {
   inTechnicianList,

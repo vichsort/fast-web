@@ -1,5 +1,6 @@
-// Formas dos dados de exemplo: as linhas do banco (database.types.ts) e as "views" que as telas leem, no formato
-// que as consultas reais vão devolver (select com relações embutidas). Trocar o mock pela integração não muda a tela.
+// Formas que as telas leem: as linhas do banco (database.types.ts) e as "views" que as consultas devolvem (select com
+// relações embutidas). As APIs das áreas (OfficeApi, TechnicianApi) são escritas nesses tipos; a real e a de exemplo
+// devolvem a mesma forma.
 import type { Tables } from '@/lib/database.types';
 import type { OrderPriority, OrderStatus, ServiceType } from '@/lib/enums';
 import type { ExecutionAlert, PhotoAlert } from '@/photos/alerts';
@@ -49,7 +50,7 @@ export interface OfficeOrderListItem
 }
 
 export interface PhotoView extends Photo {
-  /** URL para exibir (no real, assinada por get_photo_urls; aqui, um SVG local). */
+  /** URL para exibir (no real, assinada por get_photo_urls; nos dados de exemplo, um SVG local). */
   url: string;
   /** Alertas calculados no front (src/photos/alerts.ts). */
   alerts: PhotoAlert[];

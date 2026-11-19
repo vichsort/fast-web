@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AvatarStack } from '@/components/user';
 import { formatOrderNumber, formatRelative } from '@/lib/format';
 import { t } from '@/lib/i18n';
-import type { LateSupplementItem, OrderDetail } from '@/mocks';
+import type { LateSupplementItem, OrderDetail } from '@/lib/views';
 import { acknowledgeSupplements, seenUntil } from '../api';
 import { useLateSupplements, usePendingOrders } from '../queries';
 import { useOffice, useOfficeAction } from '../session';

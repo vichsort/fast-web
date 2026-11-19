@@ -17,7 +17,7 @@ import {
 } from '@/lib/enums';
 import { formatNumber } from '@/lib/format';
 import { t } from '@/lib/i18n';
-import type { OfficeOrderListItem, OrderFilters } from '@/mocks';
+import type { OfficeOrderListItem, OrderFilters } from '@/lib/views';
 import { useClients, useOrders, useTechnicians } from '../queries';
 import { useOffice } from '../session';
 import { priorityOptions, serviceTypeOptions, statusOptions } from '../shared';

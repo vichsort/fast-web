@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { formatPhone } from '@/lib/format';
 import { t } from '@/lib/i18n';
-import type { Client } from '@/mocks';
+import type { Client } from '@/lib/views';
 import { createClient, updateClient } from '../api';
 import { useOfficeAction } from '../session';
 import { useCreateId, useStayOpen } from '../shared';

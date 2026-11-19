@@ -2,36 +2,39 @@
 // @/mocks), para as ações (criar, aprovar, excluir…) mostrarem o efeito em todas as telas até recarregar a página.
 // As leituras têm a forma das consultas reais; as ações imitam as RPCs e Edge Functions (03, 04, 02, 01, 06), inclusive
 // os erros de regra que o banco devolveria. Nada sai do navegador. Na integração, cada função vira a chamada real.
-import { ACTIVE_ORDER_STATUSES, type MemberRole, type OrderPriority, type ServiceType } from '@/lib/enums';
+import { ACTIVE_ORDER_STATUSES, type MemberRole } from '@/lib/enums';
 import { calendarDay } from '@/lib/format';
+import type {
+  AuditView,
+  Client,
+  ClientAddress,
+  ClientDetail,
+  ClientListItem,
+  Company,
+  DashboardCounts,
+  HistoryView,
+  LateSupplementItem,
+  MemberView,
+  OfficeOrderListItem,
+  OrderDetail,
+  OrderFilters,
+  PersonRef,
+  Profile,
+} from '@/lib/views';
 import {
-  type AuditView,
-  type Client,
-  type ClientAddress,
-  type ClientDetail,
-  type ClientListItem,
-  type Company,
-  type DashboardCounts,
   getClient,
   getCompany,
   getOrder,
   getSessionUser,
-  type HistoryView,
-  type LateSupplementItem,
   listAudit,
   listClients,
   listMembers,
   listOrders,
-  type MemberView,
   MOCK_USER_IDS,
-  type OfficeOrderListItem,
-  type OrderDetail,
-  type OrderFilters,
-  type PersonRef,
-  type Profile,
 } from '@/mocks';
 import { emails } from '@/mocks/data';
 import { ApiError } from '@/offline/queue/errors';
+import type { AddressInput, OrderInput } from './api/types';
 import type { ZipLookup } from './api/viacep';
 import { addressText, clientMatches, isOverdue, orderMatches, seenUntil } from './derive';
 
@@ -292,19 +295,6 @@ export async function officeSessionUser(role: 'owner' | 'manager'): Promise<Prof
 
 // ---------------------------------------------------------------- ações: O.S. (03)
 
-export interface OrderInput {
-  client_id: string;
-  client_address_id: string | null;
-  service_type: ServiceType;
-  title: string;
-  instructions: string | null;
-  priority: OrderPriority;
-  /** AAAA-MM-DD (03, R5). */
-  due_date: string | null;
-  materials_notes: string | null;
-  assignee_ids: string[];
-}
-
 const blankToNull = (v: string | null | undefined) => (v && v.trim() !== '' ? v.trim() : null);
 /** Fim do dia no fuso da empresa (03, R5). O fuso de exemplo (São Paulo) não tem horário de verão. */
 const dueAt = (date: string | null) => (date ? new Date(`${date}T23:59:59.999-03:00`).toISOString() : null);
@@ -533,18 +523,6 @@ export async function acknowledgeSupplements(orderId: string, until: string, act
 }
 
 // ---------------------------------------------------------------- ações: clientes (02)
-
-export interface AddressInput {
-  label: string | null;
-  zip_code: string | null;
-  street: string;
-  number: string | null;
-  complement: string | null;
-  district: string | null;
-  city: string;
-  state: string;
-  reference: string | null;
-}
 
 function newAddress(s: Store, clientId: string, input: AddressInput, primary: boolean): ClientAddress {
   if (!input.street.trim() || !input.city.trim() || !/^[A-Za-z]{2}$/.test(input.state.trim())) fail('invalid_input');

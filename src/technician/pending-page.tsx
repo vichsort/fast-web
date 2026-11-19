@@ -10,7 +10,7 @@ import { PendingItemCard, SyncIndicator } from '@/components/sync';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { t } from '@/lib/i18n';
-import type { PendingItem } from '@/mocks';
+import type { PendingItem } from '@/lib/views';
 import { act } from './act';
 import { removePending, retryPending, usePendingItems, useQueueDraft, useSyncStatus, useTimeZone } from './api';
 import { Callout, GroupHeading } from './parts';
