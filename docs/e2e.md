@@ -104,7 +104,7 @@ Revisado com o usuário em 2026-11-19. Mapa e estimativa; as correções ficam p
 | # | Item | Decisão | O que fazer |
 | --- | --- | --- | --- |
 | 1 | P8, versionamento do app e do backend | dados de hoje são descartáveis: juntar as versões 1 a 3 do Dexie numa só, sem migração (apagar os dados do site nos aparelhos de teste) | o squash; depois, o mapa abaixo ([Versionamento](#versionamento)) vira itens, e cada mudança do Dexie ou do formato de item da fila ganha teste de upgrade (unit, `fake-indexeddb`) |
-| 2 | D4, D5, D6, listas do escritório | fazer antes de doer; estimativa em [Listas do escritório](#listas-do-escritório) | D4 primeiro; D5 leve; D6 sai (a auditoria cresce pouco) |
+| 2 | D4, D5, D6, listas do escritório | recomendada a opção A agora e a B quando o volume pedir; falta o ok do usuário | ver [Listas do escritório](#listas-do-escritório) |
 | 3 | P9, retrocompatibilidade das RPCs da fila | aprovado: vai como regra na spec do backend (`../fast/docs/spec.md`) | escrever a regra lá; faz parte do [Versionamento](#versionamento) |
 | 4 | Campo em Android emulado | depois (usuário, 2026-11-19): por enquanto, só corrigir o que está pela metade | plano guardado em [Android emulado](#android-emulado) |
 | 5 | E2E no CI | depois (usuário, 2026-11-19) | GitHub Actions: `supabase start` do `../fast`, build, `npm run test:e2e` a cada push |
@@ -124,14 +124,20 @@ Mapa do que falta para app e backend evoluírem cada um no seu ritmo, com celula
 
 #### Listas do escritório
 
-Volume informado: ~500 clientes; no mínimo 4 O.S. por dia (~120 por mês). Medido no código em 2026-11-19.
+Volume informado: ~500 clientes; no mínimo 4 O.S. por dia (~120 por mês). Revisado em 2026-11-19 a partir do código.
 
-| Lista | Hoje | Quando dói | Correção | Tamanho |
-| --- | --- | --- | --- | --- |
-| D4, O.S. | traz todas as O.S. da empresa com cliente, endereço, atribuições e todas as execuções e fotos (`ORDER_SELECT`); status, prioridade, tipo, cliente e atraso filtram no banco; busca, técnico, intervalo de prazo e "sem técnico" filtram na tela | o corte de 1000 em ~8 meses; antes disso, o peso: cada visita à lista baixa o histórico inteiro | no backend, uma view `security_invoker` da lista com as colunas da linha (nome do cliente, ids dos técnicos, flag "sem técnico"), que vira contrato no 03; no front, a lista lê da view com todos os filtros no banco, paginação (`range` com contagem) e a busca por número, título e cliente (`ilike`); revisão e dashboard continuam com o select completo, que já é limitado pelo status | médio: ~2 dias de agente (view e doc no backend ~0,5; API, tipos, mocks, tela paginada, unit do mapeamento dos filtros e um E2E com mais de 1000 O.S. geradas no banco ~1,5) |
-| D4, caminho leve (só front, sem view) | — | — | select enxuto na lista (sem execuções e fotos; o resumo de pendência e o dashboard continuam com o completo); por padrão, só as ativas e as encerradas recentes, como a lista do técnico, e "ver mais antigas" busca por período no banco; busca no banco em dois passos (ids dos clientes por `ilike` no nome, depois `or` de número, título e cliente); técnico em dois passos (ids das O.S. pelas atribuições ativas); intervalo de prazo pelos limites do dia no fuso da empresa; "sem técnico" continua na tela, porque só vale para as ativas, que são poucas; paginação com `range` | ~1 dia de agente, sem mudar o contrato do backend |
-| D5, clientes | traz todos com endereços e o status de cada O.S. deles; ordem e busca na tela; o seletor da O.S. nova carrega todos | ~500 clientes: longe do corte | ordem por nome no banco (o corte, se vier, fica previsível); paginação e busca no banco só se a base passar de ~800 | pequeno: ~2 h |
-| D6, auditoria | traz todos os eventos | quase nunca: só empresa, membros e papéis entram (05, R5) | nenhuma; reavaliar se a auditoria passar a cobrir O.S. | — |
+| Lista | Hoje | Quando dói |
+| --- | --- | --- |
+| D4, O.S. | pede ao banco todas as O.S. da empresa (status filtra no banco; busca, técnico, prazo e "sem técnico" na tela) e pagina na tela, 15 por página; cada linha traz execuções e fotos, mas mostra só número, título, status, prioridade, tipo, técnicos e prazo | o corte de 1000 (`max_rows`) em ~8 meses: as mais antigas somem da lista e da busca, sem aviso (o link direto e o dashboard seguem certos); o peso, ~1 MB comprimido com 1000 O.S., incomoda mas não trava |
+| D5, clientes | todos, com endereços e o status das O.S. de cada um; ordem e busca na tela | só passado 1000 clientes; com ~500, nada |
+| D6, auditoria | todos os eventos | quase nunca: só empresa, membros e papéis (05, R5) |
+
+| Opção | O que muda | Resolve | Tamanho |
+| --- | --- | --- | --- |
+| **A, só front (recomendada para agora)** | a lista de O.S. pede só as colunas da linha (detalhe, revisão e dashboard seguem com o select completo); uma leitura em blocos de 1000 com ordem fixa (`range`), usada pelas listas de O.S., clientes e auditoria | o corte nas três listas; o peso cai para ~300 bytes por O.S. (~450 KB por ano); filtros, busca e paginação seguem na tela | ~1 a 2 h de agente |
+| B, view no backend | view enxuta `security_invoker` da lista (cliente e técnicos juntos), filtros, busca e paginação no banco; tabela paginada pelo servidor | qualquer escala | ~3 a 4 h, nos dois repositórios; quando o volume pedir (dezenas de milhares de O.S.) |
+
+Descartado: filtros "em dois passos" só no front (ids na URL). O `postgrest-js` corta a URL em ~8000 caracteres; com ~200 O.S. de um técnico, o filtro quebraria.
 
 #### Android emulado
 
