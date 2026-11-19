@@ -80,15 +80,19 @@ export async function pendingItems(userId: string): Promise<number> {
   return pendingCount(db, userId);
 }
 
-/** Logout e remoção do membro: apaga rascunhos, fotos, fila e o acesso guardado, e encerra a sessão (queue.md, Q10). */
+/**
+ * Logout e remoção do membro: encerra a sessão e apaga rascunhos, fotos, fila, cache e o acesso guardado (queue.md,
+ * Q10). A sessão sai primeiro: o cache das leituras só grava com a sessão do usuário (persist.ts), e apagar antes
+ * deixava uma gravação no meio do logout trazer o cache de volta.
+ */
 export async function signOutAndWipe(userId: string): Promise<void> {
   const [{ clearUser }, { db }] = await Promise.all([import('@/offline/queue'), import('@/offline/db')]);
+  const { error } = await supabase.auth.signOut();
+  if (error) await supabase.auth.signOut({ scope: 'local' });
   await clearUser(db, userId);
   try {
     localStorage.removeItem(cacheKey(userId));
   } catch {
     // nada guardado
   }
-  const { error } = await supabase.auth.signOut();
-  if (error) await supabase.auth.signOut({ scope: 'local' });
 }

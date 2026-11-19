@@ -26,6 +26,7 @@ O que mais custa se falhar, onde está no código, o que já é testado e como t
 | [`technician/interrupted-upload`](../tests/e2e/technician/interrupted-upload.spec.ts) | P6: envio com sinal e 2 fotos; o 1º PUT da 2ª foto cai (`context.route`). A retomada chega sozinha: 1 execução, 2 fotos, a 1ª enviada uma vez e a 2ª duas |
 | [`technician/pair-offline`](../tests/e2e/technician/pair-offline.spec.ts) | P7: a dupla envia sem sinal, cada um no seu celular (dois contextos), e os dois voltam ao sinal juntos. No banco: uma tentativa e um complemento dela, 2 fotos; as Pendências dos dois ficam vazias |
 | [`technician/removed-member`](../tests/e2e/technician/removed-member.spec.ts) | P4: técnico próprio do teste (usuário pela chave de serviço, vínculo pelo `invite_member`), com um envio na fila sem sinal; o owner o remove. Ao abrir com sinal, vai ao login com o aviso, nada dele fica no Dexie e nada chega ao servidor |
+| [`technician/shared-device`](../tests/e2e/technician/shared-device.spec.ts) | S4: o técnico 1 (próprio do teste) deixa um rascunho com foto e sai; o técnico 2 entra no mesmo contexto, não vê a O.S. do 1 (nem pelo link) e nada do 1 fica no Dexie |
 | [`technician/refused-submission`](../tests/e2e/technician/refused-submission.spec.ts) | P5: envio feito sem sinal numa O.S. que o escritório cancela. Com o sinal, o rascunho fica em "Precisam de você" com o motivo e o texto, continua ao reabrir, nada chega ao servidor e só sai quando o técnico apaga |
 
 ## Perda da prova
@@ -83,7 +84,8 @@ O pior caso do produto: serviço feito que nunca chega ao escritório.
 | S1 | Abrir o app sem sinal | precache, `NavigationRoute`, acesso guardado e cache de 3 dias; é o começo do dia em campo. Passado 3 dias sem sinal, o cache vence e a lista abre vazia, mas os rascunhos ficam (premissa do backend) | `sw.ts`, `session.ts`, `persist.ts` | E2E desde 2026-11-19. O teste achou ~7 s de "Carregando…": o postgrest-js repetia a consulta do acesso 3 vezes (1, 2 e 4 s) antes de cair no acesso guardado; corrigido ([screens.md](screens.md#decisões)) | coberto |
 | S2 | Relógio do aparelho errado | `client_started_at`, `client_submitted_at` e `captured_at` vêm dele e mudam os alertas (`late_delivery`, `gallery_before_start`) | 04 | aceito (os horários do servidor vão junto) | — |
 | S3 | Isolamento entre empresas e técnicos | o RLS é a única barreira; o front usa a chave anon | backend | pgTAP no backend | não repetir aqui |
-| S4 | Aparelho compartilhado | cache, fila e fotos por usuário (Q3, Q10) | `clearUser`, `persist.ts` | unit | E2E barato: o técnico 1 sai, o técnico 2 entra e não vê nada do 1 |
+| S4 | Aparelho compartilhado | cache, fila e fotos por usuário (Q3, Q10) | `clearUser`, `persist.ts` | unit; E2E desde 2026-11-19. O teste achou o cache do técnico 1 de volta depois do logout (2 em 4 rodadas): uma gravação do cache no meio do logout, com a sessão ainda dele, depois do `clearUser`; corrigido ([queue.md](queue.md#decisões)) | coberto |
+| S5 | ⚠️ Logout encerra a sessão do usuário em todos os aparelhos | o `signOut()` do supabase-js é `scope: 'global'` por padrão: sair num celular derruba a sessão do mesmo técnico nos outros. Lá, a Edge Function passa a responder 401 e a fila para pedindo login (mantém a fila, Q3; mas a janela do P3 vale). Achado no S4 (2026-11-19), porque derrubava os outros testes com o mesmo usuário | `app/session.ts` (`signOutAndWipe`) | sem decisão | — |
 
 ## Próximos passos
 
@@ -104,7 +106,7 @@ Revisado em 2026-11-19, com a ordem antiga (P5, S1, E1, P3, P6, P7) toda feita. 
 | --- | --- | --- | --- |
 | 5 | P2, logout com fila | o aviso mostra a contagem certa; cancelar não apaga nada | é a única proteção do caminho que apaga a prova de propósito |
 | 6 | ~~P4, membro removido~~ (feito) | removido pelo `remove_member` no banco; ao abrir com sinal, o aparelho limpa e vai ao login com o aviso | confere a ligação gate → `clearUser` → login, que hoje só tem unit |
-| 7 | S4, aparelho compartilhado | o técnico 1 sai, o técnico 2 entra no mesmo contexto e não vê O.S., rascunho nem fila do 1 | o cache e a fila são por usuário só por convenção do código |
+| 7 | ~~S4, aparelho compartilhado~~ (feito) | o técnico 1 sai, o técnico 2 entra no mesmo contexto e não vê O.S., rascunho nem fila do 1 | o cache e a fila são por usuário só por convenção do código |
 | 8 | E2, `stale_review` | abrir a revisão, chegar um complemento (pelo banco), aprovar: aviso de recarregar, e a aprovação sai depois de recarregar | o escritório aprovaria sem ver a prova nova |
 
 ### 3. Escritório
@@ -118,6 +120,7 @@ Revisado em 2026-11-19, com a ordem antiga (P5, S1, E1, P3, P6, P7) toda feita. 
 
 | # | Item | O que | Por quê |
 | --- | --- | --- | --- |
+| 10b | S5, alcance do logout | decisão do usuário: `scope: 'local'` (sair só deste aparelho) ou manter o global | aparelho compartilhado e técnico com dois celulares; o global é mais seguro com celular perdido, o local não para a fila do outro aparelho |
 | 11 | P3, janela de até 1 h | decisão do usuário: um "Entrar de novo" no aviso da fila que leva ao login sem apagar nada (Q3 mantém a fila do mesmo usuário) | hoje a única saída visível nessa janela é o logout, que apaga a prova |
 | 12 | D1, custo por foto | medir com `Network.emulateNetworkConditions` (2G); com os números, decidir se o backend entrega as URLs de várias fotos numa chamada | 3 idas e voltas por foto em série |
 | 13 | D6, auditoria | paginação | lacuna menor: só os 1000 eventos mais recentes |
