@@ -18,6 +18,7 @@ O que mais custa se falhar, onde está no código, o que já é testado e como t
 | Teste | Prova |
 | --- | --- |
 | [`office/login`](../tests/e2e/office/login.spec.ts) | o gerente entra e cai no dashboard |
+| [`office/review-cycle`](../tests/e2e/office/review-cycle.spec.ts) | E1: com o celular do técnico ao lado (contexto Pixel 7), o escritório rejeita com o motivo; o técnico vê o motivo e envia de novo; o escritório vê a tentativa nova com a anterior guardada e aprova; o técnico vê a O.S. aprovada. No banco: 2 tentativas (rejeitada com o comentário, aprovada) |
 | [`technician/login`](../tests/e2e/technician/login.spec.ts) | o técnico entra e cai em Minhas O.S. |
 | [`technician/offline-execution`](../tests/e2e/technician/offline-execution.spec.ts) | início e envio sem sinal, com foto da câmera e da galeria. Depois de uma espera longa, o sinal volta e o envio chega em até 5 s: uma execução, 2 fotos, nada repetido ao reabrir |
 | [`technician/offline-open`](../tests/e2e/technician/offline-open.spec.ts) | S1: login e lista com sinal; sem sinal, recarregar direto numa O.S. mostra a O.S. em até 5 s, e a lista também abre |
@@ -65,7 +66,7 @@ O pior caso do produto: serviço feito que nunca chega ao escritório.
 
 | ID | Ponto | Por que pesa | Onde | Hoje | Teste |
 | --- | --- | --- | --- | --- | --- |
-| E1 | Ciclo de revisão: rejeitar, o técnico vê o motivo e refaz, aprovar | fecha a O.S. entre as duas interfaces | `office/review`, telas do técnico | sem teste | E2E com os dois projetos |
+| E1 | Ciclo de revisão: rejeitar, o técnico vê o motivo e refaz, aprovar | fecha a O.S. entre as duas interfaces | `office/review`, telas do técnico | E2E desde 2026-11-19 | coberto |
 | E2 | Complemento chegando durante a revisão | o backend recusa com `stale_review` (04, R10); a tela trata pela classe de erro | `office/review` | backend | E2E: complemento entre abrir e aprovar |
 | E3 | Criar cliente e O.S. pela tela e atribuir | hoje o teste cria direto no banco | `office/clients`, `office/orders` | sem teste | E2E |
 | E4 | Fuso do navegador diferente do fuso da empresa | prazo é o fim do dia no fuso da empresa (03, R5); "atrasada" depende dele | `lib/format.ts` | unit | E2E barato: `timezoneId` diferente do fuso da empresa, mesmo prazo na tela |
@@ -85,7 +86,7 @@ O pior caso do produto: serviço feito que nunca chega ao escritório.
 | --- | --- | --- |
 | 1 | ~~P5, recusa por regra~~ (feito) | é o exemplo do offline.md, e a prova não pode sumir |
 | 2 | ~~S1, abrir sem sinal~~ (feito) | é o começo do dia em campo |
-| 3 | E1, ciclo de revisão | fecha a O.S. |
+| 3 | ~~E1, ciclo de revisão~~ (feito) | fecha a O.S. |
 | 4 | P3, sessão perdida com fila | garante que o caminho que mantém a fila continua assim |
 | 5 | P6, upload interrompido | retomada sem duplicar |
 | 6 | P7, dupla | dois celulares voltando ao sinal juntos |
