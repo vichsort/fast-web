@@ -19,7 +19,7 @@ Ordem de trabalho do front. Cada item é um comportamento: teste vermelho (quand
 - [x] Textos pt-BR (`t()`) com as chaves de erro do backend.
 - [x] Rotas (TanStack Router), login, recuperar e definir senha, layout por papel.
 - [x] shadcn/ui e tema.
-- [ ] Service worker: fila no Background Sync, atualização do app.
+- [ ] Service worker: fila no Background Sync, atualização do app. O que existe e o que falta: [queue.md](queue.md#service-worker-a-fazer).
 - [x] Membro removido: conferir o vínculo ativo a cada recusa por regra da fila (ao abrir com sinal já confere); sem vínculo, `clearUser` e logout.
 - [ ] ~~Playwright contra o stack local do backend.~~ Pausado (ver Decisões).
 
@@ -53,9 +53,11 @@ Esboço da estrutura visual do sistema inteiro, antes da integração real. Regr
 
 ## 5. Produção
 
-- [ ] Ícones e manifest final.
+- [x] Manifest final e ícones gerados no build a partir de `public/logo.svg` (`pwa-assets.config.ts`).
+- [ ] Trocar `public/logo.svg` (hoje a marca provisória do app) pela logo da Fast, já pedida.
 - [ ] Cloudflare Pages ligado ao Supabase de produção.
 
 ## Decisões
 
 - **2026-11-19** — Playwright de lado até segunda ordem: sem E2E, e o projeto `browser` do Vitest (que roda no Chromium do Playwright) sai do `npm test` e do `npm run check`, ficando em `npm run test:browser`. *Por quê:* pedido do usuário para entregar as funcionalidades primeiro; instalar e manter o navegador de teste fica para depois.
+- **2026-11-19** — Ícones do PWA gerados no build (`@vite-pwa/assets-generator`, pelo `pwaAssets` do plugin) a partir de um arquivo só, `public/logo.svg`; o maskable e o apple-touch levam o fundo da marca e margem para o recorte do Android. *Por quê:* a logo da Fast ainda não chegou; quando chegar, basta trocar o arquivo, sem mexer em tamanhos, manifest ou `<head>`.

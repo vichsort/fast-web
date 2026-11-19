@@ -32,9 +32,24 @@ Implementação no aparelho da fila descrita em [offline.md](../../fast/docs/off
 
 O rascunho (`drafts`) é editado pela tela até o técnico tocar em "Enviar"; aí vira `queued` e entra na fila (Q4). Recusado por regra, fica `refused`, visível com o motivo, até o técnico apagar ([offline.md](../../fast/docs/offline.md#recusa-definitiva)). Fotos são das telas e do módulo de fotos ([photos.md](photos.md)); a fila só lê, marca `uploaded` e apaga.
 
+## Service worker (a fazer)
+
+A fila hoje roda só na página. O que já existe e o que falta para ela rodar também no service worker ([`src/sw.ts`](../src/sw.ts), [roadmap](roadmap.md), etapa 2):
+
+| Ponto | Hoje | Para o service worker |
+| --- | --- | --- |
+| Processador | `processQueue` sem DOM nem React, com API, lock e relógio injetados; o lock é o `webLock` (Web Locks também existe no worker), então página e worker nunca rodam juntos | chamar o mesmo `processQueue` no evento `sync` (`event.waitUntil`) |
+| Quem roda na página | [`runner.ts`](../src/technician/api/real/runner.ts): ao abrir, ao voltar o sinal e a aba, depois de cada ação; esperando rede, timer até a hora marcada | registrar a tag de sync depois de cada ação que põe na fila (`actions.ts`), além do `kick` |
+| Supabase | a sessão já fica no IndexedDB (`auth-storage.ts`), lida pela página e pelo worker; [`supabase.ts`](../src/lib/supabase.ts) lê `window.location` (links do Auth) e não pode ser importado no worker | cliente próprio no worker com `createAuthStorage()` e `detectSessionInUrl: false`; conferir se página e worker renovando o token ao mesmo tempo não invalidam o refresh token um do outro |
+| Usuário | a página passa o `userId` da sessão | o usuário da sessão guardada; sem sessão, não roda; só os itens desse usuário (Q3) |
+| Depois de enviar | `onAfterRun` invalida `['technician']` e, com recusa, confere o vínculo (`runtime.tsx`); o `liveQuery` do Dexie vê as mudanças | avisar a página aberta (`postMessage` ou `BroadcastChannel`) para fazer o mesmo que o `onAfterRun`; conferir que o `liveQuery` vê a escrita do worker |
+| Registro e atualização | ninguém registra o worker: `registerType: 'prompt'` e `injectRegister: false` no `vite.config.ts` | registrar (`virtual:pwa-register/react`) e mostrar o aviso de versão nova; recarregar não perde nada (tudo está no Dexie), mas não interromper a câmera aberta |
+| Precache | o app inteiro, ícones inclusive (`globPatterns`) | — |
+| Rodar | `devOptions.enabled: false`: o worker só existe no build | `npm run build && npm run preview` |
+| Playwright | pausado | nos testes comuns, `serviceWorkers: 'block'` (o worker escapa do `page.route` e guarda arquivos velhos); liberar só nos testes do offline |
+
 ## Fora daqui
 
-- Ligar a fila ao service worker e ao Background Sync, e a sessão do Supabase acessível no service worker: entram com a base do app ([roadmap](roadmap.md)).
 - Telas: [screens.md](screens.md).
 
 ## Decisões

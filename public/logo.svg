@@ -1,0 +1,7 @@
+<!-- Ícone PROVISÓRIO (a marca do app): trocar por public/logo.svg com a logo da Fast; os ícones saem dele no build. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>Fast O.S.</title>
+  <rect width="512" height="512" rx="112" fill="#1a57ad"/>
+  <circle cx="256" cy="256" r="136" fill="none" stroke="#fcfcfc" stroke-width="37"/>
+  <circle cx="256" cy="256" r="54" fill="#fcfcfc"/>
+</svg>

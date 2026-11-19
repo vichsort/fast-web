@@ -19,15 +19,23 @@ export default defineConfig({
       filename: 'sw.ts',
       registerType: 'prompt',
       injectRegister: false,
+      // Ícones, favicon e os <link> do <head> saem de public/logo.svg (pwa-assets.config.ts).
+      pwaAssets: { config: true, overrideManifestIcons: true },
+      // O app inteiro no precache, ícones inclusive: abre e instala sem sinal.
+      injectManifest: { globPatterns: ['**/*.{js,css,html,svg,png,ico}'] },
       manifest: {
+        id: '/',
         name: 'Fast O.S.',
         short_name: 'Fast O.S.',
+        description: 'Ordens de serviço da Fast: escritório e técnicos em campo, mesmo sem sinal.',
         lang: 'pt-BR',
+        dir: 'ltr',
         start_url: '/',
+        scope: '/',
         display: 'standalone',
-        background_color: '#ffffff',
-        theme_color: '#0f172a',
-        icons: [],
+        // Cores do tema claro (src/index.css: --background e --primary).
+        background_color: '#f5f7f9',
+        theme_color: '#1a57ad',
       },
       devOptions: { enabled: false, type: 'module' },
     }),
