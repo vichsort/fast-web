@@ -19,6 +19,27 @@ describe('processQueue', () => {
     expect(status).toEqual({ kind: 'idle' });
   });
 
+  it('Q13: an item of a newer format waits untouched, with the items behind it in that order', async () => {
+    const db = newDb();
+    const { api, calls } = fakeApi();
+    await enqueueStart(db, { userId: 'u1', orderId: 'o1', clientStartedAt: at });
+    await enqueueStart(db, { userId: 'u1', orderId: 'o1', clientStartedAt: at });
+    await enqueueStart(db, { userId: 'u1', orderId: 'o2', clientStartedAt: at });
+    // Gravado por um build mais novo, aberto em outra aba.
+    const [newer] = await db.queue.orderBy('id').primaryKeys();
+    await db.queue.update(newer as number, { format: 2 });
+
+    const status = await processQueue({ db, api, lock: noLock, clock: fakeClock(), userId: 'u1' });
+
+    expect(calls.map((c) => (c.args[0] as StartExecutionArgs).p_order_id)).toEqual(['o2']);
+    expect(await db.queue.orderBy('id').toArray()).toMatchObject([
+      { orderId: 'o1', format: 2, state: 'pending', attempts: 0, lastError: null },
+      { orderId: 'o1', format: 1, state: 'pending', attempts: 0 },
+    ]);
+    // Nada a tentar por este build: a fila não fica girando em volta do item.
+    expect(status).toEqual({ kind: 'idle' });
+  });
+
   it.each<ErrorClass>(['network', 'server'])(
     'Q2, Q6: a %s failure keeps the item and waits only on that order',
     async (errorClass) => {

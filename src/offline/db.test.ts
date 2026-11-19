@@ -17,6 +17,7 @@ describe('local db', () => {
     const now = new Date().toISOString();
     await db.queue.bulkAdd([
       {
+        format: 1,
         userId: 'u1',
         orderId: 'o1',
         type: 'start',
@@ -29,6 +30,7 @@ describe('local db', () => {
         createdAt: now,
       },
       {
+        format: 1,
         userId: 'u2',
         orderId: 'o1',
         type: 'start',
@@ -41,6 +43,7 @@ describe('local db', () => {
         createdAt: now,
       },
       {
+        format: 1,
         userId: 'u1',
         orderId: 'o1',
         type: 'materials',

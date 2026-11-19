@@ -28,6 +28,7 @@ Implementação no aparelho da fila descrita em [offline.md](../../fast/docs/off
 - **Q10.** Logout e remoção do membro apagam tudo do usuário no aparelho: rascunhos, fotos, fila, recusas, O.S. e fotos já vistas e o cache das leituras. Antes do logout, a tela pergunta se há itens pendentes (contagem pela fila).
 - **Q11.** A fila não conhece React nem DOM: roda na página e no service worker. Recebe a API (chamadas ao Supabase e o PUT), o lock e o relógio por injeção; os testes passam versões falsas.
 - **Q12.** Armazenamento persistente: ao abrir a interface do técnico, o app pede `navigator.storage.persist()` (só se ainda não tem; [`persistence.ts`](../src/offline/persistence.ts)). Sem ele, o Chrome pode apagar o IndexedDB inteiro (rascunhos, fotos e fila) quando falta espaço. Negado, Minhas O.S. avisa e pede para instalar o app.
+- **Q13.** Formato do item: todo item gravado leva `format` (`QUEUE_ITEM_FORMAT`, hoje 1, em [`db.ts`](../src/offline/db.ts)). A fila não toca no item de formato mais novo que o build dela (gravado por um build mais novo aberto em outra aba): a O.S. dele fica parada, com os itens de trás (Q2), até este build atualizar. Formato novo é versão nova do Dexie com um `upgrade()` que converte os itens gravados, testado a partir dos dados da versão anterior.
 
 ## Rascunho
 

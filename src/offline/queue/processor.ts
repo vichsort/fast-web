@@ -1,5 +1,5 @@
 // Processador da fila (docs/queue.md): escolhe o próximo item, executa e trata a resposta pela classe de erro.
-import type { FastDb, MaterialsPayload, QueueItem, SubmitPayload } from '../db';
+import { type FastDb, type MaterialsPayload, QUEUE_ITEM_FORMAT, type QueueItem, type SubmitPayload } from '../db';
 import type { Clock, QueueApi, QueueLock } from './api';
 import { ApiError } from './errors';
 
@@ -104,13 +104,16 @@ export function wakeNetworkWaits(db: FastDb, userId: string): Promise<number> {
     .modify({ nextAttemptAt: 0 });
 }
 
-/** Q2: de cada O.S., só o item mais antigo do usuário (Q3) pode ser tentado. Em ordem de chegada. */
+/**
+ * Q2: de cada O.S., só o item mais antigo do usuário (Q3) pode ser tentado. Em ordem de chegada. Q13: a O.S. cujo
+ * item mais antigo é de um formato mais novo que este build fica parada, intocada, com os itens atrás dela.
+ */
 async function headsByOrder({ db, userId }: QueueDeps): Promise<QueueItem[]> {
   const heads = new Map<string, QueueItem>();
   for (const item of await db.queue.where('userId').equals(userId).sortBy('id')) {
     if (!heads.has(item.orderId)) heads.set(item.orderId, item);
   }
-  return [...heads.values()];
+  return [...heads.values()].filter((item) => item.format <= QUEUE_ITEM_FORMAT);
 }
 
 function statusOf(heads: QueueItem[]): QueueStatus {

@@ -1,7 +1,20 @@
+import { QUEUE_ITEM_FORMAT } from '../db';
 import { enqueueMaterials, enqueueStart, enqueueSubmit } from './enqueue';
 import { addDraft, newDb } from './testing';
 
 describe('enqueue', () => {
+  it('Q13: every item carries the format of this build', async () => {
+    const db = newDb();
+    const draft = await addDraft(db, { userId: 'u1', orderId: 'o2' });
+
+    await enqueueStart(db, { userId: 'u1', orderId: 'o1', clientStartedAt: '2026-11-13T10:00:00.000Z' });
+    await enqueueSubmit(db, { userId: 'u1', draftId: draft.id, clientSubmittedAt: '2026-11-13T11:00:00.000Z' });
+    await enqueueMaterials(db, { userId: 'u1', orderId: 'o3', text: 'cabo', expected: null });
+
+    expect(QUEUE_ITEM_FORMAT).toBe(1);
+    expect((await db.queue.toArray()).map((i) => i.format)).toEqual([1, 1, 1]);
+  });
+
   it('Q1: start is queued with the device clock of the tap', async () => {
     const db = newDb();
 

@@ -51,6 +51,12 @@ export interface DraftPhoto {
 
 export type QueueItemType = 'start' | 'submit' | 'materials';
 
+/**
+ * Formato dos itens da fila (docs/queue.md, Q13). Mudou o formato? Sobe aqui, numa versão nova do Dexie com um
+ * `upgrade()` que converte os itens gravados, e teste a partir dos dados da versão anterior.
+ */
+export const QUEUE_ITEM_FORMAT = 1;
+
 /** `start_execution`: o relógio do aparelho no "iniciar" (04, R1). */
 export interface StartPayload {
   clientStartedAt: string;
@@ -73,6 +79,8 @@ export interface MaterialsPayload {
 
 interface QueueItemBase {
   id?: number;
+  /** QUEUE_ITEM_FORMAT do build que gravou; um build mais velho não toca no item (Q13). */
+  format: number;
   userId: string;
   orderId: string;
   /** pending: vai ser tentado; blocked: erro de bug, pausado até ação do técnico (nunca descartado). */

@@ -1,10 +1,14 @@
 // Entrada na fila (docs/queue.md, Q1): o que a tela chama quando o técnico age.
-import type { FastDb, QueueItem } from '../db';
+import { type FastDb, QUEUE_ITEM_FORMAT, type QueueItem } from '../db';
 
-type Fresh = Pick<QueueItem, 'state' | 'attempts' | 'nextAttemptAt' | 'waitingFor' | 'lastError' | 'createdAt'>;
+type Fresh = Pick<
+  QueueItem,
+  'format' | 'state' | 'attempts' | 'nextAttemptAt' | 'waitingFor' | 'lastError' | 'createdAt'
+>;
 
 function fresh(): Fresh {
   return {
+    format: QUEUE_ITEM_FORMAT,
     state: 'pending',
     attempts: 0,
     nextAttemptAt: 0,
