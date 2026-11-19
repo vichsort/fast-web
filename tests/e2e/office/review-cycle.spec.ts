@@ -24,6 +24,10 @@ test('rejeitar, o técnico refaz com o motivo à vista, aprovar', async ({
   await tech.getByText(order.title).click();
   await tech.getByRole('button', { name: t('technician.detail.start') }).click();
   await submitWithGalleryPhoto(tech, 'Primeira tentativa.');
+  // Com sinal, o aviso é de envio em andamento (e2e.md, T7).
+  await expect(
+    tech.getByRole('region', { name: /Notifications/ }).getByText(t('technician.execution.sendingToast')),
+  ).toBeVisible();
   await expect(tech.getByText(t('technician.detail.waitingBody'))).toBeVisible();
 
   // O escritório rejeita.

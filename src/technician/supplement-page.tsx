@@ -7,8 +7,9 @@ import { EmptyState, ErrorState, LoadingDetail } from '@/components/states';
 import { Button } from '@/components/ui/button';
 import { formatOrderNumber, formatRelative } from '@/lib/format';
 import { t } from '@/lib/i18n';
-import { act } from './act';
+import { act, useOffline } from './act';
 import { type Draft, draftKey, notify, submit, type TechOrder, useDraft, useTechOrder, useTimeZone } from './api';
+import { sendNotice } from './derive';
 import { ActionBar, Callout } from './parts';
 import { defaultParticipants, SubmissionForm } from './submission-form';
 
@@ -58,6 +59,7 @@ function Supplement({ order, target }: { order: TechOrder; target: AttemptData }
   const canSend = draft.description.trim().length > 0 || draft.photos.length > 0;
   // 04, R11: chega depois da revisão = tardio.
   const reviewed = target.review_status === 'approved' || target.review_status === 'rejected';
+  const offline = useOffline();
 
   return (
     <div className="flex flex-col gap-4">
@@ -106,7 +108,7 @@ function Supplement({ order, target }: { order: TechOrder; target: AttemptData }
           onClick={async () => {
             const result = await act(submit(order, key, target.id));
             if (!result) return;
-            notify(t(result === 'queued' ? 'technician.supplement.queuedToast' : 'technician.supplement.sentToast'));
+            notify(t(`technician.supplement.${sendNotice(result, offline)}`));
             void navigate({ to: '/technician/orders/$orderId', params: { orderId: order.id } });
           }}
         >

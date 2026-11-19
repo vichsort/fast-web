@@ -25,6 +25,7 @@ import {
   useTimeZone,
   withAlerts,
 } from './api';
+import { sendNotice } from './derive';
 import { ActionBar, Callout } from './parts';
 import { defaultParticipants, SubmissionForm } from './submission-form';
 
@@ -155,7 +156,7 @@ function Execution({ order }: { order: TechOrder }) {
         onSend={async () => {
           const result = await act(submit(order, key, null));
           if (!result) return;
-          notify(t(result === 'queued' ? 'technician.execution.queuedToast' : 'technician.execution.sentToast'));
+          notify(t(`technician.execution.${sendNotice(result, offline)}`));
           void back();
         }}
       />

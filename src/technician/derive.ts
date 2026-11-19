@@ -195,3 +195,12 @@ export function closedCutoff(now: number): string {
 export function inTechnicianList(o: Pick<OrderDetail, 'status' | 'updated_at'>, now: number): boolean {
   return !CLOSED_STATUSES.includes(o.status) || o.updated_at >= closedCutoff(now);
 }
+
+/**
+ * Aviso depois de "Enviar" (execução e complemento). O real sempre enfileira (queue.md, Q4); com sinal, a fila
+ * manda na hora, então o aviso é de envio em andamento, não de falta de sinal.
+ */
+export function sendNotice(result: 'sent' | 'queued', offline: boolean): 'sentToast' | 'queuedToast' | 'sendingToast' {
+  if (result === 'sent') return 'sentToast';
+  return offline ? 'queuedToast' : 'sendingToast';
+}

@@ -1,6 +1,14 @@
 import type { OrderDetail } from '@/mocks';
 import type { Draft, DraftPhoto, QueueItem, QueueRefusal } from '@/offline/db';
-import { inTechnicianList, type LocalState, pendingItems, toMyOrder, toTechOrder, withLocalPhotos } from './derive';
+import {
+  inTechnicianList,
+  type LocalState,
+  pendingItems,
+  sendNotice,
+  toMyOrder,
+  toTechOrder,
+  withLocalPhotos,
+} from './derive';
 
 const NOW = Date.parse('2026-11-19T12:00:00Z');
 const ME = 'u-me';
@@ -299,5 +307,19 @@ describe('inTechnicianList', () => {
       expect(inTechnicianList({ status, updated_at: ago(7 * day - 1000) }, NOW)).toBe(true);
       expect(inTechnicianList({ status, updated_at: ago(7 * day + 1000) }, NOW)).toBe(false);
     }
+  });
+});
+
+describe('sendNotice', () => {
+  it('na fila com sinal, avisa que está enviando, não que falta sinal', () => {
+    expect(sendNotice('queued', false)).toBe('sendingToast');
+  });
+
+  it('na fila sem sinal, avisa que entrou na fila', () => {
+    expect(sendNotice('queued', true)).toBe('queuedToast');
+  });
+
+  it('já enviado, avisa que foi enviado', () => {
+    expect(sendNotice('sent', false)).toBe('sentToast');
   });
 });
