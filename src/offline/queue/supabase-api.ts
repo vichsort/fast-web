@@ -1,6 +1,6 @@
 // API real da fila (docs/queue.md, Q11) sobre o @supabase/supabase-js: RPCs, Edge Functions das fotos, renovação
 // da sessão e o PUT da foto com `fetch`. Toda falha vira `ApiError` classificada (./errors).
-import { isAuthRetryableFetchError, type SupabaseClient } from '@supabase/supabase-js';
+import { isAuthRefreshDiscardedError, isAuthRetryableFetchError, type SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/database.types';
 import type { PhotoRef, QueueApi } from './api';
 import { ApiError, classifyFetchFailure, classifyFunctionError, classifyHttpStatus, classifyRpcError } from './errors';
@@ -76,6 +76,9 @@ export function createSupabaseQueueApi(client: QueueSupabaseClient, options: Que
     async refreshSession() {
       const { data, error } = await client.auth.refreshSession();
       if (!error) return data.session !== null;
+      // A página ou o worker renovou primeiro: a sessão nova já está no storage. Se foi um logout, o próximo erro de
+      // sessão (logo depois de uma renovação) para a fila pedindo login.
+      if (isAuthRefreshDiscardedError(error)) return true;
       // Sem rede ou com o Supabase fora não dá para dizer que o login acabou.
       const status = (error as { status?: number }).status ?? 0;
       if (isAuthRetryableFetchError(error) && status === 0) throw new ApiError('network', null, error.message);

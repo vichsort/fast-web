@@ -1,4 +1,10 @@
-import { AuthApiError, AuthRetryableFetchError, FunctionsFetchError, FunctionsHttpError } from '@supabase/supabase-js';
+import {
+  AuthApiError,
+  AuthRefreshDiscardedError,
+  AuthRetryableFetchError,
+  FunctionsFetchError,
+  FunctionsHttpError,
+} from '@supabase/supabase-js';
 import { ApiError } from './errors';
 import { createSupabaseQueueApi, type QueueSupabaseClient } from './supabase-api';
 
@@ -194,5 +200,13 @@ describe('supabase queue api', () => {
     expect(await api.refreshSession()).toBe(false);
     await expect(api.refreshSession()).rejects.toMatchObject({ errorClass: 'network' });
     await expect(api.refreshSession()).rejects.toMatchObject({ errorClass: 'server' });
+  });
+
+  it('Q6: a renewal discarded because the page or the worker renewed first counts as renewed', async () => {
+    const { client } = fakeClient({
+      refresh: async () => ({ data: { session: null }, error: new AuthRefreshDiscardedError() }),
+    });
+
+    expect(await createSupabaseQueueApi(client).refreshSession()).toBe(true);
   });
 });
