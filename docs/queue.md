@@ -45,8 +45,8 @@ A fila roda na página e no worker ([`src/sw.ts`](../src/sw.ts)), com o mesmo c�
 | Supabase no worker | cliente próprio, com a sessão do IndexedDB (`createAuthStorage()`), `detectSessionInUrl: false` e `autoRefreshToken: false` (renova quando uma chamada precisa); [`supabase.ts`](../src/lib/supabase.ts) lê `window.location` e não entra no worker |
 | Usuário no worker | o da sessão guardada; sem sessão, não roda; só os itens dele (Q3) |
 | Depois da passada do worker | `BroadcastChannel` `fast-queue` → a página aberta atualiza o indicador e faz o mesmo que depois da própria passada (invalida `['technician']`; com recusa, confere o vínculo). O `liveQuery` vê a escrita do worker pelo canal do próprio Dexie |
-| Registro e atualização | `useRegisterSW` no `TechnicianRuntime` (`registerType: 'prompt'`, `injectRegister: false`); aviso de versão nova: a fazer |
-| Precache | o app inteiro, ícones inclusive (`globPatterns`) |
+| Registro e atualização | `useRegisterSW` no `TechnicianRuntime` (`registerType: 'prompt'`, `injectRegister: false`). Versão nova: aviso fixo (toast) com "Atualizar"; só ao toque o worker novo entra (`SKIP_WAITING`) e a página recarrega, então nunca no meio da câmera. Recarregar não perde nada: rascunhos, fotos e fila estão no Dexie |
+| Precache | o app inteiro, ícones inclusive (`globPatterns`); sem sinal, qualquer rota responde com o `index.html` do precache (`NavigationRoute`), então abrir direto numa O.S. funciona |
 | Rodar | `devOptions.enabled: false`: o worker só existe no build (`npm run build && npm run preview`) |
 | Playwright | pausado; quando voltar: `serviceWorkers: 'block'` nos testes comuns (o worker escapa do `page.route` e guarda arquivos velhos), liberado só nos do offline |
 
