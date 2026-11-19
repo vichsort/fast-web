@@ -122,11 +122,11 @@ Revisado em 2026-11-19, com a ordem antiga (P5, S1, E1, P3, P6, P7) toda feita. 
 
 | # | Item | O que | Por quê |
 | --- | --- | --- | --- |
-| 10b | S5, alcance do logout | decisão do usuário: `scope: 'local'` (sair só deste aparelho) ou manter o global | aparelho compartilhado e técnico com dois celulares; o global é mais seguro com celular perdido, o local não para a fila do outro aparelho |
-| 11 | P3, janela de até 1 h | decisão do usuário: um "Entrar de novo" no aviso da fila que leva ao login sem apagar nada (Q3 mantém a fila do mesmo usuário) | hoje a única saída visível nessa janela é o logout, que apaga a prova |
-| 12 | D1, custo por foto | medir com `Network.emulateNetworkConditions` (2G); com os números, decidir se o backend entrega as URLs de várias fotos numa chamada | 3 idas e voltas por foto em série |
-| 13 | D6, auditoria | paginação | lacuna menor: só os 1000 eventos mais recentes |
-| 14 | D3, cache do técnico | observar o tamanho em campo | aceito no volume esperado |
+| 11 | S5, alcance do logout | decisão do usuário: `scope: 'local'` (sair só deste aparelho) ou manter o global | aparelho compartilhado e técnico com dois celulares; o global é mais seguro com celular perdido, o local não para a fila do outro aparelho |
+| 12 | P3, janela de até 1 h | decisão do usuário: um "Entrar de novo" no aviso da fila que leva ao login sem apagar nada (Q3 mantém a fila do mesmo usuário) | hoje a única saída visível nessa janela é o logout, que apaga a prova |
+| 13 | D1, custo por foto | medir com `Network.emulateNetworkConditions` (2G); com os números, decidir se o backend entrega as URLs de várias fotos numa chamada | 3 idas e voltas por foto em série |
+| 14 | D6, auditoria | paginação | lacuna menor: só os 1000 eventos mais recentes |
+| 15 | D3, cache do técnico | observar o tamanho em campo | aceito no volume esperado |
 
 ## Fora do Playwright
 
