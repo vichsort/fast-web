@@ -33,6 +33,21 @@ export interface OrderListItem extends ServiceOrder {
   late_supplements_unseen: number;
 }
 
+/** Linha da lista de O.S. do escritório: só o que a tabela mostra e os filtros usam (docs/e2e.md, D4). */
+export interface OfficeOrderListItem
+  extends Pick<
+    ServiceOrder,
+    'id' | 'order_number' | 'title' | 'status' | 'priority' | 'service_type' | 'due_at' | 'client_id'
+  > {
+  client: Pick<Client, 'id' | 'name'>;
+  /** Técnicos com atribuição ativa. Vazio = "sem técnico". */
+  assignees: PersonRef[];
+  /** 03, R6: prazo vencido em open, in_progress ou rejected. */
+  overdue: boolean;
+  /** Complementos tardios ainda sem ciência (04, R11). */
+  late_supplements_unseen: number;
+}
+
 export interface PhotoView extends Photo {
   /** URL para exibir (no real, assinada por get_photo_urls; aqui, um SVG local). */
   url: string;
@@ -101,7 +116,7 @@ export interface ClientListItem extends Client {
 
 export interface ClientDetail extends Client {
   addresses: ClientAddress[];
-  orders: OrderListItem[];
+  orders: OfficeOrderListItem[];
 }
 
 export interface MemberView extends CompanyMember {

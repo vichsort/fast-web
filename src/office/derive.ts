@@ -11,6 +11,7 @@ import type {
   Execution,
   ExecutionView,
   HistoryEvent,
+  OfficeOrderListItem,
   OrderDetail,
   OrderFilters,
   PersonRef,
@@ -36,6 +37,15 @@ export interface OrderRow extends ServiceOrder {
   executions: ExecutionRow[];
   /** Só no detalhe. */
   history?: (HistoryEvent & { actor: PersonRef | null })[];
+}
+
+/**
+ * Linha de `service_orders` da lista do escritório (ORDER_LIST_SELECT em api/supabase.ts): só as colunas da tabela,
+ * sem execuções nem fotos; `late` são só os complementos tardios sem ciência, filtrados no banco.
+ */
+export interface OrderListRow extends Omit<OfficeOrderListItem, 'assignees' | 'overdue' | 'late_supplements_unseen'> {
+  assignments: (Pick<Assignment, 'unassigned_at'> & { user: PersonRef })[];
+  late: { id: string }[];
 }
 
 /** Linha de `clients` com os endereços e o status das O.S. (CLIENT_SELECT em api/supabase.ts). */
@@ -98,8 +108,19 @@ export function toOrderDetail(row: OrderRow, now: number, photoUrls: Map<string,
   };
 }
 
+/** Linha da lista de O.S. como a tabela lê. */
+export function toOrderListItem(row: OrderListRow, now: number): OfficeOrderListItem {
+  const { assignments, late, ...order } = row;
+  return {
+    ...order,
+    assignees: assignments.filter((a) => a.unassigned_at === null).map((a) => a.user),
+    overdue: isOverdue(row, now),
+    late_supplements_unseen: late.length,
+  };
+}
+
 /** Filtros da lista de O.S. (03, "Filtrar") sobre a view já montada. */
-export function orderMatches(o: OrderDetail, f: OrderFilters, timeZone: string): boolean {
+export function orderMatches(o: OfficeOrderListItem, f: OrderFilters, timeZone: string): boolean {
   if (f.search) {
     const q = f.search.trim().toLowerCase().replace(/^#/, '');
     const hay =

@@ -13,7 +13,7 @@ import { formatOrderNumber, formatRelative } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import type { LateSupplementItem, OrderDetail } from '@/mocks';
 import { acknowledgeSupplements, seenUntil } from '../api';
-import { useLateSupplements, useOrders } from '../queries';
+import { useLateSupplements, usePendingOrders } from '../queries';
 import { useOffice, useOfficeAction } from '../session';
 import { textLink } from '../shared';
 
@@ -32,7 +32,7 @@ export function pendingSummary(o: OrderDetail) {
 export function ReviewQueuePage() {
   const { tab } = route.useSearch();
   const navigate = useNavigate({ from: '/office/review' });
-  const pending = useOrders({ status: ['pending_approval'] });
+  const pending = usePendingOrders();
   const late = useLateSupplements();
   const queue = [...(pending.data ?? [])].sort((a, b) =>
     (pendingSummary(a)?.attempt.received_at ?? '').localeCompare(pendingSummary(b)?.attempt.received_at ?? ''),

@@ -9,6 +9,7 @@ const api: OfficeApi = usingMocks ? mock : supabaseApi;
 
 export const {
   officeListOrders,
+  officePendingOrders,
   officeGetOrder,
   officeDashboard,
   officeLateSupplements,

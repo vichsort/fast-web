@@ -5,9 +5,11 @@ import {
   clientMatches,
   directWriteError,
   type ExecutionRow,
+  type OrderListRow,
   type OrderRow,
   toClientListItem,
   toOrderDetail,
+  toOrderListItem,
 } from './derive';
 
 const NOW = Date.parse('2026-11-19T12:00:00Z');
@@ -96,6 +98,56 @@ function assignment(user: { id: string; full_name: string }, unassigned_at: stri
     user,
   };
 }
+
+describe('toOrderListItem', () => {
+  function listRow(over: Partial<OrderListRow> = {}): OrderListRow {
+    return {
+      id: 'o1',
+      order_number: 7,
+      title: 'Instalar',
+      status: 'open',
+      priority: 'normal',
+      service_type: 'installation',
+      due_at: null,
+      client_id: 'cl1',
+      client: { id: 'cl1', name: 'Cliente' },
+      assignments: [],
+      late: [],
+      ...over,
+    };
+  }
+
+  it('keeps only what the row shows, with the active technicians', () => {
+    const item = toOrderListItem(
+      listRow({ assignments: [assignment(ana), assignment(bia, '2026-11-02T10:00:00Z')] }),
+      NOW,
+    );
+
+    expect(item).toEqual({
+      id: 'o1',
+      order_number: 7,
+      title: 'Instalar',
+      status: 'open',
+      priority: 'normal',
+      service_type: 'installation',
+      due_at: null,
+      client_id: 'cl1',
+      client: { id: 'cl1', name: 'Cliente' },
+      assignees: [ana],
+      overdue: false,
+      late_supplements_unseen: 0,
+    });
+  });
+
+  it('marks overdue by the due date and status (03, R6)', () => {
+    expect(toOrderListItem(listRow({ due_at: '2026-11-18T00:00:00Z', status: 'rejected' }), NOW).overdue).toBe(true);
+    expect(toOrderListItem(listRow({ due_at: '2026-11-18T00:00:00Z', status: 'approved' }), NOW).overdue).toBe(false);
+  });
+
+  it('counts the unacknowledged late supplements the query brought (04, R11)', () => {
+    expect(toOrderListItem(listRow({ late: [{ id: 'e1' }, { id: 'e2' }] }), NOW).late_supplements_unseen).toBe(2);
+  });
+});
 
 describe('toOrderDetail', () => {
   it('numbers the attempts by arrival and nests the supplements under their attempt', () => {

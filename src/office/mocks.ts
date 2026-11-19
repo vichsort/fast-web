@@ -24,6 +24,7 @@ import {
   listOrders,
   type MemberView,
   MOCK_USER_IDS,
+  type OfficeOrderListItem,
   type OrderDetail,
   type OrderFilters,
   type PersonRef,
@@ -99,6 +100,25 @@ function view(s: Store, o: OrderDetail): OrderDetail {
   };
 }
 
+/** A linha da lista, na forma enxuta da consulta real (ORDER_LIST_SELECT em api/supabase.ts). */
+function listItem(s: Store, o: OrderDetail): OfficeOrderListItem {
+  const v = view(s, o);
+  return {
+    id: v.id,
+    order_number: v.order_number,
+    title: v.title,
+    status: v.status,
+    priority: v.priority,
+    service_type: v.service_type,
+    due_at: v.due_at,
+    client_id: v.client_id,
+    client: { id: v.client.id, name: v.client.name },
+    assignees: v.assignees,
+    overdue: v.overdue,
+    late_supplements_unseen: v.late_supplements_unseen,
+  };
+}
+
 function findOrder(s: Store, id: string): OrderDetail {
   return s.orders.find((o) => o.id === id || String(o.order_number) === id) ?? fail('not_found');
 }
@@ -133,14 +153,20 @@ function ensureEditable(o: OrderDetail) {
 // ---------------------------------------------------------------- leituras: O.S.
 
 /** Lista de O.S. com cliente e técnicos, filtrada (03, "Filtrar"). Mais nova primeiro. */
-export async function officeListOrders(filters: OrderFilters = {}): Promise<OrderDetail[]> {
+export async function officeListOrders(filters: OrderFilters = {}): Promise<OfficeOrderListItem[]> {
   const s = await store();
   return wait(
     s.orders
-      .map((o) => view(s, o))
+      .map((o) => listItem(s, o))
       .filter((o) => orderMatches(o, filters, s.company.timezone))
       .sort((a, b) => b.order_number - a.order_number),
   );
+}
+
+/** O.S. aguardando aprovação com as tentativas (fila de revisão e dashboard). */
+export async function officePendingOrders(): Promise<OrderDetail[]> {
+  const s = await store();
+  return wait(s.orders.filter((o) => o.status === 'pending_approval').map((o) => view(s, o)));
 }
 
 /** Detalhe da O.S. (por id ou número). */
@@ -219,7 +245,7 @@ export async function officeGetClient(id: string): Promise<(ClientDetail & { ope
   if (!c) return wait(null);
   const orders = s.orders
     .filter((o) => o.client_id === c.id)
-    .map((o) => view(s, o))
+    .map((o) => listItem(s, o))
     .sort((a, b) => b.order_number - a.order_number);
   return wait({ ...c, orders, open_orders: clientListItem(s, c).open_orders });
 }

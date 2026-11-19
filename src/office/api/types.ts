@@ -5,6 +5,7 @@ import type * as mock from '../mocks';
 export type OfficeApi = Pick<
   typeof mock,
   | 'officeListOrders'
+  | 'officePendingOrders'
   | 'officeGetOrder'
   | 'officeDashboard'
   | 'officeLateSupplements'

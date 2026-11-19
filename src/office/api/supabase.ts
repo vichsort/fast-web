@@ -11,6 +11,7 @@ import type {
   DashboardCounts,
   LateSupplementItem,
   MemberView,
+  OfficeOrderListItem,
   OrderDetail,
   OrderFilters,
   PersonRef,
@@ -20,10 +21,12 @@ import {
   type ClientRow,
   clientMatches,
   directWriteError,
+  type OrderListRow,
   type OrderRow,
   orderMatches,
   toClientListItem,
   toOrderDetail,
+  toOrderListItem,
 } from '../derive';
 import type { AddressInput, OrderInput } from '../mocks';
 import type { OfficeApi } from './types';
@@ -98,12 +101,24 @@ const phoneDigits = (v: string | null) => blankToNull(v?.replace(/\D/g, '') ?? n
 
 const OVERDUE_STATUSES = ['open', 'in_progress', 'rejected'] as const;
 
+/** A lista de O.S. pede só o que a linha mostra (docs/e2e.md, D4); detalhe, revisão e dashboard usam ORDER_SELECT. */
+const ORDER_LIST_SELECT = `id, order_number, title, status, priority, service_type, due_at, client_id,
+  client:clients!service_orders_client_id_fkey(id, name),
+  assignments:service_order_assignees(unassigned_at, user:profiles!service_order_assignees_user_id_fkey(${PERSON})),
+  late:service_order_executions(id)`;
+
 /**
  * O banco filtra o que é coluna da O.S. (status, prioridade, tipo, cliente, atrasada); busca, técnico, sem técnico
  * e prazo no fuso da empresa ficam no `orderMatches`, o mesmo dos dados de exemplo. Mais nova primeiro.
  */
-async function officeListOrders(filters: OrderFilters = {}): Promise<OrderDetail[]> {
-  let query = supabase.from('service_orders').select(ORDER_SELECT).eq('company_id', current().companyId);
+async function officeListOrders(filters: OrderFilters = {}): Promise<OfficeOrderListItem[]> {
+  let query = supabase
+    .from('service_orders')
+    .select(ORDER_LIST_SELECT)
+    .eq('company_id', current().companyId)
+    // Só os complementos tardios sem ciência (04, R11): o selo da linha, sem trazer as execuções.
+    .eq('late.is_late', true)
+    .is('late.acknowledged_at', null);
   if (filters.status?.length) query = query.in('status', filters.status);
   if (filters.priority?.length) query = query.in('priority', filters.priority);
   if (filters.service_type?.length) query = query.in('service_type', filters.service_type);
@@ -111,9 +126,22 @@ async function officeListOrders(filters: OrderFilters = {}): Promise<OrderDetail
   if (filters.overdue) query = query.lt('due_at', new Date().toISOString()).in('status', [...OVERDUE_STATUSES]);
   const found = await rows(query.order('order_number', { ascending: false }));
   const now = Date.now();
-  return (found as unknown as OrderRow[])
-    .map((row) => toOrderDetail(row, now))
+  return (found as unknown as OrderListRow[])
+    .map((row) => toOrderListItem(row, now))
     .filter((o) => orderMatches(o, filters, current().timeZone));
+}
+
+/** O.S. aguardando aprovação com as tentativas (fila de revisão e dashboard), sem as URLs das fotos. */
+async function officePendingOrders(): Promise<OrderDetail[]> {
+  const found = await rows(
+    supabase
+      .from('service_orders')
+      .select(ORDER_SELECT)
+      .eq('company_id', current().companyId)
+      .eq('status', 'pending_approval'),
+  );
+  const now = Date.now();
+  return (found as unknown as OrderRow[]).map((row) => toOrderDetail(row, now));
 }
 
 /** Detalhe da O.S. por id ou número (o link do WhatsApp e a busca usam o número), com as URLs das fotos. */
@@ -475,6 +503,7 @@ async function officeSessionUser(_role: 'owner' | 'manager') {
 
 export const supabaseApi: OfficeApi = {
   officeListOrders,
+  officePendingOrders,
   officeGetOrder,
   officeDashboard,
   officeLateSupplements,

@@ -11,12 +11,17 @@ import {
   officeListClients,
   officeListMembers,
   officeListOrders,
+  officePendingOrders,
   officePeople,
   officeTechnicians,
 } from './api';
 
 export const useOrders = (filters: OrderFilters = {}) =>
   useQuery({ queryKey: ['office', 'orders', filters], queryFn: () => officeListOrders(filters) });
+
+/** Aguardando aprovação, com as tentativas: a lista acima é enxuta (docs/e2e.md, D4). */
+export const usePendingOrders = () =>
+  useQuery({ queryKey: ['office', 'pending-orders'], queryFn: () => officePendingOrders() });
 
 export const useOrder = (id: string) =>
   useQuery({ queryKey: ['office', 'order', id], queryFn: () => officeGetOrder(id) });

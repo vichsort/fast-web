@@ -17,7 +17,7 @@ import {
 } from '@/lib/enums';
 import { formatNumber } from '@/lib/format';
 import { t } from '@/lib/i18n';
-import type { OrderDetail, OrderFilters } from '@/mocks';
+import type { OfficeOrderListItem, OrderFilters } from '@/mocks';
 import { useClients, useOrders, useTechnicians } from '../queries';
 import { useOffice } from '../session';
 import { priorityOptions, serviceTypeOptions, statusOptions } from '../shared';
@@ -169,7 +169,7 @@ export function OrdersPage() {
       {orders.isError ? (
         <ErrorState onRetry={() => void orders.refetch()} />
       ) : (
-        <OrderTable<OrderDetail>
+        <OrderTable<OfficeOrderListItem>
           rows={orders.data ?? []}
           loading={orders.isPending}
           timeZone={timeZone}

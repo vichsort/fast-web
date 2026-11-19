@@ -11,8 +11,8 @@ import { EmptyState, ErrorState, LoadingList } from '@/components/states';
 import { Button } from '@/components/ui/button';
 import { formatNumber, formatOrderNumber, formatRelative } from '@/lib/format';
 import { t } from '@/lib/i18n';
-import type { OrderDetail } from '@/mocks';
-import { useDashboard, useLateSupplements, useOrders } from './queries';
+import type { OfficeOrderListItem, OrderDetail } from '@/mocks';
+import { useDashboard, useLateSupplements, useOrders, usePendingOrders } from './queries';
 import { useOffice } from './session';
 
 /** Link de cada contador para a lista filtrada (05). */
@@ -36,7 +36,7 @@ export function DashboardPage() {
   const { company, timeZone } = useOffice();
   const navigate = useNavigate();
   const counts = useDashboard();
-  const pending = useOrders({ status: ['pending_approval'] });
+  const pending = usePendingOrders();
   const overdue = useOrders({ overdue: true });
   const late = useLateSupplements();
   const c = counts.data;
@@ -137,9 +137,9 @@ export function DashboardPage() {
             )
           }
         >
-          <DataTable<OrderDetail>
+          <DataTable<OfficeOrderListItem>
             rows={overdueRows.slice(0, LIST_SIZE)}
-            columns={orderColumns<OrderDetail>({
+            columns={orderColumns<OfficeOrderListItem>({
               timeZone,
               include: ['number', 'title', 'status', 'assignees', 'due'],
             })}

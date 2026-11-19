@@ -22,7 +22,7 @@ import {
 import { ACTIVE_ORDER_STATUSES } from '@/lib/enums';
 import { formatDate, formatDateTime } from '@/lib/format';
 import { errorMessage, t } from '@/lib/i18n';
-import type { ClientAddress, ClientDetail, OrderListItem } from '@/mocks';
+import type { ClientAddress, ClientDetail, OfficeOrderListItem } from '@/mocks';
 import { deleteAddress, deleteClient, setPrimaryAddress } from '../api';
 import { useClient, usePersonName } from '../queries';
 import { useOffice, useOfficeAction } from '../session';
@@ -226,7 +226,7 @@ function ClientView({ client: c }: { client: ClientDetail & { open_orders: numbe
         </div>
 
         <Section title={t('office.clientDetail.sectionOrders')} className="min-w-0 self-start">
-          <OrderTable<OrderListItem>
+          <OrderTable<OfficeOrderListItem>
             rows={c.orders}
             timeZone={timeZone}
             include={['number', 'title', 'status', 'assignees', 'due']}

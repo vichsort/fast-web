@@ -15,7 +15,7 @@ import { DataTable, type DataTableColumn, type DataTableProps } from './data-tab
 import type { OrderCardData } from './order-card';
 import { AvatarStack } from './user';
 
-export interface OrderRowData extends OrderCardData {
+export interface OrderRowData extends Omit<OrderCardData, 'address'> {
   id: string;
   assignees: { id: string; full_name: string }[];
 }

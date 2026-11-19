@@ -30,7 +30,7 @@ import { cn } from '@/lib/utils';
 import type { OrderDetail } from '@/mocks';
 import type { PhotoAlert } from '@/photos/alerts';
 import { reviewExecution, seenUntil } from '../api';
-import { useOrder, useOrders } from '../queries';
+import { useOrder, usePendingOrders } from '../queries';
 import { useOffice, useOfficeAction } from '../session';
 import { NotFound, Notice, ScratchScenario } from '../shared';
 import { pendingSummary } from './queue';
@@ -279,7 +279,7 @@ function ReviewView({
 
 /** Depois da decisão: o resultado e a próxima O.S. da fila. */
 function DoneState({ done }: { done: Done }) {
-  const pending = useOrders({ status: ['pending_approval'] });
+  const pending = usePendingOrders();
   const next = [...(pending.data ?? [])]
     .filter((o) => o.id !== done.orderId)
     .sort((a, b) =>
