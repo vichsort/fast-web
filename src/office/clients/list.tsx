@@ -1,6 +1,6 @@
 // Lista de clientes (02): busca por nome ou telefone, excluídos opcionais, cadastro no painel lateral.
-import { getRouteApi, Link, useNavigate } from '@tanstack/react-router';
-import { FileUp, Plus, UsersRound } from 'lucide-react';
+import { getRouteApi, useNavigate } from '@tanstack/react-router';
+import { Plus, UsersRound } from 'lucide-react';
 import * as React from 'react';
 import { ToneBadge } from '@/components/badges';
 import { DataTable, type DataTableColumn } from '@/components/data-table';
@@ -96,16 +96,10 @@ export function ClientsPage() {
         title={t('office.clients.title')}
         description={total !== undefined ? t('office.clients.description', { count: formatNumber(total) }) : undefined}
         actions={
-          <>
-            <Button variant="outline" render={<Link to="/office/clients/import" />} nativeButton={false}>
-              <FileUp />
-              {t('office.clients.import')}
-            </Button>
-            <Button onClick={() => setCreating(true)}>
-              <Plus />
-              {t('office.clients.newClient')}
-            </Button>
-          </>
+          <Button onClick={() => setCreating(true)}>
+            <Plus />
+            {t('office.clients.newClient')}
+          </Button>
         }
       />
       <FilterBar

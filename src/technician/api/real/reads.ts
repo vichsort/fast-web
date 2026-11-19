@@ -8,7 +8,15 @@ import { type OrderRow, toOrderDetail } from '@/office/derive';
 import { db } from '@/offline/db';
 import { ApiError, classifyFunctionError, classifyRpcError } from '@/offline/queue/errors';
 import { pruneSeenPhotos, saveSeenPhotos } from '@/offline/seen-photos';
-import { pendingItems, toMyOrder, toTechOrder, withAlerts, withLocalPhotos } from '../../derive';
+import {
+  closedCutoff,
+  inTechnicianList,
+  pendingItems,
+  toMyOrder,
+  toTechOrder,
+  withAlerts,
+  withLocalPhotos,
+} from '../../derive';
 import type { Draft, MyOrder, Read, TechOrder, TechSession } from '../types';
 import { current } from './context';
 import { parseDraftKey, photoData, seenPhotoUrl, useLocal } from './local';
@@ -36,6 +44,8 @@ async function fetchOrders(): Promise<OrderDetail[]> {
   const { data, error, status } = await supabase
     .from('service_orders')
     .select(ORDER_SELECT)
+    // Encerradas só nos últimos 7 dias (inTechnicianList); a lista e o cache não crescem sem fim.
+    .or(`status.in.(open,in_progress,pending_approval,rejected),updated_at.gte.${closedCutoff(Date.now())}`)
     .order('order_number', { ascending: false });
   if (error) throw classifyRpcError(error, status);
   const now = Date.now();
@@ -115,10 +125,12 @@ function useServerOrders() {
 export function useMyOrders(): Read<MyOrder[]> {
   const query = useServerOrders();
   const local = useLocal();
-  const data = React.useMemo(
-    () => (query.data && local ? query.data.map((o) => toMyOrder(o, local, Date.now())) : undefined),
-    [query.data, local],
-  );
+  const data = React.useMemo(() => {
+    if (!query.data || !local) return undefined;
+    // O cache pode ser de dias atrás: a janela das encerradas vale também para ele.
+    const now = Date.now();
+    return query.data.filter((o) => inTechnicianList(o, now)).map((o) => toMyOrder(o, local, now));
+  }, [query.data, local]);
   return { ...query, data, isPending: query.isPending || !local };
 }
 

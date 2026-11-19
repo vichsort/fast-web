@@ -1,6 +1,6 @@
 import type { OrderDetail } from '@/mocks';
 import type { Draft, DraftPhoto, QueueItem, QueueRefusal } from '@/offline/db';
-import { type LocalState, pendingItems, toMyOrder, toTechOrder, withLocalPhotos } from './derive';
+import { inTechnicianList, type LocalState, pendingItems, toMyOrder, toTechOrder, withLocalPhotos } from './derive';
 
 const NOW = Date.parse('2026-11-19T12:00:00Z');
 const ME = 'u-me';
@@ -281,5 +281,23 @@ describe('withLocalPhotos', () => {
 
     expect(shown?.photos.map((p) => p.url)).toEqual(['blob:p1', 'signed-p2']);
     expect(shown?.supplements[0]?.photos.map((p) => p.url)).toEqual(['blob:p3']);
+  });
+});
+
+describe('inTechnicianList', () => {
+  const day = 24 * 60 * 60 * 1000;
+  const ago = (ms: number) => new Date(NOW - ms).toISOString();
+
+  it('keeps active orders whatever their age', () => {
+    for (const status of ['open', 'in_progress', 'pending_approval', 'rejected'] as const) {
+      expect(inTechnicianList({ status, updated_at: ago(90 * day) }, NOW)).toBe(true);
+    }
+  });
+
+  it('keeps approved and cancelled orders for 7 days after closing, then drops them', () => {
+    for (const status of ['approved', 'cancelled'] as const) {
+      expect(inTechnicianList({ status, updated_at: ago(7 * day - 1000) }, NOW)).toBe(true);
+      expect(inTechnicianList({ status, updated_at: ago(7 * day + 1000) }, NOW)).toBe(false);
+    }
   });
 });

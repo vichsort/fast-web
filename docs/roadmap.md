@@ -45,11 +45,11 @@ Esboço da estrutura visual do sistema inteiro, antes da integração real. Regr
 
 - [x] Base: fonte de dados por chave (`VITE_DATA_SOURCE`), API real tipada pela de exemplo, sessão real na moldura, erros das ações por classe.
 - [x] Dashboard.
-- [x] Clientes e endereços (a importação espera o `import_clients`, etapa 9 do backend).
+- [x] Clientes e endereços.
 - [x] O.S.: criar, editar, atribuir, cancelar, histórico.
 - [x] Revisão: aprovar, rejeitar, ciência dos tardios, alertas.
 - [x] Empresa, membros e auditoria (owner).
-- [ ] Pendências do escritório: serviço de CEP (hoje a tabela de exemplo; decidido o ViaCEP em 2026-11-19, a fazer depois); importação de clientes (etapa 9 do backend). Email dos membros: decidido em 2026-11-19 não mostrar na lista ([screens-office.md](screens-office.md#decisões)).
+- [ ] Pendências do escritório: serviço de CEP (hoje a tabela de exemplo; decidido o ViaCEP em 2026-11-19, a fazer depois). Sem tela de importação de clientes ([screens-office.md](screens-office.md#decisões)). Email dos membros: decidido em 2026-11-19 não mostrar na lista ([screens-office.md](screens-office.md#decisões)).
 
 ## 5. Produção
 

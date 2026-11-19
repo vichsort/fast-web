@@ -16,7 +16,6 @@ export const officeTexts = {
     logout: 'Sair',
     userMenu: 'Menu do usuário',
     newOrder: 'Nova O.S.',
-    importClients: 'Importar clientes',
   },
 
   common: {
@@ -222,7 +221,6 @@ export const officeTexts = {
     description: '{count} clientes',
     searchPlaceholder: 'Nome ou telefone',
     newClient: 'Novo cliente',
-    import: 'Importar CSV',
     columns: {
       name: 'Nome',
       phone: 'Telefone',
@@ -232,7 +230,7 @@ export const officeTexts = {
     },
     noAddress: 'Sem endereço',
     emptyTitle: 'Nenhum cliente cadastrado',
-    emptyDescription: 'Cadastre um cliente ou importe a lista por CSV.',
+    emptyDescription: 'Cadastre o primeiro cliente.',
   },
 
   clientForm: {
@@ -302,40 +300,6 @@ export const officeTexts = {
     referencePlaceholder: 'Ex.: portão azul, ao lado da farmácia',
     makePrimary: 'Usar como endereço principal',
     requiredHint: 'Obrigatórios: rua, cidade e UF.',
-  },
-
-  import: {
-    title: 'Importar clientes',
-    description: 'Carga inicial por CSV, com prévia antes de gravar.',
-    later: 'Depois do primeiro deploy',
-    sketchTitle: 'Esboço da tela',
-    sketchDescription:
-      'O formato das colunas depende do CSV real da Fast, que ainda não chegou. A prévia abaixo usa um arquivo de exemplo.',
-    pick: 'Escolher arquivo CSV',
-    pickHint: 'Colunas esperadas (provisórias): nome, telefone, rua, número, bairro, cidade, UF, CEP.',
-    loaded: '{file} · {count} linhas',
-    change: 'Trocar arquivo',
-    valid: 'Prontas',
-    errors: 'Com erro',
-    duplicates: 'Possíveis duplicados',
-    skipDuplicates: 'Ignorar possíveis duplicados',
-    skipDuplicatesHint: 'Mesmo nome e telefone, no arquivo ou já cadastrado. Ignorados por padrão.',
-    allOrNothing: 'A importação grava tudo ou nada: corrija as linhas com erro no arquivo e escolha de novo.',
-    action: 'Importar {count} clientes',
-    actionLabel: 'Importar clientes',
-    columns: { line: 'Linha', name: 'Nome', phone: 'Telefone', address: 'Endereço', result: 'Resultado' },
-    ok: 'Pronta',
-    error: 'Erro',
-    duplicate: 'Possível duplicado',
-    skipped: 'será ignorada',
-    imported: 'entra como duplicado',
-    rows: {
-      emptyName: 'Nome vazio.',
-      invalidState: 'UF "{value}" inválida.',
-      missingCity: 'Endereço sem cidade.',
-      duplicateInFile: 'Igual à linha {line} do arquivo.',
-      duplicateExisting: 'Já cadastrado: {name}.',
-    },
   },
 
   company: {

@@ -24,7 +24,7 @@ import {
 } from '@/mocks';
 import { executionAlerts } from '@/photos/alerts';
 import { type Draft, draftKey, type MyOrder, type OrderRef, type ParticipantOption, type TechOrder } from './api/types';
-import { withAlerts } from './derive';
+import { inTechnicianList, withAlerts } from './derive';
 
 export const TZ = MOCK_TIME_ZONE;
 /** O técnico "logado" nos dados de exemplo (Marcos), não o usuário real do login. */
@@ -310,7 +310,8 @@ export function useTechSession() {
 }
 
 async function fetchMyOrders(): Promise<MyOrder[]> {
-  const list = await listMyOrders(ME);
+  const now = Date.now();
+  const list = (await listMyOrders(ME)).filter((o) => inTechnicianList(o, now));
   const rejected = await Promise.all(list.filter((o) => o.status === 'rejected').map((o) => getOrder(o.id)));
   return list.map((o) => {
     const detail = rejected.find((d) => d?.id === o.id);

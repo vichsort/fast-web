@@ -5,7 +5,6 @@ import { AuditPage } from './admin/audit';
 import { CompanyPage } from './admin/company';
 import { MembersPage } from './admin/members';
 import { ClientDetailPage } from './clients/detail';
-import { ClientImportPage } from './clients/import';
 import { ClientsPage } from './clients/list';
 import { DashboardPage } from './dashboard';
 import { OfficeLayout } from './layout';
@@ -51,7 +50,6 @@ const clientsRoute = createRoute({
     deleted: search.deleted === true || search.deleted === 'true' ? true : undefined,
   }),
 });
-const clientImportRoute = createRoute({ ...child, path: 'clients/import', component: ClientImportPage });
 const clientRoute = createRoute({ ...child, path: 'clients/$clientId', component: ClientDetailPage });
 
 const companyRoute = createRoute({ ...child, path: 'company', component: CompanyPage });
@@ -68,7 +66,6 @@ export const officeRouteTree = officeRoute.addChildren([
   reviewRoute,
   reviewOrderRoute,
   clientsRoute,
-  clientImportRoute,
   clientRoute,
   companyRoute,
   membersRoute,

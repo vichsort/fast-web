@@ -34,7 +34,6 @@ Depois do login: `technician` vai para a interface do técnico; `owner` e `manag
 | Empresa (owner)        | dados cadastrais e fuso                                                                                            | [01](../../fast/docs/modules/01-foundation.md)                               |
 | Membros (owner)        | convidar, trocar papel, remover                                                                                    | [06](../../fast/docs/modules/06-members.md)                                  |
 | Auditoria (owner)      | quem mudou empresa, membros e papéis                                                                               | [05](../../fast/docs/modules/05-dashboard-audit.md)                          |
-| Importação de clientes | CSV com erros e possíveis duplicados por linha                                                                     | [02](../../fast/docs/modules/02-clients.md) (depois do primeiro deploy)      |
 
 ## Decisões
 

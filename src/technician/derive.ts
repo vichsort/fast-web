@@ -181,3 +181,17 @@ export function withLocalPhotos<A extends { photos: PhotoData[]; supplements: { 
     supplements: a.supplements.map((s) => ({ ...s, photos: swap(s.photos) })),
   }));
 }
+
+/** Dias que a O.S. aprovada ou cancelada fica na lista do técnico (docs/screens-technician.md, Decisões). */
+export const CLOSED_VISIBLE_DAYS = 7;
+const CLOSED_STATUSES: readonly string[] = ['approved', 'cancelled'];
+
+/** Início da janela das encerradas: `updated_at` é a hora do fechamento (nada muda a O.S. depois dele). */
+export function closedCutoff(now: number): string {
+  return new Date(now - CLOSED_VISIBLE_DAYS * 24 * 60 * 60 * 1000).toISOString();
+}
+
+/** Em andamento, sempre; aprovada ou cancelada, só nos 7 dias depois do fechamento. */
+export function inTechnicianList(o: Pick<OrderDetail, 'status' | 'updated_at'>, now: number): boolean {
+  return !CLOSED_STATUSES.includes(o.status) || o.updated_at >= closedCutoff(now);
+}
