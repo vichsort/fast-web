@@ -1,7 +1,7 @@
 import type { PhotoRef, StartExecutionArgs, UpdateMaterialsNotesArgs } from './api';
 import { enqueueMaterials, enqueueStart, enqueueSubmit } from './enqueue';
 import { ApiError, type ErrorClass } from './errors';
-import { processQueue } from './processor';
+import { processQueue, wakeNetworkWaits } from './processor';
 import { addDraft, addPhoto, fakeApi, fakeClock, newDb, noLock } from './testing';
 
 const at = '2026-11-13T10:00:00.000Z';
@@ -88,6 +88,65 @@ describe('processQueue', () => {
     expect(calls.map((c) => (c.args[0] as StartExecutionArgs).p_order_id)).toEqual(['o2', 'o3', 'o1', 'o2']);
     expect(await db.queue.toArray()).toMatchObject([{ orderId: 'o2', attempts: 1 }]);
     expect(status).toEqual({ kind: 'waiting', retryAt: clock.now() + 5_000 });
+  });
+
+  describe('Q7: a hint of connectivity', () => {
+    /** o1 espera por rede, o2 por servidor, o3 (de outro usuário) por rede. */
+    async function waitingQueue() {
+      const db = newDb();
+      const clock = fakeClock();
+      let fail = true;
+      const { api, calls } = fakeApi({
+        startExecution: async (args: StartExecutionArgs) => {
+          if (!fail) return;
+          throw new ApiError(args.p_order_id === 'o2' ? 'server' : 'network', null, 'down');
+        },
+      });
+      await enqueueStart(db, { userId: 'u1', orderId: 'o1', clientStartedAt: at });
+      await enqueueStart(db, { userId: 'u1', orderId: 'o2', clientStartedAt: at });
+      await enqueueStart(db, { userId: 'u2', orderId: 'o3', clientStartedAt: at });
+      await processQueue({ db, api, lock: noLock, clock, userId: 'u1' });
+      clock.advance(5_000);
+      await processQueue({ db, api, lock: noLock, clock, userId: 'u1' });
+      await processQueue({ db, api, lock: noLock, clock, userId: 'u2' });
+      // Todas as esperas ainda no futuro.
+      expect((await db.queue.toArray()).every((i) => i.nextAttemptAt > clock.now())).toBe(true);
+      fail = false;
+      calls.length = 0;
+      return { db, api, calls, clock };
+    }
+
+    it('makes the waits for the network of the user due now, keeping the count of failures', async () => {
+      const { db } = await waitingQueue();
+      const [, o2, o3] = await db.queue.orderBy('id').toArray();
+
+      expect(await wakeNetworkWaits(db, 'u1')).toBe(1);
+
+      // o2 espera o servidor (o indício não diz nada dele) e o3 é de outro usuário (Q3): ficam como estavam.
+      expect(await db.queue.orderBy('id').toArray()).toEqual([
+        expect.objectContaining({ orderId: 'o1', nextAttemptAt: 0, attempts: 2, waitingFor: 'network' }),
+        o2,
+        o3,
+      ]);
+      expect(o2).toMatchObject({ waitingFor: 'server', attempts: 2 });
+    });
+
+    it('the next pass tries them before their time', async () => {
+      const { db, api, calls, clock } = await waitingQueue();
+
+      await wakeNetworkWaits(db, 'u1');
+      await processQueue({ db, api, lock: noLock, clock, userId: 'u1' });
+
+      // o1 vai já; o sucesso dele zera a espera de o2 (Q7), que vai em seguida.
+      expect(calls.map((c) => (c.args[0] as StartExecutionArgs).p_order_id)).toEqual(['o1', 'o2']);
+    });
+
+    it('with nothing waiting for the network, changes nothing', async () => {
+      const db = newDb();
+      await enqueueStart(db, { userId: 'u1', orderId: 'o1', clientStartedAt: at });
+
+      expect(await wakeNetworkWaits(db, 'u1')).toBe(0);
+    });
   });
 
   it("Q3: only the logged user's items are sent; the others stay untouched", async () => {

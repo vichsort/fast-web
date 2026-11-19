@@ -32,6 +32,7 @@ describe('queue module', () => {
         'retryBlocked',
         'runPass',
         'syncInWorker',
+        'wakeNetworkWaits',
         'webLock',
       ].sort(),
     );

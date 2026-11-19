@@ -23,7 +23,7 @@ export async function retryBlocked(db: FastDb, id: number): Promise<void> {
     .where('id')
     .equals(id)
     .filter((item) => item.state === 'blocked')
-    .modify({ state: 'pending', attempts: 0, nextAttemptAt: 0, lastError: null });
+    .modify({ state: 'pending', attempts: 0, nextAttemptAt: 0, waitingFor: null, lastError: null });
 }
 
 /** Recusas por regra de `start` e `materials` do usuário, em ordem de chegada (a do envio fica no rascunho). */

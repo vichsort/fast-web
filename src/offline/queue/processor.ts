@@ -83,12 +83,25 @@ function resettingWaitsOnSuccess({ db, api, userId }: QueueDeps): QueueApi {
           .where('userId')
           .equals(userId)
           .filter((i) => i.state === 'pending' && i.attempts > 0)
-          .modify({ attempts: 0, nextAttemptAt: 0, lastError: null });
+          .modify({ attempts: 0, nextAttemptAt: 0, waitingFor: null, lastError: null });
       }
       return result;
     };
   }
   return wrapped as unknown as QueueApi;
+}
+
+/**
+ * Q7: indício de conexão (o evento `online`, o `sync` do Background Sync, uma resposta HTTP do Supabase na página).
+ * As esperas por rede do usuário vencem já, sem zerar a contagem: se o indício enganar, a próxima falha espera mais.
+ * A espera por servidor (5xx, 429) continua: o indício não diz nada dele. Devolve quantos itens venceram.
+ */
+export function wakeNetworkWaits(db: FastDb, userId: string): Promise<number> {
+  return db.queue
+    .where('userId')
+    .equals(userId)
+    .filter((i) => i.state === 'pending' && i.waitingFor === 'network' && i.nextAttemptAt > 0)
+    .modify({ nextAttemptAt: 0 });
 }
 
 /** Q2: de cada O.S., só o item mais antigo do usuário (Q3) pode ser tentado. Em ordem de chegada. */
@@ -161,6 +174,7 @@ async function wait({ db, clock }: QueueDeps, item: QueueItem, failure: ApiError
     .modify((current) => {
       current.nextAttemptAt = clock.now() + Math.min(FIRST_WAIT_MS * 2 ** current.attempts, MAX_WAIT_MS);
       current.attempts += 1;
+      current.waitingFor = failure.errorClass === 'server' ? 'server' : 'network';
       current.lastError = failure.message;
     });
 }

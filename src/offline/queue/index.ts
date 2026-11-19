@@ -4,6 +4,6 @@ export { clearUser, dismissRefusal, listRefusals, pendingCount, retryBlocked } f
 export { enqueueMaterials, enqueueStart, enqueueSubmit } from './enqueue';
 export { ApiError, type ErrorClass } from './errors';
 export { QUEUE_LOCK_NAME, webLock } from './lock';
-export { processQueue, type QueueDeps, type QueueStatus } from './processor';
+export { processQueue, type QueueDeps, type QueueStatus, wakeNetworkWaits } from './processor';
 export { createSupabaseQueueApi, type QueueApiOptions, type QueueSupabaseClient } from './supabase-api';
 export { type PassResult, QUEUE_CHANNEL, type QueueMessage, runPass, SYNC_TAG, syncInWorker } from './sync';

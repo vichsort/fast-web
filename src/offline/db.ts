@@ -80,6 +80,8 @@ interface QueueItemBase {
   attempts: number;
   /** Epoch ms: antes disso não tenta de novo (espera crescente). */
   nextAttemptAt: number;
+  /** Por que espera (Q7): só a espera por rede vence com um indício de conexão; a por servidor, não. */
+  waitingFor: 'network' | 'server' | null;
   lastError: string | null;
   createdAt: string;
 }
