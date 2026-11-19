@@ -2,7 +2,7 @@
 // na fila e chega ao servidor uma vez só quando o sinal volta (queue.md; ../fast/docs/offline.md).
 import { expect, type Page, test } from '@playwright/test';
 import { t } from '@/lib/i18n';
-import { galleryJpeg, login } from '../support/app';
+import { galleryJpeg, login, readStore } from '../support/app';
 import { createOrder, serverOrder, users } from '../support/backend';
 
 test.use({
@@ -13,22 +13,10 @@ test.use({
   launchOptions: { args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] },
 });
 
-/** Tipo e tentativas dos itens da fila no Dexie (src/offline/db.ts): a espera não aparece na tela. */
-function queueAttempts(page: Page) {
-  return page.evaluate(
-    () =>
-      new Promise<{ type: string; attempts: number }[]>((resolve, reject) => {
-        const open = indexedDB.open('fast');
-        open.onerror = () => reject(open.error);
-        open.onsuccess = () => {
-          const read = open.result.transaction('queue').objectStore('queue').getAll();
-          read.onsuccess = () => {
-            resolve(read.result.map(({ type, attempts }) => ({ type, attempts })));
-            open.result.close();
-          };
-        };
-      }),
-  );
+/** Tipo e tentativas dos itens da fila: a espera não aparece na tela. */
+async function queueAttempts(page: Page) {
+  const items = await readStore<{ type: string; attempts: number }>(page, 'queue');
+  return items.map(({ type, attempts }) => ({ type, attempts }));
 }
 
 test('execução sem sinal com fotos chega ao servidor sem duplicar', async ({ page, context }) => {

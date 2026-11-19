@@ -3,27 +3,15 @@
 // O prazo padrão (5 s) é parte da prova: o acesso guardado não pode esperar repetições da consulta ao servidor.
 import { expect, type Page, test } from '@playwright/test';
 import { t } from '@/lib/i18n';
-import { login } from '../support/app';
+import { login, readStore } from '../support/app';
 import { createOrder, users } from '../support/backend';
 
 test.use({ serviceWorkers: 'allow' });
 
 /** O cache das leituras gravado no aparelho (a gravação é espaçada), como texto. */
-function cachedText(page: Page) {
-  return page.evaluate(
-    () =>
-      new Promise<string>((resolve, reject) => {
-        const open = indexedDB.open('fast');
-        open.onerror = () => reject(open.error);
-        open.onsuccess = () => {
-          const read = open.result.transaction('cache').objectStore('cache').getAll();
-          read.onsuccess = () => {
-            resolve(read.result.map((row: { value: string }) => row.value).join());
-            open.result.close();
-          };
-        };
-      }),
-  );
+async function cachedText(page: Page) {
+  const rows = await readStore<{ value: string }>(page, 'cache');
+  return rows.map((row) => row.value).join();
 }
 
 test('sem sinal, o app abre direto numa O.S. e na lista', async ({ page, context }) => {

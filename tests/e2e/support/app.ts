@@ -10,8 +10,27 @@ export async function login(page: Page, email: string) {
   await page.getByRole('button', { name: t('auth.login') }).click();
 }
 
+/** Todos os registros de uma tabela do IndexedDB do app (Dexie `fast`, src/offline/db.ts; `fast-auth`, a sessão). */
+export function readStore<T>(page: Page, store: string, database = 'fast') {
+  return page.evaluate(
+    ({ store, database }) =>
+      new Promise<T[]>((resolve, reject) => {
+        const open = indexedDB.open(database);
+        open.onerror = () => reject(open.error);
+        open.onsuccess = () => {
+          const read = open.result.transaction(store).objectStore(store).getAll();
+          read.onsuccess = () => {
+            resolve(read.result as T[]);
+            open.result.close();
+          };
+        };
+      }),
+    { store, database },
+  );
+}
+
 /** JPEG de verdade, desenhado no próprio navegador, para o seletor da galeria. */
-export async function galleryJpeg(page: Page) {
+export async function galleryJpeg(page: Page, name = 'galeria.jpg') {
   const dataUrl = await page.evaluate(() => {
     const canvas = document.createElement('canvas');
     canvas.width = 640;
@@ -25,15 +44,17 @@ export async function galleryJpeg(page: Page) {
     }
     return canvas.toDataURL('image/jpeg', 0.9);
   });
-  return { name: 'galeria.jpg', mimeType: 'image/jpeg', buffer: Buffer.from(dataUrl.split(',')[1] ?? '', 'base64') };
+  return { name, mimeType: 'image/jpeg', buffer: Buffer.from(dataUrl.split(',')[1] ?? '', 'base64') };
 }
 
-/** Na tela da execução: uma foto da galeria, o texto, revisar e enviar. Quem chama confere o aviso (fila ou enviado). */
-export async function submitWithGalleryPhoto(page: Page, description: string) {
-  const chooser = page.waitForEvent('filechooser');
-  await page.getByRole('button', { name: t('ui.actions.fromGallery') }).click();
-  await (await chooser).setFiles(await galleryJpeg(page));
-  await page.getByRole('button', { name: t('ui.photos.alt', { n: 1, total: 1 }) }).waitFor();
+/** Na tela da execução: fotos da galeria, o texto, revisar e enviar. Quem chama confere o aviso (fila ou enviado). */
+export async function submitWithGalleryPhoto(page: Page, description: string, photos = 1) {
+  for (let n = 1; n <= photos; n++) {
+    const chooser = page.waitForEvent('filechooser');
+    await page.getByRole('button', { name: t('ui.actions.fromGallery') }).click();
+    await (await chooser).setFiles(await galleryJpeg(page, `galeria-${n}.jpg`));
+    await page.getByRole('button', { name: t('ui.photos.alt', { n, total: n }) }).waitFor();
+  }
   await page.getByLabel(t('technician.execution.description')).fill(description);
   await page.getByRole('button', { name: t('technician.execution.review') }).click();
   await page.getByRole('button', { name: t('technician.execution.send') }).click();

@@ -43,6 +43,7 @@ Esboço visual do sistema inteiro antes da integração real, pedido em 2026-11-
 - [x] E2E: envio recusado por O.S. cancelada fica com o motivo até o técnico apagar ([refused-submission.spec.ts](../tests/e2e/technician/refused-submission.spec.ts); [e2e.md](e2e.md), P5).
 - [x] E2E: o app abre sem sinal direto numa O.S. ([offline-open.spec.ts](../tests/e2e/technician/offline-open.spec.ts); [e2e.md](e2e.md), S1); achou ~7 s de espera pelas repetições da consulta do acesso, corrigida ([screens.md](screens.md#decisões)).
 - [x] E2E: ciclo de revisão entre as duas interfaces, rejeitar, refazer e aprovar ([review-cycle.spec.ts](../tests/e2e/office/review-cycle.spec.ts); [e2e.md](e2e.md), E1).
+- [x] E2E: sessão perdida com envios na fila, entrar de novo manda a fila ([lost-session.spec.ts](../tests/e2e/technician/lost-session.spec.ts); [e2e.md](e2e.md), P3).
 
 ## 4. Escritório
 
