@@ -36,7 +36,9 @@ export function createSupabaseQueueApi(client: QueueSupabaseClient, options: Que
   }
 
   async function invoke<T>(name: string, body: PhotoRef): Promise<T> {
-    const { data, error } = await client.functions.invoke<T>(name, { body, timeout: requestTimeoutMs });
+    const { data, error } = await withTimeout(requestTimeoutMs, () =>
+      client.functions.invoke<T>(name, { body, timeout: requestTimeoutMs }),
+    );
     if (error) throw await classifyFunctionError(error);
     return data as T;
   }
@@ -69,12 +71,12 @@ export function createSupabaseQueueApi(client: QueueSupabaseClient, options: Que
           fetchImpl(url, { method: 'PUT', headers: { 'Content-Type': 'image/jpeg' }, body: file, signal }),
         );
       } catch (error) {
-        throw classifyFetchFailure(error);
+        throw error instanceof ApiError ? error : classifyFetchFailure(error);
       }
       if (!response.ok) throw classifyHttpStatus(response.status);
     },
     async refreshSession() {
-      const { data, error } = await client.auth.refreshSession();
+      const { data, error } = await withTimeout(requestTimeoutMs, () => client.auth.refreshSession());
       if (!error) return data.session !== null;
       // A página ou o worker renovou primeiro: a sessão nova já está no storage. Se foi um logout, o próximo erro de
       // sessão (logo depois de uma renovação) para a fila pedindo login.
@@ -88,12 +90,22 @@ export function createSupabaseQueueApi(client: QueueSupabaseClient, options: Que
   };
 }
 
-/** Roda `fn` com um sinal que aborta depois de `ms`. */
+/**
+ * Roda `fn` com um sinal que aborta depois de `ms`; passado o prazo, falha como Rede mesmo que `fn` ignore o sinal.
+ * O supabase-js busca o token (e pode renovar a sessão, sem timeout) antes do fetch, onde o sinal não chega: sem a
+ * corrida, uma conexão pendurada seguraria a passada e o lock da fila.
+ */
 async function withTimeout<T>(ms: number, fn: (signal: AbortSignal) => PromiseLike<T>): Promise<T> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(new DOMException('timeout', 'TimeoutError')), ms);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const expired = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => {
+      controller.abort(new DOMException('timeout', 'TimeoutError'));
+      reject(new ApiError('network', null, `TimeoutError: no answer in ${ms} ms`));
+    }, ms);
+  });
   try {
-    return await fn(controller.signal);
+    return await Promise.race([fn(controller.signal), expired]);
   } finally {
     clearTimeout(timer);
   }

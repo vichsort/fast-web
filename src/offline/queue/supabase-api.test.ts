@@ -202,6 +202,31 @@ describe('supabase queue api', () => {
     await expect(api.refreshSession()).rejects.toMatchObject({ errorClass: 'server' });
   });
 
+  it('Q6: a renewal that never answers is a network failure after the request timeout', async () => {
+    const { client } = fakeClient({ refresh: () => new Promise(() => {}) });
+    const api = createSupabaseQueueApi(client, { requestTimeoutMs: 10 });
+
+    await expect(api.refreshSession()).rejects.toMatchObject({ errorClass: 'network' });
+  });
+
+  it('Q6: an RPC stuck before its fetch (waiting for the token) still fails in time, as network', async () => {
+    // O supabase-js busca o token antes do fetch, e o sinal só vale para o fetch: uma renovação pendurada ali
+    // ignoraria o abort.
+    const { client } = fakeClient({ rpc: () => new Promise(() => {}) });
+    const api = createSupabaseQueueApi(client, { requestTimeoutMs: 10 });
+
+    await expect(api.startExecution({ p_order_id: 'o1', p_client_started_at: 't' })).rejects.toMatchObject({
+      errorClass: 'network',
+    });
+  });
+
+  it('Q6: a photo Edge Function stuck before its fetch still fails in time, as network', async () => {
+    const { client } = fakeClient({ invoke: () => new Promise(() => {}) });
+    const api = createSupabaseQueueApi(client, { requestTimeoutMs: 10 });
+
+    await expect(api.requestPhotoUpload(photo)).rejects.toMatchObject({ errorClass: 'network' });
+  });
+
   it('Q6: a renewal discarded because the page or the worker renewed first counts as renewed', async () => {
     const { client } = fakeClient({
       refresh: async () => ({ data: { session: null }, error: new AuthRefreshDiscardedError() }),

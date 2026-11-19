@@ -42,11 +42,11 @@ O pior caso do produto: serviço feito que nunca chega ao escritório.
 | ID | Ponto | Por que pesa | Onde | Hoje | Teste |
 | --- | --- | --- | --- | --- | --- |
 | T1 | Sinal de volta sem tentar nada | envio parado com sinal no celular | `wakeNetworkWaits` (Q7) | corrigido em 2026-11-19 | E2E (`online`); unit (`sync` e respostas HTTP) |
-| T2 | ⚠️ `refreshSession` da fila sem timeout | RPC, Edge Function e PUT têm timeout; a renovação não, e o `fetch` do auth-js também não tem (verificado no 2.119). Com a conexão pendurada, a passada não termina: a página fica `running` e ignora as novas acordadas até recarregar, e o lock segura o `sync` do worker | `supabase-api.ts` | lacuna | unit: renovação que nunca responde vira Rede no timeout |
+| T2 | `refreshSession` da fila sem timeout | RPC, Edge Function e PUT tinham timeout só pelo sinal, que não chega à busca do token, e a renovação não tinha nenhum (o `fetch` do auth-js não tem). Uma conexão pendurada segurava a passada e o lock | `supabase-api.ts`, `supabase-fetch.ts` | corrigido em 2026-11-19 ([queue.md](queue.md#decisões)) | unit |
 | T3 | Um item por vez no aparelho (Q2) | uma O.S. com 20 fotos em 2G segura as outras | `processor.ts` | por design | medir em campo |
 | T4 | Background Sync com o app fechado | o Chrome tenta o `sync` poucas vezes, com espera própria; esgotado, só a página manda (o app tem de abrir) | `sw.ts` | unit | campo; o Playwright não simula |
 | T5 | Aba congelada pelo Android em segundo plano | a fila da página para; só o `sync` do worker cobre | `runner.ts` | — | campo |
-| T6 | Celular "conectado" sem dados | o `online` não dispara; só a resposta HTTP e o timer (até 1 min) acordam a fila | `response-signal.ts` | unit | — |
+| T6 | Celular "conectado" sem dados | o `online` não dispara; só a resposta HTTP e o timer (até 1 min) acordam a fila | `supabase-fetch.ts` | unit | — |
 
 ## Gargalos
 

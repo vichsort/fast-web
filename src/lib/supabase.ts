@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { authLinkError, authLinkType } from '@/app/access';
 import { createAuthStorage } from './auth-storage';
 import type { Database } from './database.types';
-import { signalingFetch } from './response-signal';
+import { authTimeoutFetch, signalingFetch } from './supabase-fetch';
 
 const url = import.meta.env.VITE_SUPABASE_URL;
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -33,7 +33,7 @@ export const supabase = createClient<Database>(url, anonKey, {
   auth: { storage: createAuthStorage(), persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
   global: {
     fetch: signalingFetch(
-      (...args) => fetch(...args),
+      authTimeoutFetch((...args) => fetch(...args)),
       () => {
         for (const listener of responseListeners) listener();
       },

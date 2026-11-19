@@ -6,6 +6,7 @@ import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from
 import { NavigationRoute, registerRoute } from 'workbox-routing';
 import { createAuthStorage } from '@/lib/auth-storage';
 import type { Database } from '@/lib/database.types';
+import { authTimeoutFetch } from '@/lib/supabase-fetch';
 import { db } from '@/offline/db';
 import {
   createSupabaseQueueApi,
@@ -38,6 +39,7 @@ self.addEventListener('message', (event) => {
 // chamada precisa, e a corrida com a página é resolvida pelo supabase-js e pelo servidor (docs/queue.md, Decisões).
 const supabase = createClient<Database>(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY, {
   auth: { storage: createAuthStorage(), persistSession: true, autoRefreshToken: false, detectSessionInUrl: false },
+  global: { fetch: authTimeoutFetch((...args) => fetch(...args)) },
 });
 const api = createSupabaseQueueApi(supabase);
 const lock = webLock();
