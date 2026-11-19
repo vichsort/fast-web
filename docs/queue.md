@@ -40,6 +40,7 @@ A fila roda na página e no worker ([`src/sw.ts`](../src/sw.ts)), com o mesmo c�
 | --- | --- |
 | Passada | `runPass`: roda o `processQueue` sob o lock `fast-queue` (página e worker nunca juntos, Q9) e diz se algo saiu da fila (`sent`) e se houve recusa nova (`refused`) |
 | Página | [`runner.ts`](../src/technician/api/real/runner.ts): ao abrir, ao voltar o sinal e a aba, depois de cada ação; esperando rede, timer até a hora marcada |
+| Indício de conexão na página | o evento `online` e qualquer resposta HTTP do Supabase (o `fetch` do cliente avisa, [`response-signal.ts`](../src/lib/response-signal.ts)): as esperas por rede vencem e a fila roda (`hintConnectivity`, Q7). A resposta cobre o celular "conectado" sem dados, em que o `online` nunca dispara |
 | Background Sync | cada ação que põe na fila (`queued()` em `actions.ts`) também registra a tag `fast-queue`; o evento `sync` do worker roda a passada (`syncInWorker`) |
 | Fila esperando rede no worker | o `sync` é indício de conexão (Q7): as esperas por rede vencem antes da passada. Se ainda sobra item esperando, o evento falha de propósito e o navegador agenda outra tentativa; sem login (`needs_login`), termina: só a página entra de novo |
 | Supabase no worker | cliente próprio, com a sessão do IndexedDB (`createAuthStorage()`), `detectSessionInUrl: false` e `autoRefreshToken: false` (renova quando uma chamada precisa); [`supabase.ts`](../src/lib/supabase.ts) lê `window.location` e não entra no worker |

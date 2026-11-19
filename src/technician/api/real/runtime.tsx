@@ -10,10 +10,11 @@ import { useAuth } from '@/app/auth-context';
 import { LoadingDetail } from '@/components/states';
 import { usingMocks } from '@/lib/data-source';
 import { t } from '@/lib/i18n';
+import { onSupabaseResponse } from '@/lib/supabase';
 import { bindTechnician } from './context';
 import { stopLocal, watchLocal } from './local';
 import { persistTechnicianCache } from './persist';
-import { kick, listenToWorker, onAfterRun, stopRunner } from './runner';
+import { hintConnectivity, kick, listenToWorker, onAfterRun, stopRunner } from './runner';
 
 export function TechnicianRuntime({ access, children }: { access: Access; children: React.ReactNode }) {
   if (usingMocks || !('companyId' in access)) return children;
@@ -55,7 +56,12 @@ function RealRuntime({
   React.useEffect(() => {
     if (!userId || !restored) return;
     void kick();
-    const wake = () => void kick();
+    // Sinal de volta: o que espera por rede vai já (Q7); sem nada esperando, roda a fila assim mesmo.
+    const wake = () =>
+      void hintConnectivity().then((kicked) => {
+        if (!kicked) void kick();
+      });
+    const stopResponses = onSupabaseResponse(() => void hintConnectivity());
     const visible = () => {
       if (document.visibilityState !== 'visible') return;
       void kick();
@@ -71,6 +77,7 @@ function RealRuntime({
     });
     return () => {
       window.removeEventListener('online', wake);
+      stopResponses();
       document.removeEventListener('visibilitychange', visible);
       stopWorker();
       stopAfter();

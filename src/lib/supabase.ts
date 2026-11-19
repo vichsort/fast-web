@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { authLinkError, authLinkType } from '@/app/access';
 import { createAuthStorage } from './auth-storage';
 import type { Database } from './database.types';
+import { signalingFetch } from './response-signal';
 
 const url = import.meta.env.VITE_SUPABASE_URL;
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -20,6 +21,22 @@ export const clearAuthLink = () => {
 /** O app abriu por um link de email expirado ou já usado: o login avisa. */
 export const authLinkFailed = authLinkError(window.location.hash);
 
+const responseListeners = new Set<() => void>();
+
+/** Avisa a cada resposta HTTP do Supabase (indício de conexão para a fila do técnico, docs/queue.md Q7). */
+export function onSupabaseResponse(listener: () => void): () => void {
+  responseListeners.add(listener);
+  return () => responseListeners.delete(listener);
+}
+
 export const supabase = createClient<Database>(url, anonKey, {
   auth: { storage: createAuthStorage(), persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+  global: {
+    fetch: signalingFetch(
+      (...args) => fetch(...args),
+      () => {
+        for (const listener of responseListeners) listener();
+      },
+    ),
+  },
 });

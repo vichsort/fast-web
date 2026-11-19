@@ -12,6 +12,7 @@ import {
   type QueueStatus,
   runPass,
   SYNC_TAG,
+  wakeNetworkWaits,
   webLock,
 } from '@/offline/queue';
 import { currentOrNull } from './context';
@@ -81,6 +82,18 @@ function applyPass({ status, sent, refused }: PassResult) {
     timer = setTimeout(() => void kick(), Math.max(1_000, status.retryAt - Date.now()));
   }
   for (const listener of afterRun) listener({ sent, refused });
+}
+
+/**
+ * Indício de conexão (Q7): o evento `online` ou uma resposta do Supabase. As esperas por rede vencem e, se alguma
+ * venceu, a fila roda. Diz se acordou a fila.
+ */
+export async function hintConnectivity(): Promise<boolean> {
+  const context = currentOrNull();
+  if (!context) return false;
+  if ((await wakeNetworkWaits(db, context.userId)) === 0) return false;
+  void kick();
+  return true;
 }
 
 /** A tela pôs algo na fila: tenta já e deixa o Background Sync de reserva (sinal que volta com o app fechado). */
