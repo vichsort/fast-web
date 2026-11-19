@@ -6,6 +6,7 @@ import { ACTIVE_ORDER_STATUSES, type MemberRole, type OrderPriority, type Servic
 import { calendarDay } from '@/lib/format';
 import {
   type AuditView,
+  type Client,
   type ClientAddress,
   type ClientDetail,
   type ClientListItem,
@@ -29,7 +30,7 @@ import {
   type Profile,
 } from '@/mocks';
 import { ApiError } from '@/offline/queue/errors';
-import { addressText, isOverdue, orderMatches, seenUntil } from './derive';
+import { addressText, clientMatches, isOverdue, orderMatches, seenUntil } from './derive';
 
 const LATENCY = 150;
 const wait = <T>(value: T): Promise<T> =>
@@ -199,12 +200,10 @@ export async function officeListClients(
   filters: { search?: string; includeDeleted?: boolean } = {},
 ): Promise<ClientListItem[]> {
   const s = await store();
-  const q = filters.search?.trim().toLowerCase() ?? '';
-  const digits = q.replace(/\D/g, '');
   return wait(
     s.clients
       .filter((c) => filters.includeDeleted || c.deleted_at === null)
-      .filter((c) => !q || c.name.toLowerCase().includes(q) || (digits.length > 0 && (c.phone ?? '').includes(digits)))
+      .filter((c) => clientMatches(c, filters.search ?? ''))
       .map((c) => clientListItem(s, c))
       .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')),
   );
@@ -235,6 +234,14 @@ export async function officeTechnicians(): Promise<PersonRef[]> {
       .map((m) => ({ id: m.user_id, full_name: m.profile.full_name }))
       .sort((a, b) => a.full_name.localeCompare(b.full_name, 'pt-BR')),
   );
+}
+
+/** Pessoas que o usuário enxerga (quem divide a empresa, inclusive removidos), para mostrar nomes por id. */
+export async function officePeople(): Promise<PersonRef[]> {
+  const s = await store();
+  const people = new Map<string, PersonRef>();
+  for (const p of [...s.members.map((m) => m.profile), ...profiles.values()]) people.set(p.id, ref(p));
+  return wait([...people.values()]);
 }
 
 export async function officeAudit(): Promise<AuditView[]> {
@@ -561,7 +568,10 @@ export async function createClient(input: {
 }
 
 /** Update direto de `clients` (nome, telefone, observações). */
-export async function updateClient(id: string, input: { name: string; phone: string | null; notes: string | null }) {
+export async function updateClient(
+  id: string,
+  input: { name: string; phone: string | null; notes: string | null },
+): Promise<Client> {
   const s = await store();
   const c = activeClient(s, id);
   if (!input.name.trim()) fail('invalid_input');
@@ -572,13 +582,15 @@ export async function updateClient(id: string, input: { name: string; phone: str
 }
 
 /** add_client_address: vira principal se pedido ou se não há principal ativo (02, R3). */
-export async function addAddress(clientId: string, input: AddressInput, makePrimary: boolean) {
+export async function addAddress(target: { id: string; clientId: string }, input: AddressInput, makePrimary: boolean) {
   const s = await store();
+  const clientId = target.clientId;
   const c = activeClient(s, clientId);
+  if (c.addresses.some((a) => a.id === target.id)) return wait(target.id);
   const hasPrimary = c.addresses.some((a) => a.is_primary && a.deleted_at === null);
   const primary = makePrimary || !hasPrimary;
   if (primary) for (const a of c.addresses) a.is_primary = false;
-  const address = newAddress(s, clientId, input, primary);
+  const address = { ...newAddress(s, clientId, input, primary), id: target.id };
   c.addresses.push(address);
   return wait(address.id);
 }
@@ -619,7 +631,7 @@ export async function deleteAddress(addressId: string, reason: string, actor: Pe
 }
 
 /** delete_client: recusa com O.S. em andamento (02, R7). */
-export async function deleteClient(id: string, reason: string, actor: PersonRef) {
+export async function deleteClient(id: string, reason: string, actor: PersonRef): Promise<Client> {
   const s = await store();
   const c = activeClient(s, id);
   if (!reason.trim()) fail('reason_required');

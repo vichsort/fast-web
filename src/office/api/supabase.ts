@@ -3,9 +3,18 @@
 import type { PostgrestError } from '@supabase/supabase-js';
 import type { Database } from '@/lib/database.types';
 import { supabase } from '@/lib/supabase';
-import type { DashboardCounts, LateSupplementItem, OrderDetail, OrderFilters } from '@/mocks';
+import type { DashboardCounts, LateSupplementItem, OrderDetail, OrderFilters, PersonRef } from '@/mocks';
 import { ApiError, classifyFunctionError, classifyRpcError } from '@/offline/queue/errors';
-import { type OrderRow, orderMatches, toOrderDetail } from '../derive';
+import {
+  type ClientRow,
+  clientMatches,
+  directWriteError,
+  type OrderRow,
+  orderMatches,
+  toClientListItem,
+  toOrderDetail,
+} from '../derive';
+import type { AddressInput } from '../mocks';
 import type { OfficeApi } from './types';
 
 type Functions = Database['public']['Functions'];
@@ -57,6 +66,21 @@ export async function invoke<T>(name: string, body: Record<string, unknown>): Pr
   if (error) throw await classifyFunctionError(error);
   return data as T;
 }
+
+/**
+ * Update direto (api.md): o RLS barra sem erro, com zero linhas, então pede a linha de volta e sem ela é `not_found`.
+ * CHECK, UNIQUE e NOT NULL viram `invalid_input`.
+ */
+async function update<R extends Response>(query: PromiseLike<R>): Promise<Data<R>> {
+  const { data, error, status } = await query;
+  if (error) throw directWriteError(error, status);
+  if (data === null) throw new ApiError('rule', 'not_found', 'not_found');
+  return data as Data<R>;
+}
+
+const blankToNull = (v: string | null | undefined) => (v && v.trim() !== '' ? v.trim() : null);
+/** Telefone só com dígitos, como os dados de exemplo (o link do WhatsApp e a busca usam os dígitos). */
+const phoneDigits = (v: string | null) => blankToNull(v?.replace(/\D/g, '') ?? null);
 
 /** Ainda sem integração: a tela mostra o erro genérico em vez de fingir que gravou. */
 const pending =
@@ -145,12 +169,125 @@ async function officeLateSupplements(): Promise<LateSupplementItem[]> {
     .sort((a, b) => Date.parse(b.supplement.received_at) - Date.parse(a.supplement.received_at));
 }
 
+// ---------------------------------------------------------------- clientes (02)
+
+const ADDRESS_COLUMNS =
+  'id, company_id, client_id, label, street, number, complement, district, city, state, zip_code, reference, is_primary, created_at, deleted_at, deleted_by, delete_reason';
+
+const CLIENT_SELECT = `*, addresses:client_addresses(${ADDRESS_COLUMNS}), orders:service_orders(status)`;
+
+async function clientRows(filter: (q: ReturnType<typeof clientQuery>) => ReturnType<typeof clientQuery>) {
+  return (await rows(filter(clientQuery()))) as unknown as ClientRow[];
+}
+
+function clientQuery() {
+  return supabase.from('clients').select(CLIENT_SELECT).eq('company_id', current().companyId);
+}
+
+/** Clientes por nome; os excluídos só quando pedidos (api.md: "ativos" filtram no front). Busca no front. */
+async function officeListClients(filters: { search?: string; includeDeleted?: boolean } = {}) {
+  const found = await clientRows((q) => (filters.includeDeleted ? q : q.is('deleted_at', null)));
+  return found
+    .filter((c) => clientMatches(c, filters.search ?? ''))
+    .map(toClientListItem)
+    .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+}
+
+async function officeGetClient(id: string) {
+  const [found, orders] = await Promise.all([clientRows((q) => q.eq('id', id)), officeListOrders({ client_id: id })]);
+  const row = found[0];
+  if (!row) return null;
+  const { open_orders } = toClientListItem(row);
+  return { ...row, orders, open_orders };
+}
+
+/** `p_address` de create_client e add_client_address (02, "Formato de endereço"). */
+const addressPayload = (a: AddressInput) => ({
+  label: blankToNull(a.label),
+  zip_code: blankToNull(a.zip_code),
+  street: a.street.trim(),
+  number: blankToNull(a.number),
+  complement: blankToNull(a.complement),
+  district: blankToNull(a.district),
+  city: a.city.trim(),
+  state: a.state.trim(),
+  reference: blankToNull(a.reference),
+});
+
+async function createClient(input: {
+  id: string;
+  name: string;
+  phone: string | null;
+  notes: string | null;
+  address: AddressInput | null;
+}) {
+  const created = await rpc('create_client', {
+    p_id: input.id,
+    p_company_id: current().companyId,
+    p_name: input.name.trim(),
+    p_phone: phoneDigits(input.phone) ?? undefined,
+    p_notes: blankToNull(input.notes) ?? undefined,
+    p_address: input.address ? addressPayload(input.address) : undefined,
+  });
+  return created as unknown as { client_id: string; address_id: string | null };
+}
+
+async function updateClient(id: string, input: { name: string; phone: string | null; notes: string | null }) {
+  return update(
+    supabase
+      .from('clients')
+      .update({ name: input.name.trim(), phone: phoneDigits(input.phone), notes: blankToNull(input.notes) })
+      .eq('id', id)
+      .select('*')
+      .maybeSingle(),
+  );
+}
+
+async function addAddress(target: { id: string; clientId: string }, input: AddressInput, makePrimary: boolean) {
+  return rpc('add_client_address', {
+    p_id: target.id,
+    p_client_id: target.clientId,
+    p_address: addressPayload(input),
+    p_make_primary: makePrimary,
+  });
+}
+
+async function updateAddress(addressId: string, input: AddressInput) {
+  return update(
+    supabase
+      .from('client_addresses')
+      .update(addressPayload(input))
+      .eq('id', addressId)
+      .is('deleted_at', null)
+      .select(ADDRESS_COLUMNS)
+      .maybeSingle(),
+  );
+}
+
+async function setPrimaryAddress(addressId: string) {
+  await rpc('set_primary_address', { p_address_id: addressId });
+  return addressId;
+}
+
+async function deleteAddress(addressId: string, reason: string, _actor: PersonRef) {
+  return rpc('delete_client_address', { p_address_id: addressId, p_reason: reason });
+}
+
+async function deleteClient(id: string, reason: string, _actor: PersonRef) {
+  return rpc('delete_client', { p_client_id: id, p_reason: reason });
+}
+
 // ---------------------------------------------------------------- empresa e usuário
 
 async function officeCompany() {
   const company = await one(supabase.from('companies').select('*').eq('id', current().companyId).maybeSingle());
   if (bound) bound.timeZone = company.timezone;
   return company;
+}
+
+/** O RLS de `profiles` mostra quem divide a empresa, inclusive os removidos (01). */
+async function officePeople(): Promise<PersonRef[]> {
+  return rows(supabase.from('profiles').select(PERSON));
 }
 
 async function officeSessionUser(_role: 'owner' | 'manager') {
@@ -162,11 +299,12 @@ export const supabaseApi: OfficeApi = {
   officeGetOrder,
   officeDashboard,
   officeLateSupplements,
-  officeListClients: pending('officeListClients'),
-  officeGetClient: pending('officeGetClient'),
+  officeListClients,
+  officeGetClient,
   officeListMembers: pending('officeListMembers'),
   officeTechnicians: pending('officeTechnicians'),
   officeAudit: pending('officeAudit'),
+  officePeople,
   officeCompany,
   officeSessionUser,
   createOrder: pending('createOrder'),
@@ -176,13 +314,13 @@ export const supabaseApi: OfficeApi = {
   cancelOrder: pending('cancelOrder'),
   reviewExecution: pending('reviewExecution'),
   acknowledgeSupplements: pending('acknowledgeSupplements'),
-  createClient: pending('createClient'),
-  updateClient: pending('updateClient'),
-  addAddress: pending('addAddress'),
-  updateAddress: pending('updateAddress'),
-  setPrimaryAddress: pending('setPrimaryAddress'),
-  deleteAddress: pending('deleteAddress'),
-  deleteClient: pending('deleteClient'),
+  createClient,
+  updateClient,
+  addAddress,
+  updateAddress,
+  setPrimaryAddress,
+  deleteAddress,
+  deleteClient,
   updateCompany: pending('updateCompany'),
   inviteMember: pending('inviteMember'),
   updateMemberRole: pending('updateMemberRole'),

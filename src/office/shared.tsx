@@ -130,6 +130,18 @@ export const textLink = 'font-medium underline-offset-4 hover:underline';
 export const phoneDigits = (value: string) => value.replace(/\D/g, '');
 
 /**
+ * `p_id` de uma criação (api.md, idempotência): um por abertura do diálogo, o mesmo em cada nova tentativa, para a
+ * resposta perdida não virar um registro duplicado.
+ */
+export function useCreateId(open: boolean): string {
+  const [id, setId] = React.useState(() => crypto.randomUUID());
+  React.useEffect(() => {
+    if (open) setId(crypto.randomUUID());
+  }, [open]);
+  return id;
+}
+
+/**
  * Diálogo controlado que não fecha quando o envio falha (campos obrigatórios, erro de regra). Os diálogos do kit fecham
  * quando o `onSubmit` resolve; chamar `stayOpen()` antes de resolver ignora esse fechamento.
  */

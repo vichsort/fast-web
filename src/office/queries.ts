@@ -1,5 +1,6 @@
 // Leituras do escritório (TanStack Query), com a chave 'office' para as ações recarregarem tudo de uma vez.
 import { useQuery } from '@tanstack/react-query';
+import * as React from 'react';
 import type { OrderFilters } from '@/mocks';
 import {
   officeAudit,
@@ -10,6 +11,7 @@ import {
   officeListClients,
   officeListMembers,
   officeListOrders,
+  officePeople,
   officeTechnicians,
 } from './api';
 
@@ -41,3 +43,10 @@ export const useTechnicians = () =>
   useQuery({ queryKey: ['office', 'technicians'], queryFn: () => officeTechnicians() });
 
 export const useAudit = () => useQuery({ queryKey: ['office', 'audit'], queryFn: () => officeAudit() });
+
+/** Nome de uma pessoa por id (autor de exclusão, cancelamento, histórico); '—' enquanto carrega ou se não visível. */
+export function usePersonName(): (id: string | null | undefined) => string {
+  const people = useQuery({ queryKey: ['office', 'people'], queryFn: () => officePeople(), staleTime: 5 * 60_000 });
+  const data = people.data;
+  return React.useCallback((id) => (id ? (data?.find((p) => p.id === id)?.full_name ?? '—') : '—'), [data]);
+}

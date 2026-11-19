@@ -17,6 +17,7 @@ export const {
   officeListMembers,
   officeTechnicians,
   officeAudit,
+  officePeople,
   officeCompany,
   officeSessionUser,
   createOrder,

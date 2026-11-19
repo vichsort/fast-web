@@ -12,7 +12,7 @@ import { t } from '@/lib/i18n';
 import type { Client } from '@/mocks';
 import { createClient, updateClient } from '../api';
 import { useOfficeAction } from '../session';
-import { useStayOpen } from '../shared';
+import { useCreateId, useStayOpen } from '../shared';
 import { AddressFields, addressValid, draftToInput, emptyAddress } from './address-form';
 
 interface ClientDraft {
@@ -98,6 +98,7 @@ export function NewClientPanel({
   const [withAddress, setWithAddress] = React.useState(false);
   const [address, setAddress] = React.useState(emptyAddress);
   const [showErrors, setShowErrors] = React.useState(false);
+  const id = useCreateId(open);
   React.useEffect(() => {
     if (!open) return;
     setDraft({ name: '', phone: '', notes: '' });
@@ -111,7 +112,6 @@ export function NewClientPanel({
       setShowErrors(true);
       return stayOpen();
     }
-    const id = crypto.randomUUID();
     const result = await run(t('office.clientForm.create'), () =>
       createClient({ id, ...draft, address: withAddress ? draftToInput(address) : null }),
     );
@@ -159,6 +159,7 @@ export function QuickClientDialog({
   const [handleOpenChange, stayOpen] = useStayOpen(onOpenChange);
   const [draft, setDraft] = React.useState<ClientDraft>({ name: '', phone: '', notes: '' });
   const [showErrors, setShowErrors] = React.useState(false);
+  const id = useCreateId(open);
   React.useEffect(() => {
     if (!open) return;
     setDraft({ name: initialName, phone: '', notes: '' });
@@ -170,7 +171,6 @@ export function QuickClientDialog({
       setShowErrors(true);
       return stayOpen();
     }
-    const id = crypto.randomUUID();
     const result = await run(t('office.orderForm.quickClientAction'), () =>
       createClient({ id, name: draft.name, phone: draft.phone, notes: null, address: null }),
     );

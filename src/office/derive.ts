@@ -7,6 +7,7 @@ import type {
   AttemptView,
   Client,
   ClientAddress,
+  ClientListItem,
   Execution,
   ExecutionView,
   HistoryEvent,
@@ -16,7 +17,7 @@ import type {
   Photo,
   ServiceOrder,
 } from '@/mocks';
-import { ApiError } from '@/offline/queue/errors';
+import { ApiError, classifyRpcError, type RpcError } from '@/offline/queue/errors';
 import { executionAlerts, photoAlerts } from '@/photos/alerts';
 
 export interface ExecutionRow extends Execution {
@@ -35,6 +36,12 @@ export interface OrderRow extends ServiceOrder {
   executions: ExecutionRow[];
   /** Só no detalhe. */
   history?: (HistoryEvent & { actor: PersonRef | null })[];
+}
+
+/** Linha de `clients` com os endereços e o status das O.S. (CLIENT_SELECT em api/supabase.ts). */
+export interface ClientRow extends Client {
+  addresses: ClientAddress[];
+  orders: Pick<ServiceOrder, 'status'>[];
 }
 
 const OVERDUE_STATUSES: readonly string[] = ['open', 'in_progress', 'rejected'];
@@ -113,6 +120,34 @@ export function orderMatches(o: OrderDetail, f: OrderFilters, timeZone: string):
   if (f.overdue && !o.overdue) return false;
   if (f.unassigned && (o.assignees.length > 0 || !ACTIVE_ORDER_STATUSES.includes(o.status))) return false;
   return true;
+}
+
+/** Cliente como a lista mostra: principal ativo, endereços ativos e O.S. em andamento (02, R7). */
+export function toClientListItem(row: ClientRow): ClientListItem {
+  const { addresses, orders, ...client } = row;
+  const active = addresses.filter((a) => a.deleted_at === null);
+  return {
+    ...client,
+    primary_address: active.find((a) => a.is_primary) ?? null,
+    address_count: active.length,
+    open_orders: orders.filter((o) => ACTIVE_ORDER_STATUSES.includes(o.status)).length,
+  };
+}
+
+/** Busca de clientes: parte do nome (sem caixa) ou dígitos do telefone. */
+export function clientMatches(c: Pick<Client, 'name' | 'phone'>, search: string): boolean {
+  const q = search.trim().toLowerCase();
+  if (!q) return true;
+  const digits = q.replace(/\D/g, '');
+  return c.name.toLowerCase().includes(q) || (digits.length > 0 && (c.phone ?? '').replace(/\D/g, '').includes(digits));
+}
+
+/** Falha de um update direto: CHECK, UNIQUE e NOT NULL são dado fora da regra (errors.md, `invalid_input`). */
+export function directWriteError(error: RpcError, status: number): ApiError {
+  if (['23514', '23505', '23502'].includes(error.code ?? '')) {
+    return new ApiError('rule', 'invalid_input', error.message);
+  }
+  return classifyRpcError(error, status);
 }
 
 /** Texto do endereço copiado na O.S. (03, R3). */

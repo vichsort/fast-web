@@ -45,9 +45,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { UserChip } from '@/components/user';
 import { formatDate, formatDateTime, formatOrderNumber, formatRelative } from '@/lib/format';
 import { t } from '@/lib/i18n';
-import { getPerson, type OrderDetail } from '@/mocks';
+import type { OrderDetail } from '@/mocks';
 import { acknowledgeSupplements, cancelOrder, seenUntil, setAssignees, updateMaterials } from '../api';
-import { useOrder, useTechnicians } from '../queries';
+import { useOrder, usePersonName, useTechnicians } from '../queries';
 import { useOffice, useOfficeAction } from '../session';
 import { NotFound, Notice, textLink } from '../shared';
 
@@ -77,6 +77,7 @@ function shareUrl(o: OrderDetail): string {
 }
 
 function OrderDetailView({ order: o }: { order: OrderDetail }) {
+  const personName = usePersonName();
   const { timeZone, actor, company } = useOffice();
   const run = useOfficeAction();
   const [cancelling, setCancelling] = React.useState(false);
@@ -170,7 +171,7 @@ function OrderDetailView({ order: o }: { order: OrderDetail }) {
               {o.cancelled_at && (
                 <p className="text-xs opacity-80">
                   {t('office.orderDetail.cancelledBy', {
-                    name: getPerson(o.cancelled_by ?? '')?.full_name ?? '—',
+                    name: personName(o.cancelled_by),
                     time: formatDateTime(o.cancelled_at, timeZone),
                   })}
                 </p>
@@ -386,8 +387,7 @@ function OrderDetailView({ order: o }: { order: OrderDetail }) {
             <Timeline
               entries={orderHistoryEntries(o.history, {
                 timeZone,
-                personName: (id) =>
-                  getPerson(id)?.full_name ?? o.assignments.find((a) => a.user_id === id)?.user.full_name ?? '—',
+                personName: (id) => personName(id),
               })}
               timeZone={timeZone}
               reverse

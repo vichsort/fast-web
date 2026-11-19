@@ -44,7 +44,7 @@ Esboço da estrutura visual do sistema inteiro, antes da integração real. Regr
 
 - [x] Base: fonte de dados por chave (`VITE_DATA_SOURCE`), API real tipada pela de exemplo, sessão real na moldura, erros das ações por classe.
 - [x] Dashboard.
-- [ ] Clientes e endereços.
+- [x] Clientes e endereços (a importação espera o `import_clients`, etapa 9 do backend).
 - [ ] O.S.: criar, editar, atribuir, cancelar, histórico.
 - [ ] Revisão: aprovar, rejeitar, ciência dos tardios, alertas.
 - [ ] Empresa, membros e auditoria (owner).

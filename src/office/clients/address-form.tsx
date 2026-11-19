@@ -14,7 +14,7 @@ import { t } from '@/lib/i18n';
 import type { ClientAddress } from '@/mocks';
 import { type AddressInput, addAddress, updateAddress } from '../api';
 import { useOfficeAction } from '../session';
-import { useStayOpen } from '../shared';
+import { useCreateId, useStayOpen } from '../shared';
 
 export type AddressDraft = Record<keyof AddressInput, string>;
 
@@ -241,6 +241,7 @@ export function AddressDialog({
   const [draft, setDraft] = React.useState<AddressDraft>(emptyAddress);
   const [primary, setPrimary] = React.useState(false);
   const [showErrors, setShowErrors] = React.useState(false);
+  const createId = useCreateId(open);
   React.useEffect(() => {
     if (!open) return;
     setDraft(address ? draftFromAddress(address) : emptyAddress);
@@ -257,7 +258,9 @@ export function AddressDialog({
       ? await run(t('office.address.editTitle'), () =>
           updateAddress(address.id, draftToInput(draft)).then(() => address.id),
         )
-      : await run(t('office.address.addTitle'), () => addAddress(clientId, draftToInput(draft), primary));
+      : await run(t('office.address.addTitle'), () =>
+          addAddress({ id: createId, clientId }, draftToInput(draft), primary),
+        );
     if (result.ok) onSaved?.(result.value);
     else stayOpen();
   }

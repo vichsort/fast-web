@@ -13,6 +13,7 @@ export type OfficeApi = Pick<
   | 'officeListMembers'
   | 'officeTechnicians'
   | 'officeAudit'
+  | 'officePeople'
   | 'officeCompany'
   | 'officeSessionUser'
   | 'createOrder'

@@ -1,5 +1,14 @@
 import { ApiError } from '@/offline/queue/errors';
-import { actionErrorCode, type ExecutionRow, type OrderRow, toOrderDetail } from './derive';
+import {
+  actionErrorCode,
+  type ClientRow,
+  clientMatches,
+  directWriteError,
+  type ExecutionRow,
+  type OrderRow,
+  toClientListItem,
+  toOrderDetail,
+} from './derive';
 
 const NOW = Date.parse('2026-11-19T12:00:00Z');
 const ana = { id: 'u-ana', full_name: 'Ana' };
@@ -218,5 +227,97 @@ describe('actionErrorCode', () => {
     expect(actionErrorCode(new ApiError('server', null, 'x'))).toBe('unknown');
     expect(actionErrorCode(new ApiError('bug', null, 'x'))).toBe('unknown');
     expect(actionErrorCode(new Error('boom'))).toBe('unknown');
+  });
+});
+
+function address(id: string, over: Partial<ClientRow['addresses'][number]> = {}): ClientRow['addresses'][number] {
+  return {
+    id,
+    company_id: 'c1',
+    client_id: 'cl1',
+    label: null,
+    zip_code: null,
+    street: 'Rua',
+    number: null,
+    complement: null,
+    district: null,
+    city: 'Curitiba',
+    state: 'PR',
+    reference: null,
+    is_primary: false,
+    created_at: '2026-10-01T10:00:00Z',
+    deleted_at: null,
+    deleted_by: null,
+    delete_reason: null,
+    ...over,
+  };
+}
+
+function clientRow(over: Partial<ClientRow> = {}): ClientRow {
+  return {
+    id: 'cl1',
+    company_id: 'c1',
+    name: 'Maria Souza',
+    phone: '41999998888',
+    notes: null,
+    created_at: '2026-10-01T10:00:00Z',
+    deleted_at: null,
+    deleted_by: null,
+    delete_reason: null,
+    addresses: [],
+    orders: [],
+    ...over,
+  };
+}
+
+describe('toClientListItem', () => {
+  it('takes the active primary address, counts the active addresses and the orders still running', () => {
+    const item = toClientListItem(
+      clientRow({
+        addresses: [
+          address('a1'),
+          address('a2', { is_primary: true }),
+          address('a3', { deleted_at: '2026-11-01T00:00:00Z', deleted_by: 'u', delete_reason: 'x' }),
+        ],
+        orders: [{ status: 'open' }, { status: 'pending_approval' }, { status: 'approved' }, { status: 'cancelled' }],
+      }),
+    );
+    expect(item.primary_address?.id).toBe('a2');
+    expect(item.address_count).toBe(2);
+    expect(item.open_orders).toBe(2);
+    expect(item).not.toHaveProperty('orders');
+  });
+
+  it('has no primary address when the primary was deleted (02, R4)', () => {
+    const item = toClientListItem(clientRow({ addresses: [address('a1')] }));
+    expect(item.primary_address).toBeNull();
+  });
+});
+
+describe('clientMatches', () => {
+  it('finds by part of the name, ignoring case, or by the phone digits', () => {
+    const c = clientRow();
+    expect(clientMatches(c, 'souza')).toBe(true);
+    expect(clientMatches(c, '(41) 99999')).toBe(true);
+    expect(clientMatches(c, 'joão')).toBe(false);
+    expect(clientMatches(c, '')).toBe(true);
+  });
+
+  it('finds by the phone digits even when the phone was saved with a mask', () => {
+    expect(clientMatches(clientRow({ phone: '(41) 99999-8888' }), '4199999')).toBe(true);
+  });
+});
+
+describe('directWriteError', () => {
+  it('treats a constraint violation of a direct update as invalid_input (errors.md)', () => {
+    for (const code of ['23514', '23505', '23502']) {
+      const error = directWriteError({ code, message: 'violates' }, 400);
+      expect([error.errorClass, error.code]).toEqual(['rule', 'invalid_input']);
+    }
+  });
+
+  it('classifies the rest like any other call', () => {
+    expect(directWriteError({ message: 'Failed to fetch' }, 0).errorClass).toBe('network');
+    expect(directWriteError({ code: '42501', message: 'denied' }, 403).errorClass).toBe('bug');
   });
 });

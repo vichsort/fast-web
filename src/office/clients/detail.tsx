@@ -22,9 +22,9 @@ import {
 import { ACTIVE_ORDER_STATUSES } from '@/lib/enums';
 import { formatDate, formatDateTime } from '@/lib/format';
 import { errorMessage, t } from '@/lib/i18n';
-import { type ClientAddress, type ClientDetail, getPerson, type OrderListItem } from '@/mocks';
+import type { ClientAddress, ClientDetail, OrderListItem } from '@/mocks';
 import { deleteAddress, deleteClient, setPrimaryAddress } from '../api';
-import { useClient } from '../queries';
+import { useClient, usePersonName } from '../queries';
 import { useOffice, useOfficeAction } from '../session';
 import { NotFound, Notice } from '../shared';
 import { AddressDialog } from './address-form';
@@ -41,6 +41,7 @@ export function ClientDetailPage() {
 }
 
 function ClientView({ client: c }: { client: ClientDetail & { open_orders: number } }) {
+  const personName = usePersonName();
   const { timeZone, actor } = useOffice();
   const navigate = useNavigate();
   const run = useOfficeAction();
@@ -115,7 +116,7 @@ function ClientView({ client: c }: { client: ClientDetail & { open_orders: numbe
               {c.deleted_at && (
                 <p className="text-xs opacity-80">
                   {t('office.common.deletedBy', {
-                    name: getPerson(c.deleted_by ?? '')?.full_name ?? '—',
+                    name: personName(c.deleted_by),
                     time: formatDateTime(c.deleted_at, timeZone),
                   })}
                 </p>
