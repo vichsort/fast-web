@@ -20,7 +20,7 @@ Ordem de trabalho do front. Cada item é um comportamento: teste vermelho (quand
 - [x] Rotas (TanStack Router), login, recuperar e definir senha, layout por papel.
 - [x] shadcn/ui e tema.
 - [ ] Service worker: fila no Background Sync, atualização do app.
-- [ ] Membro removido: conferir o vínculo ativo a cada recusa por regra da fila (ao abrir com sinal já confere); sem vínculo, `clearUser` e logout.
+- [x] Membro removido: conferir o vínculo ativo a cada recusa por regra da fila (ao abrir com sinal já confere); sem vínculo, `clearUser` e logout.
 - [ ] ~~Playwright contra o stack local do backend.~~ Pausado (ver Decisões).
 
 ## 2b. Scratch visual (sem testes, dados de exemplo)
@@ -33,11 +33,12 @@ Esboço da estrutura visual do sistema inteiro, antes da integração real. Regr
 
 ## 3. Técnico
 
-- [ ] Minhas O.S. com cache persistido (TanStack Query no IndexedDB).
-- [ ] Detalhe da O.S. e materiais offline.
-- [ ] Execução: câmera, galeria, rascunho, enviar.
-- [ ] Complemento.
-- [ ] Pendências.
+- [x] Minhas O.S. com cache persistido (TanStack Query no IndexedDB).
+- [x] Detalhe da O.S. e materiais offline.
+- [x] Execução: câmera, galeria, rascunho, enviar.
+- [x] Complemento.
+- [x] Pendências.
+- [ ] Fotos já vistas no aparelho sem sinal (offline.md, "Fotos já vistas"): hoje as URLs assinadas vencem e a foto do servidor não abre offline.
 - [ ] ~~E2E: execução offline com fotos chega ao servidor sem duplicar.~~ Pausado (ver Decisões).
 
 ## 4. Escritório

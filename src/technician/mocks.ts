@@ -17,13 +17,14 @@ import {
   MOCK_TIME_ZONE,
   MOCK_USER_IDS,
   type OrderDetail,
-  type OrderListItem,
   type PendingItem,
   type PersonRef,
   type SyncState,
   samplePhotoUrl,
 } from '@/mocks';
-import { executionAlerts, photoAlerts } from '@/photos/alerts';
+import { executionAlerts } from '@/photos/alerts';
+import { type Draft, draftKey, type MyOrder, type OrderRef, type ParticipantOption, type TechOrder } from './api/types';
+import { withAlerts } from './derive';
 
 export const TZ = MOCK_TIME_ZONE;
 /** O técnico "logado" nos dados de exemplo (Marcos), não o usuário real do login. */
@@ -35,15 +36,6 @@ const MINUTE = 60_000;
 const iso = (ms: number) => new Date(ms).toISOString();
 
 // ---------------------------------------------------------------- dados extras (a partir dos mocks do kit)
-
-/** Rascunho guardado no aparelho (no real, `drafts` e `photos` do Dexie). */
-export interface Draft {
-  /** `client_started_at` (só na tentativa; o complemento não tem início). */
-  startedAt: string | null;
-  description: string;
-  participants: string[];
-  photos: PhotoData[];
-}
 
 function samplePhoto(scene: Scene, seed: string, source: PhotoSource, capturedAt: string | null): PhotoData {
   return {
@@ -146,17 +138,6 @@ export function useScratch(): ScratchState {
   return React.useSyncExternalStore(subscribe, () => state);
 }
 
-export const draftKey = {
-  attempt: (orderId: string) => `attempt:${orderId}`,
-  supplement: (orderId: string, attemptId: string) => `supplement:${orderId}:${attemptId}`,
-};
-
-interface OrderRef {
-  id: string;
-  order_number: number;
-  title: string;
-}
-
 function queueItem(order: OrderRef, kind: PendingItem['kind'], photos: number | null): PendingItem {
   return {
     id: `local-${crypto.randomUUID()}`,
@@ -191,6 +172,18 @@ export const scratch = {
     const draft = state.drafts[key];
     if (draft) scratch.saveDraft(key, { ...draft, startedAt: at });
     return at;
+  },
+  /** Rascunho da chave, ou um novo com o início guardado (tentativa) e sem participantes. */
+  draftOrNew(key: string): Draft {
+    const orderId = key.startsWith('attempt:') ? key.slice('attempt:'.length) : null;
+    return (
+      state.drafts[key] ?? {
+        startedAt: orderId ? (state.started[orderId] ?? null) : null,
+        description: '',
+        participants: [],
+        photos: [],
+      }
+    );
   },
   saveDraft(key: string, draft: Draft) {
     update((s) => ({ drafts: { ...s.drafts, [key]: draft } }));
@@ -288,14 +281,6 @@ export function newSamplePhoto(source: PhotoSource): PhotoData {
   };
 }
 
-/** Alertas das fotos do rascunho, calculados como o doc 04 manda (src/photos/alerts.ts). */
-export function withAlerts(photos: PhotoData[], startedAt: string | null): PhotoData[] {
-  return photos.map((p) => ({
-    ...p,
-    alerts: photoAlerts({ source: p.source, capturedAt: p.captured_at }, { clientStartedAt: startedAt }),
-  }));
-}
-
 // ---------------------------------------------------------------- leituras (TanStack Query) com o estado local
 
 const person = (id: string): PersonRef => getPerson(id) ?? { id, full_name: '—' };
@@ -323,12 +308,6 @@ export function useTechSession() {
     query.data && s.profile ? { ...query.data, profile: { ...query.data.profile, ...s.profile } } : query.data;
   return { ...query, data };
 }
-
-export type MyOrder = OrderListItem & {
-  is_new: boolean;
-  /** Motivo da última rejeição (só nas rejeitadas), para o cartão. */
-  rejection: string | null;
-};
 
 async function fetchMyOrders(): Promise<MyOrder[]> {
   const list = await listMyOrders(ME);
@@ -361,21 +340,6 @@ export function useMyOrders() {
   );
   return { ...query, data };
 }
-
-export interface ParticipantOption extends PersonRef {
-  active: boolean;
-  isSelf: boolean;
-}
-
-export type TechOrder = Omit<OrderDetail, 'attempts'> & {
-  attempts: AttemptData[];
-  /** Hora do início guardada neste aparelho. */
-  startedHere: string | null;
-  /** 04, R6: quem pode constar como participante (atribuído agora ou antes). */
-  participantOptions: ParticipantOption[];
-  /** Recusa `conflict` de materiais ainda não resolvida. */
-  conflict: { mine: string; current: string } | null;
-};
 
 function toExecution(sub: LocalSubmission): ExecutionData {
   return {

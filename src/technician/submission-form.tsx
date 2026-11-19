@@ -5,40 +5,64 @@ import * as React from 'react';
 import { ToneBadge } from '@/components/badges';
 import { AddPhoto, PhotoGrid } from '@/components/photos';
 import { Section } from '@/components/section';
-import { scratchToast } from '@/components/states';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Textarea } from '@/components/ui/textarea';
 import { UserAvatar } from '@/components/user';
 import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
-import { CameraSheet } from './camera-sheet';
-import { type Draft, newSamplePhoto, type ParticipantOption, TZ, withAlerts } from './mocks';
+import type { PhotoInput } from '@/photos/process';
+import { act } from './act';
+import {
+  addPhoto,
+  CameraSheet,
+  type Draft,
+  type DraftFields,
+  type ParticipantOption,
+  pickFromGallery,
+  removePhoto,
+  saveDraft,
+  useTimeZone,
+  withAlerts,
+} from './api';
 
 export function SubmissionForm({
+  draftKey,
   draft,
-  onChange,
   participantOptions,
   descriptionLabel,
   descriptionPlaceholder,
   photosHint,
 }: {
+  /** Chave do rascunho (draftKey): cada alteração vai para ele. */
+  draftKey: string;
   draft: Draft;
-  onChange: (draft: Draft) => void;
   participantOptions: ParticipantOption[];
   descriptionLabel: string;
   descriptionPlaceholder: string;
   photosHint: string;
 }) {
+  const TZ = useTimeZone();
   const [camera, setCamera] = React.useState(false);
   const descriptionId = React.useId();
-  // Ref para a câmera somar várias fotos seguidas sem perder as anteriores.
-  const latest = React.useRef(draft);
-  latest.current = draft;
-  const change = (patch: Partial<Draft>) => {
-    latest.current = { ...latest.current, ...patch };
-    onChange(latest.current);
+  // Texto e participantes ficam na tela (o rascunho salvo chega depois, pela leitura do aparelho); as gravações vão
+  // em fila, na ordem dos toques, para fotos seguidas não criarem dois rascunhos.
+  const [fields, setFields] = React.useState<DraftFields>({
+    description: draft.description,
+    participants: draft.participants,
+  });
+  const latest = React.useRef(fields);
+  const chain = React.useRef<Promise<unknown>>(Promise.resolve());
+  const write = (work: () => Promise<unknown>) => {
+    chain.current = chain.current.then(() => act(work()));
   };
+  const change = (patch: Partial<DraftFields>) => {
+    latest.current = { ...latest.current, ...patch };
+    setFields(latest.current);
+    const next = latest.current;
+    write(() => saveDraft(draftKey, next));
+  };
+  const add = (photo: PhotoInput) => write(() => addPhoto(draftKey, latest.current, photo));
   const photos = withAlerts(draft.photos, draft.startedAt);
 
   return (
@@ -57,17 +81,14 @@ export function SubmissionForm({
         }
       >
         {photos.length > 0 && (
-          <PhotoGrid
-            photos={photos}
-            timeZone={TZ}
-            onRemove={(photo) => change({ photos: latest.current.photos.filter((p) => p.id !== photo.id) })}
-          />
+          <PhotoGrid photos={photos} timeZone={TZ} onRemove={(photo) => write(() => removePhoto(draftKey, photo.id))} />
         )}
         <AddPhoto
           onCamera={() => setCamera(true)}
           onGallery={() => {
-            change({ photos: [...latest.current.photos, newSamplePhoto('gallery')] });
-            scratchToast(t('technician.execution.galleryToast'));
+            void pickFromGallery().then((picked) => {
+              for (const photo of picked) add(photo);
+            });
           }}
         />
       </Section>
@@ -79,7 +100,7 @@ export function SubmissionForm({
           </FieldLabel>
           <Textarea
             id={descriptionId}
-            value={draft.description}
+            value={fields.description}
             onChange={(e) => change({ description: e.target.value })}
             placeholder={descriptionPlaceholder}
             rows={4}
@@ -96,7 +117,7 @@ export function SubmissionForm({
       >
         <ul className="-mx-1 flex flex-col">
           {participantOptions.map((p) => {
-            const checked = p.isSelf || draft.participants.includes(p.id);
+            const checked = p.isSelf || fields.participants.includes(p.id);
             return (
               <li key={p.id}>
                 {/* biome-ignore lint/a11y/noLabelWithoutControl: o Checkbox do Base UI renderiza o controle dentro do label */}
@@ -133,11 +154,7 @@ export function SubmissionForm({
         </ul>
       </Section>
 
-      <CameraSheet
-        open={camera}
-        onOpenChange={setCamera}
-        onCapture={(photo) => change({ photos: [...latest.current.photos, photo] })}
-      />
+      <CameraSheet open={camera} onOpenChange={setCamera} onCapture={add} />
     </>
   );
 }

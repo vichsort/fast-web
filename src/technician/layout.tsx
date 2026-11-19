@@ -1,21 +1,32 @@
 import { Link, Outlet, useRouterState } from '@tanstack/react-router';
 import { ClipboardList, ListTodo, UserRound } from 'lucide-react';
+import type { Access } from '@/app/access';
 import { RequireAccess } from '@/app/pages/gate';
 import { TechnicianShell } from '@/components/app-shell';
 import type { NavItem } from '@/components/nav';
 import { ScratchBanner } from '@/components/states';
 import { SyncIndicator } from '@/components/sync';
+import { usingMocks } from '@/lib/data-source';
 import { t } from '@/lib/i18n';
-import { TZ, useMyOrders, usePendingItems, useSyncStatus } from './mocks';
+import { TechnicianRuntime, useMyOrders, usePendingItems, useSyncStatus, useTimeZone } from './api';
 
 /** Interface do técnico: celular, uma coluna, offline-first (docs/screens.md, docs/screens-technician.md). */
 export function TechnicianLayout() {
-  return <RequireAccess kind="technician">{() => <TechnicianFrame />}</RequireAccess>;
+  return (
+    <RequireAccess kind="technician">
+      {(access: Access) => (
+        <TechnicianRuntime access={access}>
+          <TechnicianFrame />
+        </TechnicianRuntime>
+      )}
+    </RequireAccess>
+  );
 }
 
 function TechnicianFrame() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const sync = useSyncStatus();
+  const TZ = useTimeZone();
   const orders = useMyOrders().data;
   const pending = usePendingItems().data;
   const section = pathname.startsWith('/technician/pending')
@@ -54,7 +65,7 @@ function TechnicianFrame() {
     <TechnicianShell
       navItems={navItems}
       sync={sync && <SyncIndicator status={sync} timeZone={TZ} render={<Link to="/technician/pending" />} />}
-      banner={<ScratchBanner />}
+      banner={usingMocks ? <ScratchBanner /> : undefined}
     >
       <Outlet />
     </TechnicianShell>

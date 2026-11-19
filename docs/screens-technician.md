@@ -1,6 +1,6 @@
 # Telas do técnico
 
-Mapa das telas da interface do técnico ([screens.md](screens.md#técnico-celular-offline)): rota, o que mostra, ações e estados. Feitas no scratch visual ([CLAUDE.md](../CLAUDE.md#scratch-visual)): leem `src/mocks/` pelas funções de [`src/technician/mocks.ts`](../src/technician/mocks.ts), que guardam em memória o efeito das ações (recarregar volta ao início). Regras de cada ação: [03](../../fast/docs/modules/03-service-orders.md), [04](../../fast/docs/modules/04-execution-photos.md), [offline.md](../../fast/docs/offline.md), [queue.md](queue.md), [photos.md](photos.md).
+Mapa das telas da interface do técnico ([screens.md](screens.md#técnico-celular-offline)): rota, o que mostra, ações e estados. As telas leem e chamam só [`src/technician/api`](../src/technician/api/types.ts) (`TechnicianApi`): a implementação real ([`api/real/`](../src/technician/api/real/)) ou, com `VITE_DATA_SOURCE=mock`, os dados de exemplo de [`src/technician/mocks.ts`](../src/technician/mocks.ts), em memória (recarregar volta ao início). Regras de cada ação: [03](../../fast/docs/modules/03-service-orders.md), [04](../../fast/docs/modules/04-execution-photos.md), [offline.md](../../fast/docs/offline.md), [queue.md](queue.md), [photos.md](photos.md).
 
 ## Moldura
 
@@ -9,7 +9,7 @@ Mapa das telas da interface do técnico ([screens.md](screens.md#técnico-celula
 | Parte | O que tem |
 | --- | --- |
 | Topo | marca e `SyncIndicator` (pill), que leva a Pendências |
-| Faixa | `ScratchBanner` (só no scratch) |
+| Faixa | `ScratchBanner` (só nos dados de exemplo) |
 | Barra inferior | Minhas O.S. (contador de "Nova"), Pendências (contador de itens), Perfil |
 | Barra de ação | botão principal da tela preso acima da barra inferior (`ActionBar`), alvo de 48 px |
 
@@ -36,18 +36,19 @@ Mapa das telas da interface do técnico ([screens.md](screens.md#técnico-celula
 | envio da O.S. na fila | nenhum: "quando ele chegar, dá para mandar complemento" |
 | `cancelled` | nenhum |
 
-## Só no scratch
+## Dados
 
-| Parte | Hoje | Na integração |
+| Parte | Real (`api/real/`) | Dados de exemplo |
 | --- | --- | --- |
-| Dados | `src/mocks` + estado em memória (`src/technician/mocks.ts`) | Supabase com cache persistido (TanStack Query no IndexedDB); rascunho, fila e recusas no Dexie |
-| Técnico "logado" | Marcos dos mocks (`MOCK_USER_IDS.technician`), não o usuário do login | sessão real e o perfil dela |
-| Câmera e galeria | visor com cena de exemplo; galeria alterna os casos da prova (antes do início, sem EXIF, normal) | `getUserMedia`, seletor de arquivo e `src/photos` (compressão, EXIF, localização, espaço) |
-| Enviar | com sinal, aceito na hora (vira tentativa na tela); sem sinal, item novo na fila | sempre pela fila (`src/offline/queue`), uma foto por vez |
-| Sem sinal | chave "Simular sem sinal" no perfil | "online" = último request que deu certo (queue.md, Q7) |
-| Mapa | desenho local, sem tiles | o mesmo link; prévia pode virar imagem em cache |
-| "Nova" | marcada ao abrir, em memória | IndexedDB (04) |
-| Sair | real (`signOutAndWipe`); a contagem de pendências é a dos mocks | contagem da fila (Q10) |
+| Leituras | O.S. pelo RLS (03, R14) com o select do escritório (`src/lib/orders-query.ts`); cache do TanStack Query no Dexie (`cache`, por usuário, 3 dias) | `src/mocks` + estado em memória |
+| Efeito local | rascunhos, fotos, fila e recusas do Dexie (`liveQuery`), juntos com o servidor em [`derive.ts`](../src/technician/derive.ts): iniciada no aparelho conta como em execução; materiais na fila e `conflict` por cima do texto do servidor | o mesmo, em memória |
+| Ações | gravam no Dexie e acordam a fila (`processQueue` sob o `webLock`); o perfil é update direto, só com sinal | efeito em memória e aviso de scratch |
+| Fila | roda ao abrir, ao voltar o sinal, ao voltar para a aba e depois de cada ação; esperando rede, tenta de novo na hora marcada | — |
+| Técnico logado | sessão real; o fuso é o da empresa | Marcos dos mocks |
+| Câmera e galeria | `getUserMedia` (câmera traseira), posição pelo `watchPosition`, aviso de pouco espaço; galeria pelo seletor de arquivo; `src/photos` processa | visor e galeria de exemplo |
+| Sem sinal | "online" = último request que deu certo (queue.md, Q7) | chave "Simular sem sinal" no perfil |
+| "Nova" | tabela `seen` do Dexie, por usuário | em memória |
+| Mapa | desenho local, sem tiles | o mesmo |
 
 ## Decisões
 
@@ -57,6 +58,11 @@ Mapa das telas da interface do técnico ([screens.md](screens.md#técnico-celula
 - **2026-11-17** — Envio novo passa por um painel de revisão; complemento vai direto. *Por quê:* a tentativa é imutável e o escritório revisa por ela; o complemento só soma.
 - **2026-11-17** — Participantes: a tentativa já vem com a dupla marcada; o complemento, só com quem envia. Quem saiu da O.S. aparece com o selo e pode ser marcado (R6). *Por quê:* a tentativa é feita em dupla; o complemento costuma ser de um só.
 - **2026-11-17** — Com um envio da O.S. na fila, a tela não oferece envio novo nem complemento. *Por quê:* o complemento precisa da tentativa no servidor; um segundo envio viraria complemento (R4) sem o técnico querer.
+- **2026-11-19** — Contrato explícito (`TechnicianApi`) com duas implementações, a real e a de exemplo, escolhidas pela mesma chave do escritório (`VITE_DATA_SOURCE`). *Por quê:* as telas não sabem de onde vêm os dados, e os dados de exemplo continuam úteis para testar as telas depois.
+- **2026-11-19** — Enviar põe sempre na fila e volta ao detalhe; a fila manda em seguida. *Por quê:* um caminho só (queue.md), com ou sem sinal; a tela não espera as fotos subirem.
+- **2026-11-19** — Texto e participantes do envio ficam na tela e vão para o rascunho a cada alteração, em ordem (uma gravação por vez). *Por quê:* o rascunho salvo volta pelo `liveQuery` com atraso, o que faria o cursor pular; em ordem, duas fotos seguidas não criam dois rascunhos.
+- **2026-11-19** — O cache das leituras guarda só consultas com sucesso e só do usuário da sessão. *Por quê:* o técnico abre o app sem sinal com a lista da última vez, sem misturar usuários no mesmo aparelho (offline.md).
+- **2026-11-19** — Depois de uma passada da fila com recusa, o app confere o vínculo ativo (a leitura de acesso); sem vínculo, a porta de entrada apaga o aparelho e sai. *Por quê:* a remoção do membro é detectada pelo app (queue.md, 2026-11-13); a recusa por regra é o sinal de que algo mudou.
 
 ## Pendências
 

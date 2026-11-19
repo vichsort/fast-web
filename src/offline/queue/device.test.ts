@@ -5,7 +5,7 @@ import { addDraft, addPhoto, newDb } from './testing';
 const at = '2026-11-13T10:00:00.000Z';
 
 describe('device', () => {
-  it('Q10: clearing a user removes their drafts, photos, queue and refusals, and nothing of other users', async () => {
+  it('Q10: clearing a user removes their drafts, photos, queue, refusals, seen orders and cache, and nothing of other users', async () => {
     const db = newDb();
     for (const userId of ['u1', 'u2']) {
       const draft = await addDraft(db, { userId, orderId: 'o1' });
@@ -21,11 +21,13 @@ describe('device', () => {
         current: null,
         createdAt: at,
       });
+      await db.seen.put({ userId, orderId: 'o1', seenAt: at });
+      await db.cache.put({ userId, value: '{}', savedAt: at });
     }
 
     await clearUser(db, 'u1');
 
-    for (const table of [db.drafts, db.photos, db.queue, db.refusals] as const) {
+    for (const table of [db.drafts, db.photos, db.queue, db.refusals, db.seen, db.cache] as const) {
       const owners = (await table.toArray()).map((row) => row.userId);
       expect([table.name, ...new Set(owners)]).toEqual([table.name, 'u2']);
     }

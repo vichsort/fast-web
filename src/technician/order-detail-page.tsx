@@ -20,25 +20,27 @@ import { NewBadge, OrderStatusBadge, OverdueBadge, PriorityBadge, ServiceTypeBad
 import { ExecutionCard } from '@/components/execution-card';
 import { PageHeader } from '@/components/page-header';
 import { DetailItem, DetailList, Section } from '@/components/section';
-import { EmptyState, ErrorState, LoadingDetail, scratchToast } from '@/components/states';
+import { EmptyState, ErrorState, LoadingDetail } from '@/components/states';
 import { reviewVar, statusVar } from '@/components/tone';
 import { Button } from '@/components/ui/button';
 import { AvatarStack } from '@/components/user';
 import { formatDateTime, formatDue, formatOrderNumber, formatRelative } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
-import { MaterialsSection } from './materials-section';
+import { act } from './act';
 import {
   draftKey,
-  scratch,
+  markSeen,
+  start as startOrder,
   type TechOrder,
-  TZ,
+  useDraft,
   useMyOrders,
   usePendingItems,
-  useScratch,
   useTechOrder,
   useTechSession,
-} from './mocks';
+  useTimeZone,
+} from './api';
+import { MaterialsSection } from './materials-section';
 import { ActionBar, Callout, MapPreview } from './parts';
 
 const ACTIVE_QUEUE = ['sending', 'waiting', 'queued'];
@@ -51,7 +53,7 @@ export function OrderDetailPage() {
   // 04: a O.S. deixa de ser "Nova" quando é aberta neste aparelho. Lê o selo antes de marcar.
   const [wasNew] = React.useState(isNew);
   React.useEffect(() => {
-    scratch.markSeen(orderId);
+    markSeen(orderId);
   }, [orderId]);
 
   if (query.isPending) return <LoadingDetail />;
@@ -76,13 +78,13 @@ export function OrderDetailPage() {
 
 function OrderDetail({ order, wasNew }: { order: TechOrder; wasNew: boolean }) {
   const navigate = useNavigate();
-  const s = useScratch();
+  const TZ = useTimeZone();
   const company = useTechSession().data?.company.name;
   const queue = (usePendingItems().data ?? []).filter((i) => i.order_id === order.id);
   const activeQueue = queue.filter((i) => ACTIVE_QUEUE.includes(i.state));
   const problems = queue.filter((i) => i.state === 'refused' || i.state === 'blocked');
   const queuedSubmit = activeQueue.some((i) => i.kind === 'submit');
-  const draft = s.drafts[draftKey.attempt(order.id)];
+  const draft = useDraft(draftKey.attempt(order.id));
   const lastAttempt = order.attempts.at(-1);
   const lastRejected = lastAttempt?.review_status === 'rejected' ? lastAttempt : null;
   const attemptsNewestFirst = [...order.attempts].reverse();
@@ -99,10 +101,8 @@ function OrderDetail({ order, wasNew }: { order: TechOrder; wasNew: boolean }) {
       search: { attempt: attemptId },
     });
 
-  function start() {
-    scratch.start(order);
-    scratchToast(t('technician.detail.startedToast'));
-    void goExecution();
+  async function start() {
+    if ((await act(startOrder(order).then(() => true))) === true) void goExecution();
   }
 
   // Ação principal pelo status (04: iniciar e enviar de open/rejected; complemento em qualquer status menos cancelled).
@@ -127,7 +127,7 @@ function OrderDetail({ order, wasNew }: { order: TechOrder; wasNew: boolean }) {
     );
   } else {
     primary = (
-      <Button className="h-12 text-base" onClick={start}>
+      <Button className="h-12 text-base" onClick={() => void start()}>
         <Play className="size-5" />
         {order.status === 'rejected' ? t('technician.detail.startAgain') : t('technician.detail.start')}
       </Button>

@@ -1,0 +1,265 @@
+import type { OrderDetail } from '@/mocks';
+import type { Draft, DraftPhoto, QueueItem, QueueRefusal } from '@/offline/db';
+import { type LocalState, pendingItems, toMyOrder, toTechOrder } from './derive';
+
+const NOW = Date.parse('2026-11-19T12:00:00Z');
+const ME = 'u-me';
+const at = '2026-11-19T10:00:00.000Z';
+
+function order(over: Partial<OrderDetail> = {}): OrderDetail {
+  return {
+    id: 'o1',
+    company_id: 'c1',
+    order_number: 7,
+    client_id: 'cl1',
+    client_address_id: null,
+    address: null,
+    service_type: 'installation',
+    title: 'Instalar',
+    instructions: null,
+    priority: 'normal',
+    status: 'open',
+    due_at: null,
+    materials_notes: 'cabo',
+    created_by: 'boss',
+    created_at: at,
+    updated_at: at,
+    cancelled_at: null,
+    cancelled_by: null,
+    cancel_reason: null,
+    client: {
+      id: 'cl1',
+      company_id: 'c1',
+      name: 'Cliente',
+      phone: null,
+      notes: null,
+      created_at: at,
+      deleted_at: null,
+      deleted_by: null,
+      delete_reason: null,
+    },
+    client_address: null,
+    assignments: [],
+    assignees: [],
+    attempts: [],
+    history: [],
+    created_by_ref: { id: 'boss', full_name: 'Chefe' },
+    overdue: false,
+    late_supplements_unseen: 0,
+    ...over,
+  };
+}
+
+function draft(over: Partial<Draft> = {}): Draft {
+  return {
+    id: 'd1',
+    userId: ME,
+    orderId: 'o1',
+    supplementsExecutionId: null,
+    description: 'feito',
+    participants: [ME],
+    clientStartedAt: at,
+    state: 'editing',
+    refusal: null,
+    createdAt: at,
+    updatedAt: at,
+    ...over,
+  };
+}
+
+function item(over: Partial<QueueItem> & Pick<QueueItem, 'id' | 'type' | 'payload'>): QueueItem {
+  return {
+    userId: ME,
+    orderId: 'o1',
+    state: 'pending',
+    attempts: 0,
+    nextAttemptAt: 0,
+    lastError: null,
+    createdAt: at,
+    ...over,
+  } as QueueItem;
+}
+
+const local = (over: Partial<LocalState> = {}): LocalState => ({
+  userId: ME,
+  drafts: [],
+  photos: [],
+  queue: [],
+  refusals: [],
+  seen: new Set(),
+  ...over,
+});
+
+const assignment = (id: string, name: string, unassigned_at: string | null = null) => ({
+  id: `a-${id}`,
+  company_id: 'c1',
+  service_order_id: 'o1',
+  user_id: id,
+  assigned_at: at,
+  assigned_by: 'boss',
+  created_at: at,
+  unassigned_at,
+  unassigned_by: null,
+  user: { id, full_name: name },
+});
+
+describe('toTechOrder', () => {
+  it('shows an open order started on this device as in progress, with the start time', () => {
+    const o = toTechOrder(order({ status: 'open' }), local({ drafts: [draft()] }), NOW);
+    expect([o.status, o.startedHere]).toEqual(['in_progress', at]);
+  });
+
+  it('takes the start time from a queued start when there is no draft yet', () => {
+    const o = toTechOrder(
+      order({ status: 'rejected' }),
+      local({ queue: [item({ id: 1, type: 'start', payload: { clientStartedAt: at } })] }),
+      NOW,
+    );
+    expect([o.status, o.startedHere]).toEqual(['in_progress', at]);
+  });
+
+  it('ignores a supplement draft for the start and never reopens a closed order', () => {
+    const supplement = draft({ supplementsExecutionId: 'e1' });
+    expect(toTechOrder(order(), local({ drafts: [supplement] }), NOW).startedHere).toBeNull();
+    expect(toTechOrder(order({ status: 'cancelled' }), local({ drafts: [draft()] }), NOW).status).toBe('cancelled');
+  });
+
+  it('shows the materials text still in the queue and the unresolved conflict', () => {
+    const conflict: QueueRefusal = {
+      id: 3,
+      userId: ME,
+      orderId: 'o1',
+      type: 'materials',
+      payload: { text: 'meu texto', expected: 'cabo' },
+      code: 'conflict',
+      current: 'texto do escritório',
+      createdAt: at,
+    };
+    const o = toTechOrder(
+      order(),
+      local({
+        queue: [item({ id: 2, type: 'materials', payload: { text: 'cabo e fonte', expected: 'cabo' } })],
+        refusals: [conflict],
+      }),
+      NOW,
+    );
+    expect(o.materials_notes).toBe('cabo e fonte');
+    expect(o.conflict).toEqual({ mine: 'meu texto', current: 'texto do escritório' });
+  });
+
+  it('offers as participants everyone ever assigned, self first, marking who left', () => {
+    const o = toTechOrder(
+      order({
+        assignments: [assignment('u-bia', 'Bia', at), assignment(ME, 'Eu'), assignment('u-bia', 'Bia')],
+      }),
+      local(),
+      NOW,
+    );
+    expect(o.participantOptions.map((p) => [p.id, p.active, p.isSelf])).toEqual([
+      [ME, true, true],
+      ['u-bia', true, false],
+    ]);
+  });
+});
+
+describe('toMyOrder', () => {
+  it('is new until opened on this device and carries the last rejection reason', () => {
+    const rejected = order({
+      status: 'rejected',
+      attempts: [{ review_status: 'rejected', review_comment: 'foto escura' } as OrderDetail['attempts'][number]],
+    });
+    expect(toMyOrder(rejected, local(), NOW)).toMatchObject({ is_new: true, rejection: 'foto escura' });
+    expect(toMyOrder(rejected, local({ seen: new Set(['o1']) }), NOW).is_new).toBe(false);
+    expect(toMyOrder(order(), local(), NOW).rejection).toBeNull();
+  });
+
+  it('recomputes overdue with the local status', () => {
+    const late = order({ status: 'open', due_at: '2026-11-18T00:00:00Z' });
+    expect(toMyOrder(late, local(), NOW).overdue).toBe(true);
+  });
+});
+
+describe('pendingItems', () => {
+  const orders = new Map([['o1', { order_number: 7, title: 'Instalar' }]]);
+  const photo = (id: string, uploaded: boolean) => ({ id, draftId: 'd1', uploaded }) as DraftPhoto;
+
+  it('maps each queue item to its kind, state and photo progress', () => {
+    const list = pendingItems(
+      local({
+        drafts: [
+          draft({ id: 'd1', state: 'queued' }),
+          draft({ id: 'd2', state: 'queued', supplementsExecutionId: 'e1' }),
+        ],
+        photos: [photo('p1', true), photo('p2', false)],
+        queue: [
+          item({ id: 1, type: 'submit', payload: { draftId: 'd1', clientSubmittedAt: at, stagedPhotoIds: [] } }),
+          item({
+            id: 2,
+            type: 'submit',
+            orderId: 'o2',
+            payload: { draftId: 'd2', clientSubmittedAt: at, stagedPhotoIds: [] },
+            attempts: 2,
+            nextAttemptAt: NOW + 10_000,
+          }),
+          item({
+            id: 3,
+            type: 'materials',
+            payload: { text: 'x', expected: null },
+            state: 'blocked',
+            lastError: 'boom',
+          }),
+        ],
+      }),
+      orders,
+      { now: NOW, sending: true },
+    );
+    expect(list.map((i) => [i.kind, i.state])).toEqual([
+      ['submit', 'sending'],
+      ['supplement', 'waiting'],
+      ['materials', 'blocked'],
+    ]);
+    expect(list[0]).toMatchObject({ order_number: 7, order_title: 'Instalar', photos: { done: 1, total: 2 } });
+    expect(list[1]?.next_attempt_at).toBe(new Date(NOW + 10_000).toISOString());
+    expect(list[2]?.error).toBe('boom');
+  });
+
+  it('puts an item behind the head of the same order as queued, and nothing is sending while the queue is idle', () => {
+    const list = pendingItems(
+      local({
+        queue: [
+          item({ id: 1, type: 'start', payload: { clientStartedAt: at } }),
+          item({ id: 2, type: 'materials', payload: { text: 'x', expected: null } }),
+        ],
+      }),
+      orders,
+      { now: NOW, sending: false },
+    );
+    expect(list.map((i) => i.state)).toEqual(['queued', 'queued']);
+  });
+
+  it('lists refused drafts and refusals of start and materials with their code', () => {
+    const list = pendingItems(
+      local({
+        drafts: [draft({ id: 'd9', state: 'refused', refusal: 'order_closed' }), draft({ id: 'd8' })],
+        refusals: [
+          {
+            id: 4,
+            userId: ME,
+            orderId: 'o1',
+            type: 'start',
+            payload: { clientStartedAt: at },
+            code: 'not_assigned',
+            current: null,
+            createdAt: at,
+          },
+        ],
+      }),
+      orders,
+      { now: NOW, sending: false },
+    );
+    expect(list.map((i) => [i.id, i.kind, i.state, i.refusal])).toEqual([
+      ['draft:d9', 'submit', 'refused', 'order_closed'],
+      ['refusal:4', 'start', 'refused', 'not_assigned'],
+    ]);
+  });
+});

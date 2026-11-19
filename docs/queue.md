@@ -25,7 +25,7 @@ Implementação no aparelho da fila descrita em [offline.md](../../fast/docs/off
 - **Q7.** Espera crescente: dobra a cada tentativa, começa em 5 s e para em 5 min. Uma resposta de sucesso em qualquer item zera a espera dos itens que esperavam por rede ("online" é um request que deu certo, nunca `navigator.onLine`).
 - **Q8.** Upload com timeout generoso (5 min por foto: 400 KB em 2G leva minutos).
 - **Q9.** Um processador por vez, mesmo com a página e o service worker acordados juntos: o processamento roda sob um lock (Web Locks API, `fast-queue`).
-- **Q10.** Logout e remoção do membro apagam tudo do usuário no aparelho: rascunhos, fotos e fila. Antes do logout, a tela pergunta se há itens pendentes (contagem pela fila).
+- **Q10.** Logout e remoção do membro apagam tudo do usuário no aparelho: rascunhos, fotos, fila, recusas, O.S. já vistas e o cache das leituras. Antes do logout, a tela pergunta se há itens pendentes (contagem pela fila).
 - **Q11.** A fila não conhece React nem DOM: roda na página e no service worker. Recebe a API (chamadas ao Supabase e o PUT), o lock e o relógio por injeção; os testes passam versões falsas.
 
 ## Rascunho

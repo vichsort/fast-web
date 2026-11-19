@@ -107,11 +107,28 @@ export type QueueRefusal = {
   createdAt: string;
 } & ({ type: 'start'; payload: StartPayload } | { type: 'materials'; payload: MaterialsPayload });
 
+/** O.S. que o técnico já abriu neste aparelho: sem linha aqui, a O.S. aparece como "Nova" (04). */
+export interface SeenOrder {
+  userId: string;
+  orderId: string;
+  seenAt: string;
+}
+
+/** Cache persistido das leituras do técnico (TanStack Query), um por usuário: abre sem sinal (offline.md). */
+export interface CachedQueries {
+  userId: string;
+  /** O cliente do TanStack Query desidratado, em JSON. */
+  value: string;
+  savedAt: string;
+}
+
 export class FastDb extends Dexie {
   drafts!: EntityTable<Draft, 'id'>;
   photos!: EntityTable<DraftPhoto, 'id'>;
   queue!: EntityTable<QueueItem, 'id'>;
   refusals!: EntityTable<QueueRefusal, 'id'>;
+  seen!: EntityTable<SeenOrder, 'orderId'>;
+  cache!: EntityTable<CachedQueries, 'userId'>;
 
   constructor(name = 'fast') {
     super(name);
@@ -120,6 +137,10 @@ export class FastDb extends Dexie {
       photos: 'id, draftId, userId, orderId',
       queue: '++id, userId, orderId, [userId+orderId], nextAttemptAt',
       refusals: '++id, userId, orderId',
+    });
+    this.version(2).stores({
+      seen: '[userId+orderId], userId',
+      cache: 'userId',
     });
   }
 }

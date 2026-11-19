@@ -3,13 +3,13 @@
 import { Check, CloudUpload, GitCompareArrows, Package, Pencil } from 'lucide-react';
 import * as React from 'react';
 import { Section } from '@/components/section';
-import { scratchToast } from '@/components/states';
 import { Button } from '@/components/ui/button';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Textarea } from '@/components/ui/textarea';
 import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
-import { scratch, type TechOrder, usePendingItems } from './mocks';
+import { act } from './act';
+import { resolveConflict, saveMaterials, type TechOrder, usePendingItems } from './api';
 import { Callout } from './parts';
 
 export function MaterialsSection({ order }: { order: TechOrder }) {
@@ -53,9 +53,8 @@ export function MaterialsSection({ order }: { order: TechOrder }) {
           className="flex flex-col gap-3"
           onSubmit={(event) => {
             event.preventDefault();
-            scratch.saveMaterials(order, text);
             setEditing(false);
-            scratchToast(t('technician.materials.save'));
+            void act(saveMaterials(order, text), t('technician.materials.save'));
           }}
         >
           <Field>
@@ -150,8 +149,7 @@ function MaterialsConflict({ order, conflict }: { order: TechOrder; conflict: { 
         className="flex flex-col gap-3"
         onSubmit={(event) => {
           event.preventDefault();
-          scratch.resolveConflict(order, text);
-          scratchToast(t('technician.materials.conflictResolve'));
+          void act(resolveConflict(order, text), t('technician.materials.conflictResolve'));
         }}
       >
         <Field>

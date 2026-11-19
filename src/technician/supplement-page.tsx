@@ -3,11 +3,12 @@ import { FilePlus, Send, TriangleAlert } from 'lucide-react';
 import { ReviewStatusBadge } from '@/components/badges';
 import type { AttemptData } from '@/components/execution-card';
 import { PageHeader } from '@/components/page-header';
-import { EmptyState, ErrorState, LoadingDetail, scratchToast } from '@/components/states';
+import { EmptyState, ErrorState, LoadingDetail } from '@/components/states';
 import { Button } from '@/components/ui/button';
 import { formatOrderNumber, formatRelative } from '@/lib/format';
 import { t } from '@/lib/i18n';
-import { type Draft, draftKey, scratch, type TechOrder, TZ, useScratch, useTechOrder } from './mocks';
+import { act } from './act';
+import { type Draft, draftKey, notify, submit, type TechOrder, useDraft, useTechOrder, useTimeZone } from './api';
 import { ActionBar, Callout } from './parts';
 import { defaultParticipants, SubmissionForm } from './submission-form';
 
@@ -45,9 +46,9 @@ export function SupplementPage() {
 
 function Supplement({ order, target }: { order: TechOrder; target: AttemptData }) {
   const navigate = useNavigate();
-  const s = useScratch();
+  const TZ = useTimeZone();
   const key = draftKey.supplement(order.id, target.id);
-  const draft: Draft = s.drafts[key] ?? {
+  const draft: Draft = useDraft(key) ?? {
     startedAt: null,
     description: '',
     participants: defaultParticipants(order.participantOptions, 'supplement'),
@@ -89,8 +90,8 @@ function Supplement({ order, target }: { order: TechOrder; target: AttemptData }
       )}
 
       <SubmissionForm
+        draftKey={key}
         draft={draft}
-        onChange={(next) => scratch.saveDraft(key, next)}
         participantOptions={order.participantOptions}
         descriptionLabel={t('technician.supplement.description')}
         descriptionPlaceholder={t('technician.supplement.descriptionPlaceholder')}
@@ -102,11 +103,10 @@ function Supplement({ order, target }: { order: TechOrder; target: AttemptData }
         <Button
           className="h-12 text-base"
           disabled={!canSend}
-          onClick={() => {
-            const result = scratch.submit(order, key, target.id);
-            scratchToast(
-              t(result === 'queued' ? 'technician.supplement.queuedToast' : 'technician.supplement.sentToast'),
-            );
+          onClick={async () => {
+            const result = await act(submit(order, key, target.id));
+            if (!result) return;
+            notify(t(result === 'queued' ? 'technician.supplement.queuedToast' : 'technician.supplement.sentToast'));
             void navigate({ to: '/technician/orders/$orderId', params: { orderId: order.id } });
           }}
         >

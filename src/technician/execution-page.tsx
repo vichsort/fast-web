@@ -5,22 +5,26 @@ import { AlertBadge } from '@/components/badges';
 import { ConfirmDialog, SidePanel } from '@/components/dialogs';
 import { PageHeader } from '@/components/page-header';
 import { PhotoGrid } from '@/components/photos';
-import { EmptyState, ErrorState, LoadingDetail, scratchToast } from '@/components/states';
+import { EmptyState, ErrorState, LoadingDetail } from '@/components/states';
 import { Button } from '@/components/ui/button';
 import { formatList, formatOrderNumber, formatTime } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import { executionAlerts, type PhotoAlert } from '@/photos/alerts';
+import { act, useOffline } from './act';
 import {
   type Draft,
+  discardDraft,
   draftKey,
-  scratch,
+  notify,
+  start,
+  submit,
   type TechOrder,
-  TZ,
+  useDraft,
   usePendingItems,
-  useScratch,
   useTechOrder,
+  useTimeZone,
   withAlerts,
-} from './mocks';
+} from './api';
 import { ActionBar, Callout } from './parts';
 import { defaultParticipants, SubmissionForm } from './submission-form';
 
@@ -59,9 +63,11 @@ export function ExecutionPage() {
 
 function Execution({ order }: { order: TechOrder }) {
   const navigate = useNavigate();
-  const s = useScratch();
+  const TZ = useTimeZone();
+  const offline = useOffline();
   const key = draftKey.attempt(order.id);
-  const draft: Draft = s.drafts[key] ?? {
+  const saved = useDraft(key);
+  const draft: Draft = saved ?? {
     startedAt: order.startedHere,
     description: '',
     participants: defaultParticipants(order.participantOptions, 'attempt'),
@@ -69,7 +75,7 @@ function Execution({ order }: { order: TechOrder }) {
   };
   const [review, setReview] = React.useState(false);
   const [discard, setDiscard] = React.useState(false);
-  const hasDraft = Boolean(s.drafts[key]);
+  const hasDraft = saved !== null;
   const canSend = draft.photos.length > 0; // 04, R3: envio novo exige ao menos 1 foto.
   const back = () => navigate({ to: '/technician/orders/$orderId', params: { orderId: order.id } });
 
@@ -104,10 +110,7 @@ function Execution({ order }: { order: TechOrder }) {
             <Button
               variant="outline"
               className="h-10 bg-card"
-              onClick={() => {
-                scratch.start(order);
-                scratchToast(t('technician.execution.startNow'));
-              }}
+              onClick={() => void act(start(order), t('technician.execution.startNow'))}
             >
               {t('technician.execution.startNow')}
             </Button>
@@ -118,8 +121,8 @@ function Execution({ order }: { order: TechOrder }) {
       )}
 
       <SubmissionForm
+        draftKey={key}
         draft={draft}
-        onChange={(next) => scratch.saveDraft(key, { ...next, startedAt: order.startedHere })}
         participantOptions={order.participantOptions}
         descriptionLabel={t('technician.execution.description')}
         descriptionPlaceholder={t('technician.execution.descriptionPlaceholder')}
@@ -148,10 +151,11 @@ function Execution({ order }: { order: TechOrder }) {
         onOpenChange={setReview}
         order={order}
         draft={draft}
-        offline={s.offline}
-        onSend={() => {
-          const result = scratch.submit(order, key, null);
-          scratchToast(t(result === 'queued' ? 'technician.execution.queuedToast' : 'technician.execution.sentToast'));
+        offline={offline}
+        onSend={async () => {
+          const result = await act(submit(order, key, null));
+          if (!result) return;
+          notify(t(result === 'queued' ? 'technician.execution.queuedToast' : 'technician.execution.sentToast'));
           void back();
         }}
       />
@@ -163,10 +167,7 @@ function Execution({ order }: { order: TechOrder }) {
         title={t('technician.execution.discardTitle')}
         description={t('technician.execution.discardDescription')}
         confirmLabel={t('ui.actions.discard')}
-        onConfirm={() => {
-          scratch.discardDraft(key);
-          scratchToast(t('technician.execution.discard'));
-        }}
+        onConfirm={() => void act(discardDraft(key), t('technician.execution.discard'))}
       />
     </div>
   );
@@ -188,6 +189,7 @@ function ReviewPanel({
   offline: boolean;
   onSend: () => void;
 }) {
+  const TZ = useTimeZone();
   const photos = withAlerts(draft.photos, draft.startedAt);
   const photoAlertCounts = new Map<PhotoAlert, number>();
   for (const alert of photos.flatMap((p) => p.alerts)) {

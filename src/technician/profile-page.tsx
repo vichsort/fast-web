@@ -7,7 +7,7 @@ import { RoleBadge } from '@/components/badges';
 import { ConfirmDialog } from '@/components/dialogs';
 import { PageHeader } from '@/components/page-header';
 import { Section } from '@/components/section';
-import { LoadingDetail, scratchToast } from '@/components/states';
+import { LoadingDetail } from '@/components/states';
 import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
@@ -15,7 +15,8 @@ import { Switch } from '@/components/ui/switch';
 import { UserAvatar } from '@/components/user';
 import { formatPhone } from '@/lib/format';
 import { t } from '@/lib/i18n';
-import { scratch, usePendingItems, useScratch, useTechSession } from './mocks';
+import { act, useOffline } from './act';
+import { saveProfile, usePendingItems, useSimulatedOffline, useTechSession } from './api';
 
 /** Meu perfil: nome e telefone (01, update direto do próprio perfil, só com sinal) e sair (docs/screens-technician.md). */
 export function ProfilePage() {
@@ -27,7 +28,8 @@ export function ProfilePage() {
 function Profile({ data }: { data: NonNullable<ReturnType<typeof useTechSession>['data']> }) {
   const { session } = useAuth();
   const navigate = useNavigate();
-  const s = useScratch();
+  const simulated = useSimulatedOffline();
+  const offline = useOffline();
   const pending = usePendingItems().data?.length ?? 0;
   const [name, setName] = React.useState(data.profile.full_name);
   const [phone, setPhone] = React.useState(formatPhone(data.profile.phone));
@@ -63,8 +65,10 @@ function Profile({ data }: { data: NonNullable<ReturnType<typeof useTechSession>
             event.preventDefault();
             setTouched(true);
             if (nameInvalid) return;
-            scratch.saveProfile({ full_name: name.trim(), phone: phone.replace(/\D/g, '') || null });
-            scratchToast(t('technician.profile.save'));
+            void act(
+              saveProfile({ full_name: name.trim(), phone: phone.replace(/\D/g, '') || null }),
+              t('technician.profile.save'),
+            );
           }}
         >
           <FieldGroup>
@@ -97,28 +101,30 @@ function Profile({ data }: { data: NonNullable<ReturnType<typeof useTechSession>
               <FieldDescription>{t('technician.profile.phoneHint')}</FieldDescription>
             </Field>
           </FieldGroup>
-          {s.offline && (
+          {offline && (
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
               <WifiOff aria-hidden className="size-4" />
               {t('technician.profile.onlineOnly')}
             </p>
           )}
-          <Button type="submit" className="h-12 text-base" disabled={s.offline}>
+          <Button type="submit" className="h-12 text-base" disabled={offline}>
             <Save className="size-5" />
             {t('technician.profile.save')}
           </Button>
         </form>
       </Section>
 
-      <Section variant="muted" density="touch" icon={FlaskConical} title={t('technician.profile.scratchTitle')}>
-        <div className="flex items-center justify-between gap-4">
-          <label htmlFor={ids.offline} className="flex flex-col gap-0.5">
-            <span className="text-base font-medium">{t('technician.profile.scratchOffline')}</span>
-            <span className="text-sm text-muted-foreground">{t('technician.profile.scratchOfflineHint')}</span>
-          </label>
-          <Switch id={ids.offline} checked={s.offline} onCheckedChange={(v) => scratch.setOffline(v)} />
-        </div>
-      </Section>
+      {simulated && (
+        <Section variant="muted" density="touch" icon={FlaskConical} title={t('technician.profile.scratchTitle')}>
+          <div className="flex items-center justify-between gap-4">
+            <label htmlFor={ids.offline} className="flex flex-col gap-0.5">
+              <span className="text-base font-medium">{t('technician.profile.scratchOffline')}</span>
+              <span className="text-sm text-muted-foreground">{t('technician.profile.scratchOfflineHint')}</span>
+            </label>
+            <Switch id={ids.offline} checked={simulated.offline} onCheckedChange={(v) => simulated.setOffline(v)} />
+          </div>
+        </Section>
+      )}
 
       <Button variant="destructive" className="h-12 text-base" onClick={() => setLogout(true)}>
         <LogOut className="size-5" />

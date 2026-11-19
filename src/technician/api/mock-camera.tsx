@@ -1,5 +1,5 @@
-// Câmera do app (04, prova fotográfica: `source = camera`, `captured_at` = relógio no clique). Só visual no scratch:
-// o visor mostra uma cena de exemplo e cada toque guarda uma foto fictícia. A real usa getUserMedia (src/photos).
+// Câmera de exemplo (dados de exemplo): o visor mostra uma cena fictícia e cada toque manda um arquivo vazio com o
+// horário do clique; o adaptador (./mock.ts) põe uma foto de exemplo no rascunho. A real é ./real/camera.tsx.
 import { Check, Crosshair, X } from 'lucide-react';
 import * as React from 'react';
 import type { PhotoData } from '@/components/photos';
@@ -7,17 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
-import { newSamplePhoto } from './mocks';
+import { newSamplePhoto } from '../mocks';
+import type { CameraSheetProps } from './types';
 
-export function CameraSheet({
-  open,
-  onOpenChange,
-  onCapture,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onCapture: (photo: PhotoData) => void;
-}) {
+export function MockCameraSheet({ open, onOpenChange, onCapture }: CameraSheetProps) {
   const [preview, setPreview] = React.useState(() => newSamplePhoto('camera'));
   const [taken, setTaken] = React.useState<PhotoData[]>([]);
   const [flash, setFlash] = React.useState(false);
@@ -27,8 +20,9 @@ export function CameraSheet({
   }, [open]);
 
   function shoot() {
-    const photo = { ...preview, captured_at: new Date().toISOString() };
-    onCapture(photo);
+    const clickedAt = new Date();
+    const photo = { ...preview, captured_at: clickedAt.toISOString() };
+    onCapture({ source: 'camera', file: new Blob(), clickedAt, coords: null });
     setTaken((list) => [...list, photo]);
     setFlash(true);
     setTimeout(() => setFlash(false), 150);

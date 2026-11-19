@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { ChevronDown, CircleX, MessageSquareWarning, RotateCw } from 'lucide-react';
 import { OrderCard } from '@/components/order-card';
-import { EmptyState, ErrorState, LoadingList, scratchToast } from '@/components/states';
+import { EmptyState, ErrorState, LoadingList } from '@/components/states';
 import { SyncIndicator } from '@/components/sync';
 import { statusVar } from '@/components/tone';
 import { Button } from '@/components/ui/button';
@@ -10,11 +10,12 @@ import { Spinner } from '@/components/ui/spinner';
 import { firstName, formatTime } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
-import { type MyOrder, TZ, useMyOrders, usePendingItems, useSyncStatus, useTechSession } from './mocks';
+import { type MyOrder, notify, useMyOrders, usePendingItems, useSyncStatus, useTechSession, useTimeZone } from './api';
 import { Callout, GroupHeading } from './parts';
 
 /** Minhas O.S.: as atribuídas, agrupadas pelo que o técnico tem de fazer (docs/screens-technician.md). */
 export function OrdersPage() {
+  const TZ = useTimeZone();
   const orders = useMyOrders();
   const session = useTechSession().data;
   const sync = useSyncStatus();
@@ -53,7 +54,7 @@ export function OrdersPage() {
           disabled={orders.isFetching}
           onClick={() => {
             void orders.refetch();
-            scratchToast(t('technician.orders.refreshed'));
+            notify(t('technician.orders.refreshed'));
           }}
         >
           {orders.isFetching ? <Spinner /> : <RotateCw className="size-5" />}
@@ -179,6 +180,7 @@ function OrderGroup({
 
 /** Cartão do kit; nas rejeitadas, o motivo aparece colado embaixo (o técnico decide sem abrir). */
 function MyOrderCard({ order, hideStatus }: { order: MyOrder; hideStatus?: boolean }) {
+  const TZ = useTimeZone();
   const link = <Link to="/technician/orders/$orderId" params={{ orderId: order.id }} />;
   return (
     <div className="flex flex-col">

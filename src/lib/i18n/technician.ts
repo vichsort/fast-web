@@ -132,6 +132,9 @@ export const technicianTexts = {
     taken: '{count} foto(s) nesta sessão',
     location: 'Local ±{meters} m',
     sample: 'Câmera de exemplo: cada toque guarda uma foto fictícia.',
+    noLocation: 'Sem localização',
+    unavailable: 'Não foi possível abrir a câmera. Confira a permissão do navegador ou use a galeria.',
+    lowSpace: 'Pouco espaço no aparelho: libere espaço para não perder fotos.',
   },
 
   supplement: {

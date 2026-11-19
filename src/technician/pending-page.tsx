@@ -4,16 +4,18 @@ import * as React from 'react';
 import { ConfirmDialog } from '@/components/dialogs';
 import { PageHeader } from '@/components/page-header';
 import { PhotoGrid } from '@/components/photos';
-import { EmptyState, ErrorState, LoadingList, scratchToast } from '@/components/states';
+import { EmptyState, ErrorState, LoadingList } from '@/components/states';
 import { PendingItemCard, SyncIndicator } from '@/components/sync';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { t } from '@/lib/i18n';
 import type { PendingItem } from '@/mocks';
-import { scratch, TZ, usePendingItems, useQueueDraft, useSyncStatus } from './mocks';
+import { act } from './act';
+import { removePending, retryPending, usePendingItems, useQueueDraft, useSyncStatus, useTimeZone } from './api';
 import { GroupHeading } from './parts';
 
 /** Pendências: a fila do aparelho e as recusas (docs/queue.md; docs/screens-technician.md). */
 export function PendingPage() {
+  const TZ = useTimeZone();
   const query = usePendingItems();
   const sync = useSyncStatus();
   const [discarding, setDiscarding] = React.useState<PendingItem | null>(null);
@@ -81,8 +83,7 @@ export function PendingPage() {
         description={t('technician.pending.discardDescription')}
         confirmLabel={t('technician.pending.discardConfirm')}
         onConfirm={() => {
-          if (discarding) scratch.removePending(discarding.id);
-          scratchToast(t('ui.actions.discard'));
+          if (discarding) void act(removePending(discarding.id), t('ui.actions.discard'));
         }}
       />
     </div>
@@ -96,6 +97,7 @@ export function PendingPage() {
  */
 function PendingEntry({ item, onDiscard }: { item: PendingItem; onDiscard: () => void }) {
   const navigate = useNavigate();
+  const TZ = useTimeZone();
   const draft = useQueueDraft(item.id);
   const isDraft = item.kind === 'submit' || item.kind === 'supplement';
   const conflict = item.state === 'refused' && item.refusal === 'conflict';
@@ -109,19 +111,13 @@ function PendingEntry({ item, onDiscard }: { item: PendingItem; onDiscard: () =>
         onOpen={() => void open()}
         onRetry={
           item.state === 'waiting' || item.state === 'blocked'
-            ? () => {
-                scratch.retryPending(item.id);
-                scratchToast(t('technician.pending.retried'));
-              }
+            ? () => void act(retryPending(item.id), t('technician.pending.retried'))
             : undefined
         }
         onDiscard={item.state === 'refused' && isDraft ? onDiscard : undefined}
         onDismiss={
           item.state === 'refused' && !isDraft && !conflict
-            ? () => {
-                scratch.removePending(item.id);
-                scratchToast(t('technician.pending.dismissed'));
-              }
+            ? () => void act(removePending(item.id), t('technician.pending.dismissed'))
             : undefined
         }
         className={draft ? 'rounded-b-none' : undefined}

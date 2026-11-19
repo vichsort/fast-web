@@ -3,6 +3,7 @@
 import type { PostgrestError } from '@supabase/supabase-js';
 import type { Database } from '@/lib/database.types';
 import type { MemberRole } from '@/lib/enums';
+import { HISTORY_SELECT, ORDER_SELECT, PERSON, photoUrls } from '@/lib/orders-query';
 import { supabase } from '@/lib/supabase';
 import type {
   AuditView,
@@ -94,22 +95,6 @@ const phoneDigits = (v: string | null) => blankToNull(v?.replace(/\D/g, '') ?? n
 
 // ---------------------------------------------------------------- O.S.
 
-const PERSON = 'id, full_name';
-
-/** O que as telas do escritório embutem numa O.S. (derive.ts, OrderRow). */
-const ORDER_SELECT = `*,
-  client:clients!service_orders_client_id_fkey(*),
-  client_address:client_addresses!service_orders_client_address_id_fkey(id, company_id, client_id, label, street, number, complement, district, city, state, zip_code, reference, is_primary, created_at, deleted_at, deleted_by, delete_reason),
-  created_by_ref:profiles!service_orders_created_by_fkey(${PERSON}),
-  assignments:service_order_assignees(*, user:profiles!service_order_assignees_user_id_fkey(${PERSON})),
-  executions:service_order_executions(*,
-    submitter:profiles!service_order_executions_submitted_by_fkey(${PERSON}),
-    reviewer:profiles!service_order_executions_reviewed_by_fkey(${PERSON}),
-    acknowledger:profiles!service_order_executions_acknowledged_by_fkey(${PERSON}),
-    photos:service_order_photos(*))`;
-
-const HISTORY_SELECT = `history:service_order_history(*, actor:profiles!service_order_history_actor_id_fkey(${PERSON}))`;
-
 const OVERDUE_STATUSES = ['open', 'in_progress', 'rejected'] as const;
 
 /**
@@ -143,24 +128,12 @@ async function officeGetOrder(id: string): Promise<OrderDetail | null> {
   const photoIds = row.executions.flatMap((e) => e.photos.map((p) => p.id));
   let urls = new Map<string, string>();
   try {
-    urls = await photoUrls(photoIds);
+    urls = await photoUrls(photoIds, invoke);
   } catch (error) {
     // Sem as URLs (rede ou servidor), a O.S. abre mesmo assim; as fotos voltam ao recarregar.
     if (!(error instanceof ApiError) || !['network', 'server'].includes(error.errorClass)) throw error;
   }
   return toOrderDetail(row, Date.now(), urls);
-}
-
-const PHOTO_URL_BATCH = 100;
-
-/** get_photo_urls (04): até 100 por chamada; a URL vale 5 minutos. */
-async function photoUrls(ids: string[]): Promise<Map<string, string>> {
-  const batches: string[][] = [];
-  for (let i = 0; i < ids.length; i += PHOTO_URL_BATCH) batches.push(ids.slice(i, i + PHOTO_URL_BATCH));
-  const results = await Promise.all(
-    batches.map((photo_ids) => invoke<{ photo_id: string; url: string }[]>('get_photo_urls', { photo_ids })),
-  );
-  return new Map(results.flat().map((r) => [r.photo_id, r.url]));
 }
 
 async function createOrder(input: OrderInput & { id: string }, _actor: PersonRef) {
