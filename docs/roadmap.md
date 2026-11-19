@@ -50,6 +50,7 @@ Esboço visual do sistema inteiro antes da integração real, pedido em 2026-11-
 - [x] E2E: aparelho compartilhado, quem entra depois não vê nada de quem saiu ([shared-device.spec.ts](../tests/e2e/technician/shared-device.spec.ts); [e2e.md](e2e.md), S4); achou o cache voltando depois do logout, corrigido ([queue.md](queue.md#decisões)).
 - [x] E2E: sair com envios na fila, o aviso conta e cancelar não apaga nada ([logout-pending.spec.ts](../tests/e2e/technician/logout-pending.spec.ts); [e2e.md](e2e.md), P2).
 - [x] E2E: complemento durante a revisão, aprovar pede recarregar antes ([stale-review.spec.ts](../tests/e2e/office/stale-review.spec.ts); [e2e.md](e2e.md), E2).
+- [x] E2E: cadastrar cliente e O.S. pela tela e atribuir, o técnico vê a O.S. ([create-order.spec.ts](../tests/e2e/office/create-order.spec.ts); [e2e.md](e2e.md), E3).
 
 ## 4. Escritório
 
