@@ -75,7 +75,11 @@ Esboço visual do sistema inteiro antes da integração real, pedido em 2026-11-
   - [x] Resto do [versionamento](e2e.md#versionamento): versão do build no Perfil, `x-client-version`, versão mínima e formato do item da fila.
   - [ ] Android emulado.
   - [ ] E2E no CI.
-- [ ] Cloudflare Pages ligado ao Supabase de produção.
+- [ ] Cloudflare Pages ligado ao Supabase de produção. No primeiro deploy:
+  - o backend vai ao ar antes do front (o CORS das Edge Functions tem de liberar o `x-client-version`);
+  - conferir que REST, RPC e Auth do Supabase hospedado aceitam o `x-client-version` no CORS (o gateway do stack local aceita; o hospedado não foi testado). Se recusar, nada do app funciona;
+  - a versão do build pega o commit de `CF_PAGES_COMMIT_SHA` (`vite.config.ts`);
+  - apagar os dados do site nos celulares de teste (Dexie juntado numa versão só, [e2e.md](e2e.md#decisões)).
 
 ## Decisões
 

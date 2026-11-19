@@ -13,6 +13,9 @@ O que mais custa se falhar, onde está no código, o que já é testado e como t
 | Worker | bloqueado por padrão ([queue.md](queue.md#service-worker)); liberado nos testes do offline |
 | Quando | fora do `npm run check`; antes de commitar o que mexe num fluxo coberto |
 | Medições | projeto `measure` (`tests/e2e/measure`), fora da suíte: `MEASURE=1 npx playwright test --project measure --workers 1`; rede de celular emulada pelo CDP do Chromium |
+| Banco local | cresce a cada rodada: os testes criam O.S., clientes e usuários e não apagam (só o `order-volume` limpa as 1001 O.S. dele). Com o banco inchado (~7 mil O.S. em 2026-11-19), os testes do técnico falharam ao acaso, com avisos que não apareciam em 5 s. Suíte instável sem motivo no código: `npm run db:reset` em `../fast` e rodar de novo |
+| Estado global | nenhum teste muda o que vale para todos no banco (`app_settings`, o seed), porque os testes rodam em paralelo: troca-se a resposta só na página, com `page.route` (ver `update-required`). Usuário que sai da conta ou é removido é criado só para o teste (`createTechnician`) |
+| Chamadas do worker | no Chromium, `context.on('request')` vê também as requisições do service worker (`page.on`, não) |
 
 ## Cobertos
 
@@ -105,7 +108,7 @@ Revisado com o usuário em 2026-11-19. Mapa e estimativa; as correções ficam p
 
 | # | Item | Decisão | O que fazer |
 | --- | --- | --- | --- |
-| 1 | P8, versionamento do app e do backend | dados de hoje são descartáveis: juntar as versões 1 a 3 do Dexie numa só, sem migração (apagar os dados do site nos aparelhos de teste) | squash feito em 2026-11-19; depois, o mapa abaixo ([Versionamento](#versionamento)) vira itens, e cada mudança do Dexie ou do formato de item da fila ganha teste de upgrade (unit, `fake-indexeddb`) |
+| 1 | P8, versionamento do app e do backend | dados de hoje são descartáveis: juntar as versões 1 a 3 do Dexie numa só, sem migração (apagar os dados do site nos aparelhos de teste) | feito em 2026-11-19: o squash e o mapa do [Versionamento](#versionamento) inteiro. Daqui em diante, cada mudança do Dexie ou do formato de item da fila ganha teste de upgrade (unit, `fake-indexeddb`; [queue.md](queue.md), Q13) |
 | 2 | D4, D5, D6, listas do escritório | opção A agora; a B continua de pé para quando o volume pedir ([Decisões](#decisões), 2026-11-19) | opção A feita em 2026-11-19 ([Listas do escritório](#listas-do-escritório)) |
 | 3 | P9, retrocompatibilidade do que a fila chama (RPCs e Edge Functions de foto) | aprovado: vai como regra na spec do backend (`../fast/docs/spec.md`) | regra escrita em 2026-11-19 ([princípios](../../fast/docs/spec.md#princípios)); a versão mínima do [Versionamento](#versionamento) continua por fazer |
 | 4 | Campo em Android emulado | depois (usuário, 2026-11-19): por enquanto, só corrigir o que está pela metade | plano guardado em [Android emulado](#android-emulado) |
