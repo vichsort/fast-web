@@ -45,6 +45,7 @@ Esboço visual do sistema inteiro antes da integração real, pedido em 2026-11-
 - [x] E2E: ciclo de revisão entre as duas interfaces, rejeitar, refazer e aprovar ([review-cycle.spec.ts](../tests/e2e/office/review-cycle.spec.ts); [e2e.md](e2e.md), E1).
 - [x] E2E: sessão perdida com envios na fila, entrar de novo manda a fila ([lost-session.spec.ts](../tests/e2e/technician/lost-session.spec.ts); [e2e.md](e2e.md), P3).
 - [x] E2E: upload interrompido retoma sem reenviar a foto confirmada nem duplicar ([interrupted-upload.spec.ts](../tests/e2e/technician/interrupted-upload.spec.ts); [e2e.md](e2e.md), P6).
+- [x] E2E: dupla enviando sem sinal, um envio e um complemento, nada preso ([pair-offline.spec.ts](../tests/e2e/technician/pair-offline.spec.ts); [e2e.md](e2e.md), P7).
 
 ## 4. Escritório
 

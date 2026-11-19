@@ -24,6 +24,7 @@ O que mais custa se falhar, onde está no código, o que já é testado e como t
 | [`technician/offline-open`](../tests/e2e/technician/offline-open.spec.ts) | S1: login e lista com sinal; sem sinal, recarregar direto numa O.S. mostra a O.S. em até 5 s, e a lista também abre |
 | [`technician/lost-session`](../tests/e2e/technician/lost-session.spec.ts) | P3: envio na fila sem sinal; a sessão guardada vence e a renovação é recusada. Ao abrir com sinal, vai ao login com a fila intacta, e entrar de novo com o mesmo usuário manda o envio |
 | [`technician/interrupted-upload`](../tests/e2e/technician/interrupted-upload.spec.ts) | P6: envio com sinal e 2 fotos; o 1º PUT da 2ª foto cai (`context.route`). A retomada chega sozinha: 1 execução, 2 fotos, a 1ª enviada uma vez e a 2ª duas |
+| [`technician/pair-offline`](../tests/e2e/technician/pair-offline.spec.ts) | P7: a dupla envia sem sinal, cada um no seu celular (dois contextos), e os dois voltam ao sinal juntos. No banco: uma tentativa e um complemento dela, 2 fotos; as Pendências dos dois ficam vazias |
 | [`technician/refused-submission`](../tests/e2e/technician/refused-submission.spec.ts) | P5: envio feito sem sinal numa O.S. que o escritório cancela. Com o sinal, o rascunho fica em "Precisam de você" com o motivo e o texto, continua ao reabrir, nada chega ao servidor e só sai quando o técnico apaga |
 
 ## Perda da prova
@@ -38,7 +39,7 @@ O pior caso do produto: serviço feito que nunca chega ao escritório.
 | P4 | Remoção do membro apaga tudo, inclusive envios não mandados | remoção por engano antes do sinal perde a prova (offline.md, proteção dos dados) | `gate.tsx`, `clearUser` | aceito | E2E: removido, ao abrir com sinal o aparelho limpa e vai ao login com o aviso |
 | P5 | Recusa por regra ao voltar o sinal (O.S. cancelada, técnico tirado da O.S.) | o rascunho tem de ficar `refused`, com o motivo, até o técnico apagar (offline.md, recusa definitiva) | `processor.ts` (`refuse`), Pendências | unit; E2E desde 2026-11-19 | coberto |
 | P6 | Upload interrompido no meio do envio | a retomada não pode reenviar foto confirmada nem duplicar (Q4) | `sendSubmit` | unit, com API falsa; E2E desde 2026-11-19 | coberto |
-| P7 | Dupla enviando sem sinal | o segundo envio vira complemento (04, R4); nenhuma prova pode ficar presa | backend; fila daqui | backend | E2E com dois contextos (dois celulares): nada fica `blocked` nem `refused` |
+| P7 | Dupla enviando sem sinal | o segundo envio vira complemento (04, R4); nenhuma prova pode ficar presa | backend; fila daqui | backend; E2E desde 2026-11-19 | coberto |
 | P8 | App atualizado com itens na fila | a versão nova lê prova gravada pela velha: schema do Dexie ou formato do item. Ex.: itens anteriores ao `waitingFor` (2026-11-19) ficam sem o campo e só voltam pelo timer | `offline/db.ts` | sem regra | unit de cada upgrade do Dexie a partir de dados da versão anterior |
 | P9 | Contrato do backend mudando com itens de versões antigas na fila | uma RPC com assinatura nova responde `PGRST202` e o item fica `blocked`: não perde, mas trava até o técnico atualizar e tocar em "Tentar agora" | contrato do backend | sem regra | sugestão para a spec do backend: RPC usada pela fila muda de forma retrocompatível por pelo menos o prazo offline (3 dias) mais o ciclo de atualização |
 
@@ -92,7 +93,7 @@ O pior caso do produto: serviço feito que nunca chega ao escritório.
 | 3 | ~~E1, ciclo de revisão~~ (feito) | fecha a O.S. |
 | ~~4 | P3, sessão perdida com fila~~ (feito) | garante que o caminho que mantém a fila continua assim |
 | ~~5 | P6, upload interrompido~~ (feito) | retomada sem duplicar |
-| 6 | P7, dupla | dois celulares voltando ao sinal juntos |
+| ~~6 | P7, dupla~~ (feito) | dois celulares voltando ao sinal juntos |
 
 Correções fora do E2E, por decisão do usuário: D4, D5 (P1 e T2 corrigidos em 2026-11-19).
 
