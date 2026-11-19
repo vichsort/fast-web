@@ -96,3 +96,11 @@ export async function signOutAndWipe(userId: string): Promise<void> {
     // nada guardado
   }
 }
+
+/**
+ * "Entrar de novo" com a fila parada pedindo login (e2e.md, P3): encerra só a sessão deste aparelho e não apaga nada.
+ * Entrando com a mesma conta, a fila sai (queue.md, Q3); com outra, os dados ficam no aparelho, fora da vista.
+ */
+export async function signOutKeepingData(): Promise<void> {
+  await supabase.auth.signOut({ scope: 'local' });
+}

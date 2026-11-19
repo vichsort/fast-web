@@ -174,6 +174,9 @@ export const technicianTexts = {
     dismissed: 'Dispensar recusa',
     retried: 'Tentar agora',
     conflictHint: 'Abra a O.S. para escolher qual texto fica.',
+    loginTitle: 'Sua sessão terminou',
+    loginBody: 'O que está na fila continua no aparelho e sai quando você entrar de novo com a mesma conta.',
+    login: 'Entrar de novo',
     footnote: 'Sair da conta apaga do aparelho o que ainda não foi enviado.',
   },
 

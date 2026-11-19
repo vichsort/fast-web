@@ -1,20 +1,23 @@
 import { useNavigate } from '@tanstack/react-router';
-import { ChevronDown, CircleCheck, Info } from 'lucide-react';
+import { ChevronDown, CircleCheck, Info, LogIn } from 'lucide-react';
 import * as React from 'react';
+import { signOutKeepingData } from '@/app/session';
 import { ConfirmDialog } from '@/components/dialogs';
 import { PageHeader } from '@/components/page-header';
 import { PhotoGrid } from '@/components/photos';
 import { EmptyState, ErrorState, LoadingList } from '@/components/states';
 import { PendingItemCard, SyncIndicator } from '@/components/sync';
+import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { t } from '@/lib/i18n';
 import type { PendingItem } from '@/mocks';
 import { act } from './act';
 import { removePending, retryPending, usePendingItems, useQueueDraft, useSyncStatus, useTimeZone } from './api';
-import { GroupHeading } from './parts';
+import { Callout, GroupHeading } from './parts';
 
 /** Pendências: a fila do aparelho e as recusas (docs/queue.md; docs/screens-technician.md). */
 export function PendingPage() {
+  const navigate = useNavigate();
   const TZ = useTimeZone();
   const query = usePendingItems();
   const sync = useSyncStatus();
@@ -27,6 +30,21 @@ export function PendingPage() {
     <div className="flex flex-col gap-5">
       <PageHeader title={t('technician.pending.title')} description={t('technician.pending.description')} />
       {sync && <SyncIndicator status={sync} timeZone={TZ} variant="banner" />}
+      {sync?.needs_login && (
+        <Callout
+          tone="danger"
+          icon={LogIn}
+          title={t('technician.pending.loginTitle')}
+          action={
+            <Button className="h-11" onClick={() => void signOutKeepingData().then(() => navigate({ to: '/login' }))}>
+              <LogIn />
+              {t('technician.pending.login')}
+            </Button>
+          }
+        >
+          {t('technician.pending.loginBody')}
+        </Callout>
+      )}
 
       {query.isPending ? (
         <LoadingList count={3} />

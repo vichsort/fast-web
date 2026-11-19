@@ -52,6 +52,7 @@ Esboço visual do sistema inteiro antes da integração real, pedido em 2026-11-
 - [x] E2E: complemento durante a revisão, aprovar pede recarregar antes ([stale-review.spec.ts](../tests/e2e/office/stale-review.spec.ts); [e2e.md](e2e.md), E2).
 - [x] E2E: cadastrar cliente e O.S. pela tela e atribuir, o técnico vê a O.S. ([create-order.spec.ts](../tests/e2e/office/create-order.spec.ts); [e2e.md](e2e.md), E3).
 - [x] E2E: fuso do navegador em outro dia, o prazo e o atraso seguem o fuso da empresa ([time-zone.spec.ts](../tests/e2e/office/time-zone.spec.ts); [e2e.md](e2e.md), E4).
+- [x] "Entrar de novo" em Pendências com a fila parada pedindo login, sem apagar nada ([relogin.spec.ts](../tests/e2e/technician/relogin.spec.ts); [e2e.md](e2e.md), P3).
 
 ## 4. Escritório
 

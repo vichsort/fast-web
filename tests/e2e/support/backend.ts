@@ -146,3 +146,10 @@ export async function companyTimeZone(): Promise<string> {
   if (error) throw error;
   return data.timezone;
 }
+
+/** O usuário sai da conta em outro aparelho: o logout global revoga todas as sessões dele (queue.md, S5). */
+export async function signOutEverywhere(email: string) {
+  const { client } = await signIn(email);
+  const { error } = await client.auth.signOut();
+  if (error) throw error;
+}
