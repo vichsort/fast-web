@@ -29,7 +29,7 @@ O pior caso do produto: serviço feito que nunca chega ao escritório.
 | --- | --- | --- | --- | --- | --- |
 | P1 | ⚠️ IndexedDB sem `navigator.storage.persist()` | sem o pedido, o armazenamento é "best-effort": com o celular cheio, o Chrome pode apagar a origem inteira (rascunhos, fotos, fila) sem aviso | nenhum código pede | lacuna | campo (o Playwright não reproduz despejo). Correção sugerida: pedir ao abrir a interface do técnico (PWA instalado costuma ganhar) e mostrar no perfil se foi negado |
 | P2 | Logout com itens na fila apaga a prova | decisão do contrato (Q10); o aviso com a contagem é a única proteção | `logout-button.tsx`, `profile-page.tsx` | aceito | E2E barato: o aviso mostra a contagem certa e cancelar não apaga nada |
-| P3 | (verificar) "Entre de novo para enviar" sem botão de login | o indicador pede login, mas a única saída visível é o logout, que apaga a fila (P2). Se o supabase-js removeu a sessão, o app vai ao login e a fila do mesmo usuário fica (Q3); se não, o técnico fica entre esperar e apagar | `components/sync.tsx`, `session.ts` | sem teste | E2E: com itens na fila, estragar a sessão guardada, entrar de novo com o mesmo usuário; a fila precisa sair |
+| P3 | "Entre de novo para enviar" sem botão de login | verificado em 2026-11-19 no auth-js 2.119: com a renovação recusada e o token de acesso vencido, ele apaga a sessão, a guarda da rota (`gate.tsx`) leva ao login, e entrar com o mesmo usuário mantém a fila (Q3). Sobra uma janela de até 1 h: com o token de acesso ainda válido pelo relógio do aparelho, a sessão fica, e a única saída visível é o logout, que apaga a fila (P2) | `components/sync.tsx`, `gate.tsx` | risco menor | E2E: com itens na fila, estragar a sessão guardada e entrar de novo com o mesmo usuário; a fila precisa sair |
 | P4 | Remoção do membro apaga tudo, inclusive envios não mandados | remoção por engano antes do sinal perde a prova (offline.md, proteção dos dados) | `gate.tsx`, `clearUser` | aceito | E2E: removido, ao abrir com sinal o aparelho limpa e vai ao login com o aviso |
 | P5 | Recusa por regra ao voltar o sinal (O.S. cancelada, técnico tirado da O.S.) | o rascunho tem de ficar `refused`, com o motivo, até o técnico apagar (offline.md, recusa definitiva) | `processor.ts` (`refuse`), Pendências | unit | E2E: o escritório cancela enquanto o técnico está sem sinal |
 | P6 | Upload interrompido no meio do envio | a retomada não pode reenviar foto confirmada nem duplicar (Q4) | `sendSubmit` | unit, com API falsa | E2E: abortar uma vez o PUT da 2ª foto (`context.route`, worker bloqueado); 1 execução, e a 1ª foto não sobe de novo |
@@ -42,7 +42,7 @@ O pior caso do produto: serviço feito que nunca chega ao escritório.
 | ID | Ponto | Por que pesa | Onde | Hoje | Teste |
 | --- | --- | --- | --- | --- | --- |
 | T1 | Sinal de volta sem tentar nada | envio parado com sinal no celular | `wakeNetworkWaits` (Q7) | corrigido em 2026-11-19 | E2E (`online`); unit (`sync` e respostas HTTP) |
-| T2 | ⚠️ `refreshSession` da fila sem timeout | RPC, Edge Function e PUT têm timeout; a renovação não. Com a conexão pendurada, a passada não termina: a página fica `running` e ignora as novas acordadas até recarregar, e o lock segura o `sync` do worker | `supabase-api.ts` | lacuna | unit: renovação que nunca responde vira Rede no timeout |
+| T2 | ⚠️ `refreshSession` da fila sem timeout | RPC, Edge Function e PUT têm timeout; a renovação não, e o `fetch` do auth-js também não tem (verificado no 2.119). Com a conexão pendurada, a passada não termina: a página fica `running` e ignora as novas acordadas até recarregar, e o lock segura o `sync` do worker | `supabase-api.ts` | lacuna | unit: renovação que nunca responde vira Rede no timeout |
 | T3 | Um item por vez no aparelho (Q2) | uma O.S. com 20 fotos em 2G segura as outras | `processor.ts` | por design | medir em campo |
 | T4 | Background Sync com o app fechado | o Chrome tenta o `sync` poucas vezes, com espera própria; esgotado, só a página manda (o app tem de abrir) | `sw.ts` | unit | campo; o Playwright não simula |
 | T5 | Aba congelada pelo Android em segundo plano | a fila da página para; só o `sync` do worker cobre | `runner.ts` | — | campo |
@@ -84,7 +84,7 @@ O pior caso do produto: serviço feito que nunca chega ao escritório.
 | 1 | P5, recusa por regra | é o exemplo do offline.md, e a prova não pode sumir |
 | 2 | S1, abrir sem sinal | é o começo do dia em campo |
 | 3 | E1, ciclo de revisão | fecha a O.S. |
-| 4 | P3, sessão perdida com fila | confirma ou descarta um caminho de perda |
+| 4 | P3, sessão perdida com fila | garante que o caminho que mantém a fila continua assim |
 | 5 | P6, upload interrompido | retomada sem duplicar |
 | 6 | P7, dupla | dois celulares voltando ao sinal juntos |
 
