@@ -21,7 +21,7 @@ Ordem de trabalho do front. Cada item é um comportamento: teste vermelho (quand
 - [x] shadcn/ui e tema.
 - [ ] Service worker: fila no Background Sync, atualização do app.
 - [ ] Membro removido: conferir o vínculo ativo a cada recusa por regra da fila (ao abrir com sinal já confere); sem vínculo, `clearUser` e logout.
-- [ ] Playwright contra o stack local do backend.
+- [ ] ~~Playwright contra o stack local do backend.~~ Pausado (ver Decisões).
 
 ## 2b. Scratch visual (sem testes, dados de exemplo)
 
@@ -38,7 +38,7 @@ Esboço da estrutura visual do sistema inteiro, antes da integração real. Regr
 - [ ] Execução: câmera, galeria, rascunho, enviar.
 - [ ] Complemento.
 - [ ] Pendências.
-- [ ] E2E: execução offline com fotos chega ao servidor sem duplicar.
+- [ ] ~~E2E: execução offline com fotos chega ao servidor sem duplicar.~~ Pausado (ver Decisões).
 
 ## 4. Escritório
 
@@ -52,3 +52,7 @@ Esboço da estrutura visual do sistema inteiro, antes da integração real. Regr
 
 - [ ] Ícones e manifest final.
 - [ ] Cloudflare Pages ligado ao Supabase de produção.
+
+## Decisões
+
+- **2026-11-19** — Playwright de lado até segunda ordem: sem E2E, e o projeto `browser` do Vitest (que roda no Chromium do Playwright) sai do `npm test` e do `npm run check`, ficando em `npm run test:browser`. *Por quê:* pedido do usuário para entregar as funcionalidades primeiro; instalar e manter o navegador de teste fica para depois.
