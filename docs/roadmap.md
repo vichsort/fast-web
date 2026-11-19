@@ -48,7 +48,7 @@ Esboço da estrutura visual do sistema inteiro, antes da integração real. Regr
 - [x] O.S.: criar, editar, atribuir, cancelar, histórico.
 - [x] Revisão: aprovar, rejeitar, ciência dos tardios, alertas.
 - [x] Empresa, membros e auditoria (owner).
-- [ ] Pendências do escritório: email dos outros membros (o backend não devolve: só o do próprio usuário, pela sessão); serviço de CEP (hoje a tabela de exemplo); importação de clientes (etapa 9 do backend).
+- [ ] Pendências do escritório: email dos outros membros (o backend não devolve: só o do próprio usuário, pela sessão); serviço de CEP (hoje a tabela de exemplo; decidido o ViaCEP em 2026-11-19, a fazer depois); importação de clientes (etapa 9 do backend).
 
 ## 5. Produção
 
