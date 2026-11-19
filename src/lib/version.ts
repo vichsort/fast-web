@@ -7,6 +7,12 @@ declare const __APP_VERSION__: string | undefined;
 /** A versão deste build; nos testes, que não passam pelo Vite, `0000.00.00.0000+test`. */
 export const APP_VERSION: string = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0000.00.00.0000+test';
 
+/**
+ * Headers de toda chamada ao Supabase, da página e do worker: o backend vê qual build chamou (api.md do backend). As
+ * Edge Functions liberam o header no CORS; sem isso, o navegador barraria as chamadas a elas.
+ */
+export const VERSION_HEADERS = { 'x-client-version': APP_VERSION };
+
 const pad = (n: number, size = 2) => String(n).padStart(size, '0');
 
 export function buildVersion(at: Date, commit: string | null): string {

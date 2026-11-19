@@ -4,6 +4,7 @@ import { authLinkError, authLinkType } from '@/app/access';
 import { createAuthStorage } from './auth-storage';
 import type { Database } from './database.types';
 import { authTimeoutFetch, signalingFetch } from './supabase-fetch';
+import { VERSION_HEADERS } from './version';
 
 const url = import.meta.env.VITE_SUPABASE_URL;
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -32,6 +33,7 @@ export function onSupabaseResponse(listener: () => void): () => void {
 export const supabase = createClient<Database>(url, anonKey, {
   auth: { storage: createAuthStorage(), persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
   global: {
+    headers: VERSION_HEADERS,
     fetch: signalingFetch(
       authTimeoutFetch((...args) => fetch(...args)),
       () => {

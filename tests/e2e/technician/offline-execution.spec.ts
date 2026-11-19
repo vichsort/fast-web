@@ -3,7 +3,7 @@
 import { expect, type Page, test } from '@playwright/test';
 import { t } from '@/lib/i18n';
 import { galleryJpeg, login, readStore } from '../support/app';
-import { createOrder, serverOrder, users } from '../support/backend';
+import { createOrder, serverOrder, supabaseUrl, users } from '../support/backend';
 
 test.use({
   // O worker entra aqui: com ele, página e Background Sync disputam a mesma fila (Q9), e o envio não pode duplicar.
@@ -21,6 +21,13 @@ async function queueAttempts(page: Page) {
 
 test('execução sem sinal com fotos chega ao servidor sem duplicar', async ({ page, context }) => {
   const order = await createOrder([users.technician1]);
+  // Toda chamada à API do Supabase, da página e do worker (no Chromium, o contexto vê as do worker também). O PUT da
+  // foto vai à URL assinada do R2 (no stack local, /storage), sem o header.
+  const api = new RegExp(`^${supabaseUrl}/(rest|auth|functions)/v1/`);
+  const calls: { url: string; version: string | undefined }[] = [];
+  context.on('request', (request) => {
+    if (api.test(request.url())) calls.push({ url: request.url(), version: request.headers()['x-client-version'] });
+  });
 
   await login(page, users.technician1);
   await page.getByText(order.title).click();
@@ -81,4 +88,8 @@ test('execução sem sinal com fotos chega ao servidor sem duplicar', async ({ p
   });
   expect(server.executions[0]?.client_started_at).not.toBeNull();
   expect(server.photos.map((p) => p.source).sort()).toEqual(['camera', 'gallery']);
+
+  // A versão do app foi em todas, inclusive nas Edge Functions de foto, que a liberam no CORS (api.md do backend).
+  expect(calls.some((c) => c.url.includes('/functions/v1/confirm_photo_upload'))).toBe(true);
+  expect(calls.filter((c) => !/^\d{4}\.\d{2}\.\d{2}\.\d{4}(\+[0-9a-f]+)?$/.test(c.version ?? ''))).toEqual([]);
 });
