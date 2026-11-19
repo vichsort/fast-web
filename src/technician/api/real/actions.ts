@@ -9,7 +9,7 @@ import { processPhoto } from '@/photos/process';
 import type { DraftFields, TechnicianApi, TechOrder } from '../types';
 import { current } from './context';
 import { localSnapshot, parseDraftKey } from './local';
-import { kick } from './runner';
+import { queued } from './runner';
 
 const nowIso = () => new Date().toISOString();
 const blankToNull = (v: string | null) => (v && v.trim() !== '' ? v.trim() : null);
@@ -111,7 +111,7 @@ export const actions: Omit<
       });
     }
     await enqueueStart(db, { userId, orderId: order.id, clientStartedAt: at });
-    void kick();
+    queued();
   },
 
   async saveDraft(key, fields) {
@@ -141,7 +141,7 @@ export const actions: Omit<
     const { orderId, attemptId } = parseDraftKey(key);
     const draft = await editingDraft(orderId, attemptId);
     if (draft) await enqueueSubmit(db, { userId, draftId: draft.id, clientSubmittedAt: nowIso() });
-    void kick();
+    queued();
     return 'queued';
   },
 
@@ -159,7 +159,7 @@ export const actions: Omit<
       text: blankToNull(text),
       expected: blankToNull(server.materials_notes),
     });
-    void kick();
+    queued();
   },
 
   /** O técnico escolheu o texto: a recusa sai e a edição parte do texto atual do servidor. */
@@ -173,7 +173,7 @@ export const actions: Omit<
     const current_ = conflicts.at(-1)?.current ?? null;
     for (const r of conflicts) await dismissRefusal(db, r.id as number);
     await enqueueMaterials(db, { userId, orderId: order.id, text: blankToNull(text), expected: current_ });
-    void kick();
+    queued();
   },
 
   async removePending(id) {
@@ -191,7 +191,7 @@ export const actions: Omit<
     const item = await db.queue.get(itemId);
     if (item?.state === 'blocked') await retryBlocked(db, itemId);
     else if (item) await db.queue.update(itemId, { nextAttemptAt: 0 });
-    void kick();
+    queued();
   },
 
   /** Perfil (01): update direto do próprio nome e telefone; só com sinal. */

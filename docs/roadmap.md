@@ -19,7 +19,8 @@ Ordem de trabalho do front. Cada item é um comportamento: teste vermelho (quand
 - [x] Textos pt-BR (`t()`) com as chaves de erro do backend.
 - [x] Rotas (TanStack Router), login, recuperar e definir senha, layout por papel.
 - [x] shadcn/ui e tema.
-- [ ] Service worker: fila no Background Sync, atualização do app. O que existe e o que falta: [queue.md](queue.md#service-worker-a-fazer).
+- [x] Service worker: fila no Background Sync ([queue.md](queue.md#service-worker)).
+- [ ] Service worker: aviso de versão nova.
 - [x] Membro removido: conferir o vínculo ativo a cada recusa por regra da fila (ao abrir com sinal já confere); sem vínculo, `clearUser` e logout.
 - [ ] ~~Playwright contra o stack local do backend.~~ Pausado (ver Decisões).
 

@@ -1,9 +1,19 @@
 // Processador da fila na página (docs/queue.md): roda sob o lock `fast-queue` (o service worker usa o mesmo), quando
-// a tela põe algo na fila, quando a rede ou o app voltam e no horário que a fila pediu para tentar de novo.
+// a tela põe algo na fila, quando a rede ou o app voltam e no horário que a fila pediu para tentar de novo. Cada ação
+// que põe na fila também registra o Background Sync, que envia pelo worker com o app fechado.
 import * as React from 'react';
 import { supabase } from '@/lib/supabase';
 import { db } from '@/offline/db';
-import { createSupabaseQueueApi, processQueue, type QueueStatus, webLock } from '@/offline/queue';
+import {
+  createSupabaseQueueApi,
+  type PassResult,
+  QUEUE_CHANNEL,
+  type QueueMessage,
+  type QueueStatus,
+  runPass,
+  SYNC_TAG,
+  webLock,
+} from '@/offline/queue';
 import { currentOrNull } from './context';
 
 export interface RunnerState {
@@ -31,19 +41,6 @@ const api = createSupabaseQueueApi(supabase);
 const lock = webLock();
 const clock = { now: () => Date.now() };
 
-async function counts(userId: string) {
-  const [queue, refused, refusals] = await Promise.all([
-    db.queue.where('userId').equals(userId).count(),
-    db.drafts
-      .where('userId')
-      .equals(userId)
-      .filter((d) => d.state === 'refused')
-      .count(),
-    db.refusals.where('userId').equals(userId).count(),
-  ]);
-  return { queue, refused: refused + refusals };
-}
-
 /** Acorda a fila. Se já está rodando, roda de novo no fim (a tela pode ter posto um item no meio). */
 export async function kick(): Promise<void> {
   const context = currentOrNull();
@@ -55,29 +52,65 @@ export async function kick(): Promise<void> {
   if (timer) clearTimeout(timer);
   timer = null;
   set({ running: true });
-  const before = await counts(context.userId);
-  let status: QueueStatus = { kind: 'idle' };
+  let result: PassResult = { status: { kind: 'idle' }, sent: false, refused: false };
+  again = false;
   try {
-    do {
+    result = await runPass({ db, api, lock, clock, userId: context.userId }, () => {
+      const repeat = again;
       again = false;
-      status = await processQueue({ db, api, lock, clock, userId: context.userId });
-    } while (again);
+      return repeat;
+    });
   } catch (error) {
     console.error('fila parou', error);
-    status = { kind: 'waiting', retryAt: Date.now() + 30_000 };
+    result = { ...result, status: { kind: 'waiting', retryAt: Date.now() + 30_000 } };
   }
-  const after = await counts(context.userId);
-  const sent = after.queue < before.queue;
+  set({ running: false });
+  applyPass(result);
+}
+
+/** Resultado de uma passada, da página ou do worker: estado do indicador, próxima tentativa e os avisos. */
+function applyPass({ status, sent, refused }: PassResult) {
   set({
-    running: false,
     status,
     online: status.kind !== 'waiting',
     lastSyncAt: sent ? new Date().toISOString() : state.lastSyncAt,
   });
+  if (timer) clearTimeout(timer);
+  timer = null;
   if (status.kind === 'waiting') {
     timer = setTimeout(() => void kick(), Math.max(1_000, status.retryAt - Date.now()));
   }
-  for (const listener of afterRun) listener({ sent, refused: after.refused > before.refused });
+  for (const listener of afterRun) listener({ sent, refused });
+}
+
+/** A tela pôs algo na fila: tenta já e deixa o Background Sync de reserva (sinal que volta com o app fechado). */
+export function queued() {
+  void kick();
+  void requestSync();
+}
+
+async function requestSync() {
+  try {
+    const registration = await navigator.serviceWorker?.getRegistration();
+    await (registration as { sync?: { register(tag: string): Promise<void> } } | undefined)?.sync?.register(SYNC_TAG);
+  } catch (error) {
+    // Sem permissão ou sem suporte: a página continua enviando sozinha.
+    console.warn('background sync indisponível', error);
+  }
+}
+
+/** Ouve as passadas do worker enquanto a página está aberta. */
+export function listenToWorker(): () => void {
+  if (typeof BroadcastChannel === 'undefined') return () => {};
+  const channel = new BroadcastChannel(QUEUE_CHANNEL);
+  channel.onmessage = (event: MessageEvent<QueueMessage>) => {
+    if (event.data?.type !== 'pass') return;
+    const { sent, refused } = event.data;
+    // Com a página no meio de uma passada, o estado sai dela; os avisos (recarregar, conferir o vínculo) valem já.
+    if (state.running) for (const listener of afterRun) listener({ sent, refused });
+    else applyPass(event.data);
+  };
+  return () => channel.close();
 }
 
 export function onAfterRun(listener: (changed: { sent: boolean; refused: boolean }) => void) {

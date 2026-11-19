@@ -1,5 +1,7 @@
 // Liga a interface do técnico à fonte real: sessão, banco local ao vivo, cache persistido e o processador da fila.
 // Com os dados de exemplo, só repassa as telas.
+
+import { useRegisterSW } from 'virtual:pwa-register/react';
 import { useQueryClient } from '@tanstack/react-query';
 import * as React from 'react';
 import type { Access } from '@/app/access';
@@ -9,7 +11,7 @@ import { usingMocks } from '@/lib/data-source';
 import { bindTechnician } from './context';
 import { stopLocal, watchLocal } from './local';
 import { persistTechnicianCache } from './persist';
-import { kick, onAfterRun, stopRunner } from './runner';
+import { kick, listenToWorker, onAfterRun, stopRunner } from './runner';
 
 export function TechnicianRuntime({ access, children }: { access: Access; children: React.ReactNode }) {
   if (usingMocks || !('companyId' in access)) return children;
@@ -31,6 +33,8 @@ function RealRuntime({
 }) {
   const { session } = useAuth();
   const queryClient = useQueryClient();
+  // O worker (precache e fila no Background Sync) é do técnico: o escritório trabalha online (CLAUDE.md).
+  useRegisterSW();
   const userId = session?.user.id;
   const [restored, setRestored] = React.useState(false);
   if (userId) bindTechnician({ userId, companyId, role, queryClient });
@@ -58,6 +62,7 @@ function RealRuntime({
     };
     window.addEventListener('online', wake);
     document.addEventListener('visibilitychange', visible);
+    const stopWorker = listenToWorker();
     const stopAfter = onAfterRun(({ sent, refused }) => {
       if (sent) void queryClient.invalidateQueries({ queryKey: ['technician'] });
       // Recusa por regra: confere o próprio vínculo (offline.md, proteção dos dados); o gate apaga e sai se sumiu.
@@ -66,6 +71,7 @@ function RealRuntime({
     return () => {
       window.removeEventListener('online', wake);
       document.removeEventListener('visibilitychange', visible);
+      stopWorker();
       stopAfter();
     };
   }, [queryClient, restored, userId]);

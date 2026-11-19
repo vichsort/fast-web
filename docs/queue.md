@@ -32,21 +32,23 @@ Implementação no aparelho da fila descrita em [offline.md](../../fast/docs/off
 
 O rascunho (`drafts`) é editado pela tela até o técnico tocar em "Enviar"; aí vira `queued` e entra na fila (Q4). Recusado por regra, fica `refused`, visível com o motivo, até o técnico apagar ([offline.md](../../fast/docs/offline.md#recusa-definitiva)). Fotos são das telas e do módulo de fotos ([photos.md](photos.md)); a fila só lê, marca `uploaded` e apaga.
 
-## Service worker (a fazer)
+## Service worker
 
-A fila hoje roda só na página. O que já existe e o que falta para ela rodar também no service worker ([`src/sw.ts`](../src/sw.ts), [roadmap](roadmap.md), etapa 2):
+A fila roda na página e no worker ([`src/sw.ts`](../src/sw.ts)), com o mesmo código ([`sync.ts`](../src/offline/queue/sync.ts)). O worker só é registrado na interface do técnico.
 
-| Ponto | Hoje | Para o service worker |
-| --- | --- | --- |
-| Processador | `processQueue` sem DOM nem React, com API, lock e relógio injetados; o lock é o `webLock` (Web Locks também existe no worker), então página e worker nunca rodam juntos | chamar o mesmo `processQueue` no evento `sync` (`event.waitUntil`) |
-| Quem roda na página | [`runner.ts`](../src/technician/api/real/runner.ts): ao abrir, ao voltar o sinal e a aba, depois de cada ação; esperando rede, timer até a hora marcada | registrar a tag de sync depois de cada ação que põe na fila (`actions.ts`), além do `kick` |
-| Supabase | a sessão já fica no IndexedDB (`auth-storage.ts`), lida pela página e pelo worker; [`supabase.ts`](../src/lib/supabase.ts) lê `window.location` (links do Auth) e não pode ser importado no worker | cliente próprio no worker com `createAuthStorage()` e `detectSessionInUrl: false`; renovação ao mesmo tempo resolvida (ver Decisões, 2026-11-19) |
-| Usuário | a página passa o `userId` da sessão | o usuário da sessão guardada; sem sessão, não roda; só os itens desse usuário (Q3) |
-| Depois de enviar | `onAfterRun` invalida `['technician']` e, com recusa, confere o vínculo (`runtime.tsx`); o `liveQuery` do Dexie vê as mudanças | avisar a página aberta (`postMessage` ou `BroadcastChannel`) para fazer o mesmo que o `onAfterRun`; conferir que o `liveQuery` vê a escrita do worker |
-| Registro e atualização | ninguém registra o worker: `registerType: 'prompt'` e `injectRegister: false` no `vite.config.ts` | registrar (`virtual:pwa-register/react`) e mostrar o aviso de versão nova; recarregar não perde nada (tudo está no Dexie), mas não interromper a câmera aberta |
-| Precache | o app inteiro, ícones inclusive (`globPatterns`) | — |
-| Rodar | `devOptions.enabled: false`: o worker só existe no build | `npm run build && npm run preview` |
-| Playwright | pausado | nos testes comuns, `serviceWorkers: 'block'` (o worker escapa do `page.route` e guarda arquivos velhos); liberar só nos testes do offline |
+| Ponto | Como é |
+| --- | --- |
+| Passada | `runPass`: roda o `processQueue` sob o lock `fast-queue` (página e worker nunca juntos, Q9) e diz se algo saiu da fila (`sent`) e se houve recusa nova (`refused`) |
+| Página | [`runner.ts`](../src/technician/api/real/runner.ts): ao abrir, ao voltar o sinal e a aba, depois de cada ação; esperando rede, timer até a hora marcada |
+| Background Sync | cada ação que põe na fila (`queued()` em `actions.ts`) também registra a tag `fast-queue`; o evento `sync` do worker roda a passada (`syncInWorker`) |
+| Fila esperando rede no worker | o evento `sync` falha de propósito e o navegador agenda outra tentativa; sem login (`needs_login`), termina: só a página entra de novo |
+| Supabase no worker | cliente próprio, com a sessão do IndexedDB (`createAuthStorage()`), `detectSessionInUrl: false` e `autoRefreshToken: false` (renova quando uma chamada precisa); [`supabase.ts`](../src/lib/supabase.ts) lê `window.location` e não entra no worker |
+| Usuário no worker | o da sessão guardada; sem sessão, não roda; só os itens dele (Q3) |
+| Depois da passada do worker | `BroadcastChannel` `fast-queue` → a página aberta atualiza o indicador e faz o mesmo que depois da própria passada (invalida `['technician']`; com recusa, confere o vínculo). O `liveQuery` vê a escrita do worker pelo canal do próprio Dexie |
+| Registro e atualização | `useRegisterSW` no `TechnicianRuntime` (`registerType: 'prompt'`, `injectRegister: false`); aviso de versão nova: a fazer |
+| Precache | o app inteiro, ícones inclusive (`globPatterns`) |
+| Rodar | `devOptions.enabled: false`: o worker só existe no build (`npm run build && npm run preview`) |
+| Playwright | pausado; quando voltar: `serviceWorkers: 'block'` nos testes comuns (o worker escapa do `page.route` e guarda arquivos velhos), liberado só nos do offline |
 
 ## Fora daqui
 
@@ -67,3 +69,5 @@ A fila hoje roda só na página. O que já existe e o que falta para ela rodar t
 - **2026-11-13** — HTTP 429 é Servidor (espera e tenta de novo), não Bug. *Por quê:* é limite passageiro do Supabase ou do R2; como Bug, bloquearia o item até o técnico agir.
 - **2026-11-13** — Membro removido é detectado pelo app (leitura do próprio vínculo ativo, [offline.md](../../fast/docs/offline.md#proteção-dos-dados-no-aparelho)), não por um código de erro novo no backend. *Por quê:* o código exigiria mudar o começo de quase todas as RPCs, que respondem `not_found` de propósito para não revelar o que existe em outra empresa; a leitura direta já é exata pelo RLS e cobre também a empresa excluída. A fila não apaga nada sozinha: quem confere e chama `clearUser` é o app (base, [roadmap](roadmap.md)).
 - **2026-11-19** — Página e worker renovando a sessão ao mesmo tempo não precisam de lock: o supabase-js 2.119 não usa lock por padrão, o servidor devolve o token ativo a quem chega com o refresh token recém-trocado, e o cliente que perdeu a corrida descarta o próprio resultado (`AuthRefreshDiscardedError`). A fila conta esse descarte como renovação. *Por quê:* a sessão nova já está no storage comum; tratar como login perdido pararia a fila à toa. Se o descarte veio de um logout, o erro de sessão seguinte para a fila (uma renovação por item).
+- **2026-11-19** — O worker só é registrado na interface do técnico (`TechnicianRuntime`), não na raiz do app. *Por quê:* offline é só do técnico (CLAUDE.md); o escritório trabalha online e não precisa de worker nem de aviso de versão.
+- **2026-11-19** — Com itens esperando a rede, o evento `sync` do worker falha em vez de registrar a tag de novo. *Por quê:* o worker não tem timer que sobreviva; a falha faz o navegador tentar de novo mais tarde (com espera dele), e registrar a mesma tag dentro do evento faria o Chrome disparar outra vez logo em seguida, em laço.

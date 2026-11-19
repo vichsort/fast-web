@@ -13,11 +13,13 @@ describe('queue module', () => {
     }
   });
 
-  it('Q11: the public entry exposes the enqueue, processing, device and adapter functions', () => {
+  it('Q11: the public entry exposes the enqueue, processing, background sync, device and adapter functions', () => {
     expect(Object.keys(queue).sort()).toEqual(
       [
         'ApiError',
+        'QUEUE_CHANNEL',
         'QUEUE_LOCK_NAME',
+        'SYNC_TAG',
         'clearUser',
         'createSupabaseQueueApi',
         'dismissRefusal',
@@ -28,6 +30,8 @@ describe('queue module', () => {
         'pendingCount',
         'processQueue',
         'retryBlocked',
+        'runPass',
+        'syncInWorker',
         'webLock',
       ].sort(),
     );

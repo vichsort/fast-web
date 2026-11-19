@@ -1,9 +1,47 @@
 /// <reference lib="webworker" />
-// Service worker próprio (vite-plugin-pwa, injectManifest). Hoje só faz o precache do app; a fila offline
-// entra aqui com o Background Sync (docs/queue.md).
+// Service worker próprio (vite-plugin-pwa, injectManifest): precache do app e a fila offline no Background Sync
+// (docs/queue.md, "Service worker").
+import { createClient } from '@supabase/supabase-js';
 import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
+import { createAuthStorage } from '@/lib/auth-storage';
+import type { Database } from '@/lib/database.types';
+import { db } from '@/offline/db';
+import { createSupabaseQueueApi, QUEUE_CHANNEL, runPass, SYNC_TAG, syncInWorker, webLock } from '@/offline/queue';
 
 declare const self: ServiceWorkerGlobalScope;
 
+/** Background Sync ainda não está nos tipos do TypeScript. */
+interface SyncEvent extends ExtendableEvent {
+  readonly tag: string;
+}
+
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);
+
+// A mesma sessão da página (IndexedDB). O worker não lê links do Auth nem renova por timer: renova quando uma
+// chamada precisa, e a corrida com a página é resolvida pelo supabase-js e pelo servidor (docs/queue.md, Decisões).
+const supabase = createClient<Database>(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY, {
+  auth: { storage: createAuthStorage(), persistSession: true, autoRefreshToken: false, detectSessionInUrl: false },
+});
+const api = createSupabaseQueueApi(supabase);
+const lock = webLock();
+const clock = { now: () => Date.now() };
+
+async function sessionUserId(): Promise<string | null> {
+  const { data, error } = await supabase.auth.getSession();
+  if (error) throw error;
+  return data.session?.user.id ?? null;
+}
+
+self.addEventListener('sync', (event) => {
+  const sync = event as SyncEvent;
+  if (sync.tag !== SYNC_TAG) return;
+  const channel = new BroadcastChannel(QUEUE_CHANNEL);
+  sync.waitUntil(
+    syncInWorker({
+      sessionUserId,
+      pass: (userId) => runPass({ db, api, lock, clock, userId }),
+      post: (message) => channel.postMessage(message),
+    }).finally(() => channel.close()),
+  );
+});
