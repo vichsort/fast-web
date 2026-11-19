@@ -12,7 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { formatNumber, formatPhone, shortAddress } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import type { ClientListItem } from '@/mocks';
-import { addressText } from '../mocks';
+import { addressText } from '../api';
 import { useClients } from '../queries';
 import { NewClientPanel } from './client-form';
 

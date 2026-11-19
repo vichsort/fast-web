@@ -11,7 +11,6 @@ import {
   type ClientListItem,
   type Company,
   type DashboardCounts,
-  type ExecutionView,
   getClient,
   getCompany,
   getOrder,
@@ -29,19 +28,16 @@ import {
   type PersonRef,
   type Profile,
 } from '@/mocks';
+import { ApiError } from '@/offline/queue/errors';
+import { addressText, isOverdue, orderMatches, seenUntil } from './derive';
 
 const LATENCY = 150;
 const wait = <T>(value: T): Promise<T> =>
   new Promise((resolve) => setTimeout(() => resolve(structuredClone(value)), LATENCY));
 
-/** Erro de regra, com o código do catálogo (errors.md), como o banco devolveria. */
-export class RuleError extends Error {
-  constructor(public code: string) {
-    super(code);
-  }
-}
+/** Recusa por regra, com o código do catálogo (errors.md), como o banco devolveria. */
 const fail = (code: string): never => {
-  throw new RuleError(code);
+  throw new ApiError('rule', code, code);
 };
 
 // ---------------------------------------------------------------- a cópia em memória
@@ -83,29 +79,6 @@ const profiles = new Map<string, Profile>();
 const now = () => new Date().toISOString();
 const ref = (p: PersonRef): PersonRef => ({ id: p.id, full_name: p.full_name });
 
-/** Texto do endereço copiado na O.S. (03, R3). */
-export function addressText(
-  a: Pick<ClientAddress, 'street' | 'number' | 'complement' | 'district' | 'city' | 'state' | 'zip_code' | 'reference'>,
-): string {
-  const clean = (v: string | null) => (v && v.trim() !== '' ? v.trim() : null);
-  const zip = clean(a.zip_code);
-  const parts = [
-    [clean(a.street), clean(a.number), clean(a.complement)].filter(Boolean).join(', '),
-    clean(a.district),
-    `${a.city}/${a.state.toUpperCase()}`,
-    zip ? `CEP ${zip.slice(0, 5)}-${zip.slice(5)}` : null,
-  ].filter(Boolean);
-  const reference = clean(a.reference);
-  return parts.join(' - ') + (reference ? ` (${reference})` : '');
-}
-
-/** 03, R6. */
-function isOverdue(o: OrderDetail): boolean {
-  return (
-    o.due_at !== null && Date.parse(o.due_at) < Date.now() && ['open', 'in_progress', 'rejected'].includes(o.status)
-  );
-}
-
 /** Recalcula os campos derivados (técnicos ativos, atrasada, tardios, cliente embutido). */
 function view(s: Store, o: OrderDetail): OrderDetail {
   const client = s.clients.find((c) => c.id === o.client_id);
@@ -115,7 +88,7 @@ function view(s: Store, o: OrderDetail): OrderDetail {
       ? { ...o.client, name: client.name, phone: client.phone, notes: client.notes, deleted_at: client.deleted_at }
       : o.client,
     assignees: o.assignments.filter((a) => a.unassigned_at === null).map((a) => a.user),
-    overdue: isOverdue(o),
+    overdue: isOverdue(o, Date.now()),
     late_supplements_unseen: o.attempts.flatMap((a) => a.supplements).filter((x) => x.is_late && !x.acknowledged_at)
       .length,
   };
@@ -154,36 +127,13 @@ function ensureEditable(o: OrderDetail) {
 
 // ---------------------------------------------------------------- leituras: O.S.
 
-function matches(o: OrderDetail, f: OrderFilters, timeZone: string): boolean {
-  if (f.search) {
-    const q = f.search.trim().toLowerCase().replace(/^#/, '');
-    const hay =
-      `${o.order_number} ${String(o.order_number).padStart(4, '0')} ${o.title} ${o.client.name}`.toLowerCase();
-    if (q && !hay.includes(q)) return false;
-  }
-  if (f.status?.length && !f.status.includes(o.status)) return false;
-  if (f.priority?.length && !f.priority.includes(o.priority)) return false;
-  if (f.service_type?.length && !f.service_type.includes(o.service_type)) return false;
-  if (f.technician_id && !o.assignees.some((a) => a.id === f.technician_id)) return false;
-  if (f.client_id && o.client_id !== f.client_id) return false;
-  if (f.due_from || f.due_to) {
-    if (!o.due_at) return false;
-    const day = calendarDay(o.due_at, timeZone);
-    if (f.due_from && day < f.due_from) return false;
-    if (f.due_to && day > f.due_to) return false;
-  }
-  if (f.overdue && !o.overdue) return false;
-  if (f.unassigned && (o.assignees.length > 0 || !ACTIVE_ORDER_STATUSES.includes(o.status))) return false;
-  return true;
-}
-
 /** Lista de O.S. com cliente e técnicos, filtrada (03, "Filtrar"). Mais nova primeiro. */
 export async function officeListOrders(filters: OrderFilters = {}): Promise<OrderDetail[]> {
   const s = await store();
   return wait(
     s.orders
       .map((o) => view(s, o))
-      .filter((o) => matches(o, filters, s.company.timezone))
+      .filter((o) => orderMatches(o, filters, s.company.timezone))
       .sort((a, b) => b.order_number - a.order_number),
   );
 }
@@ -491,14 +441,6 @@ export async function cancelOrder(id: string, reason: string, actor: PersonRef) 
 }
 
 // ---------------------------------------------------------------- ações: revisão (04)
-
-/** Maior `received_at` entre os complementos da tentativa (o `p_seen_until` da revisão). */
-export function seenUntil(supplements: Pick<ExecutionView, 'received_at'>[]): string | null {
-  return supplements.reduce<string | null>(
-    (max, x) => (max === null || x.received_at > max ? x.received_at : max),
-    null,
-  );
-}
 
 /** review_execution. `simulateStale` imita a chegada de um complemento depois do carregamento da tela. */
 export async function reviewExecution(

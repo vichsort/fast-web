@@ -1,6 +1,6 @@
 # Telas do escritório
 
-Mapa das telas de owner e manager (computador, online). O que existe por papel está em [screens.md](screens.md); as peças, em [components.md](components.md); as regras e os erros, nos módulos do backend citados em cada linha. Código: [`src/office/`](../src/office/), rotas em [`routes.tsx`](../src/office/routes.tsx), textos em [`office.ts`](../src/lib/i18n/office.ts). Etapa 2b do [roadmap](roadmap.md): scratch visual, com dados de exemplo.
+Mapa das telas de owner e manager (computador, online). O que existe por papel está em [screens.md](screens.md); as peças, em [components.md](components.md); as regras e os erros, nos módulos do backend citados em cada linha. Código: [`src/office/`](../src/office/), rotas em [`routes.tsx`](../src/office/routes.tsx), textos em [`office.ts`](../src/lib/i18n/office.ts). Dados: as telas importam só de [`src/office/api/`](../src/office/api/), que escolhe a fonte pela chave `VITE_DATA_SOURCE` ([`data-source.ts`](../src/lib/data-source.ts)): `mock` usa os dados de exemplo; sem ela, o Supabase. Funções ainda sem integração respondem com o erro genérico.
 
 ## Moldura
 
@@ -48,9 +48,9 @@ O texto é sempre o do catálogo ([errors.md](../../fast/docs/errors.md), `error
 | `no_pending_execution` | revisão | a O.S. fora de `pending_approval` mostra o status atual |
 | demais | qualquer ação | aviso (toast) |
 
-## Só no scratch
+## Dados de exemplo e integração
 
-| Item | No scratch | Na integração |
+| Item | Com `VITE_DATA_SOURCE=mock` | No Supabase |
 | --- | --- | --- |
 | Leituras | [`src/office/mocks.ts`](../src/office/mocks.ts): cópia em memória dos dados do kit, com as mesmas formas; recarregar a página desfaz as ações | consultas diretas com relações embutidas e `get_dashboard`, nas mesmas chaves `['office', …]` do TanStack Query |
 | Ações | mudam a cópia, imitam os erros de regra e mostram o aviso de scratch | RPCs do 02, 03 e 04, update direto de `clients`, `client_addresses`, `companies` e `profiles`; Edge Functions do 06 |
@@ -68,4 +68,6 @@ O texto é sempre o do catálogo ([errors.md](../../fast/docs/errors.md), `error
 - **2026-11-17** — Erros que pedem ação (`stale_review`, `client_has_open_orders`, `last_owner`, `conflict`) ficam numa faixa na tela, não só no aviso que some. *Por quê:* o usuário precisa do próximo passo (recarregar, ver as O.S., promover outro dono).
 - **2026-11-17** — Editar a O.S. num formulário só (dados, endereço, materiais e técnicos), com reatribuir e materiais também no detalhe. *Por quê:* a criação já tem todos os campos; trocar a dupla ou anotar material é frequente e não precisa abrir o formulário.
 - **2026-11-17** — Filtros da lista de O.S. na URL. *Por quê:* os contadores do dashboard linkam para a lista filtrada, e voltar do detalhe mantém o filtro.
+- **2026-11-19** — Os dados de exemplo ficam, atrás de uma chave única (`VITE_DATA_SOURCE=mock`), e a API real é tipada pela forma da API de exemplo (`src/office/api/types.ts`). *Por quê:* pedido do usuário: ver as telas e testá-las sem o backend; o tipo comum impede que as duas fontes divirjam.
+- **2026-11-19** — Lista de O.S.: o banco filtra status, prioridade, tipo, cliente e atrasada; busca, técnico, sem técnico e prazo no fuso da empresa ficam no front (`orderMatches`, o mesmo dos dados de exemplo), sobre a lista já trazida com execuções e fotos (sem URLs). *Por quê:* busca no nome do cliente e técnico atribuído não são colunas da O.S.; o volume do MVP cabe numa leitura. Paginação entra quando o volume pedir.
 - **2026-11-17** — Formulários em diálogo continuam abertos quando faltam obrigatórios ou a ação é recusada. *Por quê:* fechar perderia o que foi digitado.

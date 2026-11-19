@@ -42,7 +42,8 @@ Esboço da estrutura visual do sistema inteiro, antes da integração real. Regr
 
 ## 4. Escritório
 
-- [ ] Dashboard.
+- [x] Base: fonte de dados por chave (`VITE_DATA_SOURCE`), API real tipada pela de exemplo, sessão real na moldura, erros das ações por classe.
+- [x] Dashboard.
 - [ ] Clientes e endereços.
 - [ ] O.S.: criar, editar, atribuir, cancelar, histórico.
 - [ ] Revisão: aprovar, rejeitar, ciência dos tardios, alertas.

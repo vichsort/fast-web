@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
 import {
   Building2,
@@ -19,7 +19,7 @@ import { RequireAccess } from '@/app/pages/gate';
 import { signOutAndWipe } from '@/app/session';
 import { OfficeShell } from '@/components/app-shell';
 import type { NavItem } from '@/components/nav';
-import { LoadingDetail, ScratchBanner } from '@/components/states';
+import { ErrorState, LoadingDetail, ScratchBanner } from '@/components/states';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -29,8 +29,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { UserAvatar } from '@/components/user';
+import { usingMocks } from '@/lib/data-source';
 import { t } from '@/lib/i18n';
-import { officeCompany, officeSessionUser } from './mocks';
+import { bindSession, officeCompany, officeSessionUser } from './api';
 import { useDashboard } from './queries';
 import { type OfficeSession, OfficeSessionProvider } from './session';
 
@@ -40,9 +41,23 @@ export function OfficeLayout() {
 }
 
 function OfficeFrame({ access }: { access: Access }) {
+  const { session: auth } = useAuth();
   const role = 'role' in access && access.role === 'owner' ? 'owner' : 'manager';
+  if (auth && 'companyId' in access) bindSession({ userId: auth.user.id, companyId: access.companyId });
   const user = useQuery({ queryKey: ['office', 'session', role], queryFn: () => officeSessionUser(role) });
   const company = useQuery({ queryKey: ['office', 'company'], queryFn: () => officeCompany() });
+  if (user.isError || company.isError) {
+    return (
+      <div className="mx-auto max-w-3xl p-6">
+        <ErrorState
+          onRetry={() => {
+            void user.refetch();
+            void company.refetch();
+          }}
+        />
+      </div>
+    );
+  }
   if (!user.data || !company.data) {
     return (
       <div className="mx-auto max-w-3xl p-6">
@@ -151,20 +166,22 @@ function Shell({ session }: { session: OfficeSession }) {
           </Button>
         )
       }
-      banner={<ScratchBanner />}
+      banner={usingMocks ? <ScratchBanner /> : undefined}
     >
       <Outlet />
     </OfficeShell>
   );
 }
 
-/** Rodapé da lateral: quem está logado (nos dados de exemplo), Meu perfil e Sair (logout real). */
+/** Rodapé da lateral: quem está logado, Meu perfil e Sair (logout real, que esquece as leituras do escritório). */
 function UserMenu({ session }: { session: OfficeSession }) {
   const { session: auth } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   async function logout() {
     if (!auth) return;
     await signOutAndWipe(auth.user.id);
+    queryClient.removeQueries({ queryKey: ['office'] });
     await navigate({ to: '/login' });
   }
   return (

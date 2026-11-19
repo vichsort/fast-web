@@ -29,7 +29,7 @@ import { errorMessage, t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { OrderDetail } from '@/mocks';
 import type { PhotoAlert } from '@/photos/alerts';
-import { reviewExecution, seenUntil } from '../mocks';
+import { reviewExecution, seenUntil } from '../api';
 import { useOrder, useOrders } from '../queries';
 import { useOffice, useOfficeAction } from '../session';
 import { NotFound, Notice, ScratchScenario } from '../shared';

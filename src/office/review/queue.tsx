@@ -12,7 +12,7 @@ import { AvatarStack } from '@/components/user';
 import { formatOrderNumber, formatRelative } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import type { LateSupplementItem, OrderDetail } from '@/mocks';
-import { acknowledgeSupplements, seenUntil } from '../mocks';
+import { acknowledgeSupplements, seenUntil } from '../api';
 import { useLateSupplements, useOrders } from '../queries';
 import { useOffice, useOfficeAction } from '../session';
 import { textLink } from '../shared';

@@ -12,7 +12,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { formatZipCode } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import type { ClientAddress } from '@/mocks';
-import { type AddressInput, addAddress, updateAddress } from '../mocks';
+import { type AddressInput, addAddress, updateAddress } from '../api';
 import { useOfficeAction } from '../session';
 import { useStayOpen } from '../shared';
 

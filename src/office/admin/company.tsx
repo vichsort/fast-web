@@ -12,7 +12,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { formatDate, formatOrderNumber, formatPhone } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import { ptBR } from '@/lib/i18n/pt-BR';
-import { updateCompany } from '../mocks';
+import { updateCompany } from '../api';
 import { useOffice, useOfficeAction } from '../session';
 import { OwnerOnly } from '../shared';
 

@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { formatPhone } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import type { Client } from '@/mocks';
-import { createClient, updateClient } from '../mocks';
+import { createClient, updateClient } from '../api';
 import { useOfficeAction } from '../session';
 import { useStayOpen } from '../shared';
 import { AddressFields, addressValid, draftToInput, emptyAddress } from './address-form';

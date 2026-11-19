@@ -23,7 +23,7 @@ import { ACTIVE_ORDER_STATUSES } from '@/lib/enums';
 import { formatDate, formatDateTime } from '@/lib/format';
 import { errorMessage, t } from '@/lib/i18n';
 import { type ClientAddress, type ClientDetail, getPerson, type OrderListItem } from '@/mocks';
-import { deleteAddress, deleteClient, setPrimaryAddress } from '../mocks';
+import { deleteAddress, deleteClient, setPrimaryAddress } from '../api';
 import { useClient } from '../queries';
 import { useOffice, useOfficeAction } from '../session';
 import { NotFound, Notice } from '../shared';

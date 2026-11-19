@@ -12,7 +12,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from '@/components/user';
 import { formatPhone } from '@/lib/format';
 import { t } from '@/lib/i18n';
-import { updateProfile } from './mocks';
+import { updateProfile } from './api';
 import { useMembers } from './queries';
 import { useOffice, useOfficeAction } from './session';
 

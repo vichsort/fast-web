@@ -107,6 +107,8 @@ export const uiTexts = {
     offlineDescription: 'Conecte-se à internet para ver esta tela.',
   },
 
+  actionDone: '{action}: feito.',
+
   scratch: {
     banner: 'Tela de exemplo: os dados são fictícios e nada é gravado.',
     toast: 'Exemplo: "{action}" não grava nada nesta versão.',

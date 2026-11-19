@@ -1,12 +1,13 @@
-// Sessão do escritório no scratch: o papel vem do acesso real (RequireAccess); o usuário e a empresa, dos dados de
-// exemplo (o "logado" nos mocks é o usuário de exemplo do papel, não o do login real).
+// Sessão do escritório: o papel vem do acesso real (RequireAccess); o usuário e a empresa, da fonte de dados
+// (com os dados de exemplo, o "logado" é o usuário de exemplo do papel, não o do login real).
 import { useQueryClient } from '@tanstack/react-query';
 import * as React from 'react';
 import { toast } from 'sonner';
 import { scratchToast } from '@/components/states';
-import { errorMessage } from '@/lib/i18n';
+import { usingMocks } from '@/lib/data-source';
+import { errorMessage, t } from '@/lib/i18n';
 import type { Company, PersonRef, Profile } from '@/mocks';
-import { RuleError } from './mocks';
+import { actionErrorCode } from './derive';
 
 export interface OfficeSession {
   role: 'owner' | 'manager';
@@ -30,9 +31,9 @@ export function useOffice(): OfficeSession {
 export type ActionResult<T> = { ok: true; value: T } | { ok: false; code: string };
 
 /**
- * Roda uma ação de exemplo: em caso de sucesso, recarrega as leituras do escritório e mostra o aviso de scratch; em
- * erro de regra, mostra o texto do catálogo num toast, exceto os códigos em `inline`, que a tela mostra no lugar.
- * Nunca rejeita (os diálogos fecham; a tela decide o que mais mostrar).
+ * Roda uma ação: em caso de sucesso, recarrega as leituras do escritório e avisa (com os dados de exemplo, o aviso de
+ * scratch); na falha, mostra o texto do código (derive.ts, `actionErrorCode`) num toast, exceto os códigos em
+ * `inline`, que a tela mostra no lugar. Nunca rejeita (os diálogos fecham; a tela decide o que mais mostrar).
  */
 export function useOfficeAction() {
   const queryClient = useQueryClient();
@@ -45,10 +46,11 @@ export function useOfficeAction() {
       try {
         const value = await action();
         await queryClient.invalidateQueries({ queryKey: ['office'] });
-        scratchToast(label);
+        if (usingMocks) scratchToast(label);
+        else toast.success(t('ui.actionDone', { action: label }));
         return { ok: true, value };
       } catch (error) {
-        const code = error instanceof RuleError ? error.code : 'unknown';
+        const code = actionErrorCode(error);
         if (!options.inline?.includes(code)) toast.error(errorMessage(code));
         return { ok: false, code };
       }

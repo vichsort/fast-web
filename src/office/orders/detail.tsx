@@ -46,7 +46,7 @@ import { UserChip } from '@/components/user';
 import { formatDate, formatDateTime, formatOrderNumber, formatRelative } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import { getPerson, type OrderDetail } from '@/mocks';
-import { acknowledgeSupplements, cancelOrder, seenUntil, setAssignees, updateMaterials } from '../mocks';
+import { acknowledgeSupplements, cancelOrder, seenUntil, setAssignees, updateMaterials } from '../api';
 import { useOrder, useTechnicians } from '../queries';
 import { useOffice, useOfficeAction } from '../session';
 import { NotFound, Notice, textLink } from '../shared';

@@ -31,7 +31,7 @@ export const BACKEND_ERROR_CODES = [
 ] as const;
 
 /** Erros do aparelho (docs/photos.md) e o texto genérico. */
-export const DEVICE_ERROR_CODES = ['storage_full', 'draft_not_editable', 'unknown'] as const;
+export const DEVICE_ERROR_CODES = ['storage_full', 'draft_not_editable', 'offline', 'unknown'] as const;
 
 export type ErrorCode = (typeof BACKEND_ERROR_CODES)[number] | (typeof DEVICE_ERROR_CODES)[number];
 
@@ -58,6 +58,7 @@ const errors = {
   invalid_import: 'O arquivo não tem o formato esperado.',
   storage_full: 'Sem espaço no aparelho. Libere espaço antes de continuar.',
   draft_not_editable: 'Este envio não pode mais ser alterado.',
+  offline: 'Sem conexão. Confira a internet e tente de novo.',
   unknown: 'Não foi possível concluir. Tente de novo ou fale com o escritório.',
 } satisfies Record<ErrorCode, string>;
 

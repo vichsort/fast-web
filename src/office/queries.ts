@@ -11,7 +11,7 @@ import {
   officeListMembers,
   officeListOrders,
   officeTechnicians,
-} from './mocks';
+} from './api';
 
 export const useOrders = (filters: OrderFilters = {}) =>
   useQuery({ queryKey: ['office', 'orders', filters], queryFn: () => officeListOrders(filters) });
