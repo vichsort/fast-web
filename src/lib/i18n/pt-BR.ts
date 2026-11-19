@@ -107,6 +107,12 @@ export const ptBR = {
     offlineFirstAccess: 'Sem conexão. O primeiro acesso neste aparelho precisa de internet.',
     retry: 'Tentar de novo',
   },
+  update: {
+    title: 'Atualize o app',
+    description: 'Esta versão saiu de uso. Atualize para continuar. O que está na fila fica guardado e vai depois.',
+    now: 'Atualizar agora',
+    stillHere: 'Se esta tela voltar, a versão nova ainda está chegando ao aparelho. Tente de novo em alguns minutos.',
+  },
   nav: {
     technicianHome: 'Minhas O.S.',
     officeHome: 'Dashboard',

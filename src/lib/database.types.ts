@@ -9,6 +9,24 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          id: boolean
+          min_client_version: string
+          updated_at: string
+        }
+        Insert: {
+          id?: boolean
+          min_client_version?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: boolean
+          min_client_version?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string

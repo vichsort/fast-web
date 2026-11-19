@@ -10,8 +10,9 @@ Um PWA, duas interfaces escolhidas pelo papel depois do login ([spec](../../fast
 | Recuperar senha | todos                            | Auth                                                        |
 | Definir senha   | quem chegou pelo link do convite | Auth ([06](../../fast/docs/modules/06-members.md))          |
 | Meu perfil      | todos                            | `profiles` ([01](../../fast/docs/modules/01-foundation.md)) |
+| Atualize o app  | quem está abaixo da versão mínima | `app_settings` ([01](../../fast/docs/modules/01-foundation.md), R8) |
 
-Depois do login: `technician` vai para a interface do técnico; `owner` e `manager`, para a do escritório. Sem vínculo ativo (removido ou empresa excluída), o app apaga os dados do usuário e volta ao login com o aviso ([offline.md](../../fast/docs/offline.md#proteção-dos-dados-no-aparelho)). Os links de email do Auth (convite e recuperação) abrem a raiz do app (`site_url`), que leva a "definir senha"; link expirado ou já usado avisa no login.
+Depois do login: `technician` vai para a interface do técnico; `owner` e `manager`, para a do escritório. Sem vínculo ativo (removido ou empresa excluída), o app apaga os dados do usuário e volta ao login com o aviso ([offline.md](../../fast/docs/offline.md#proteção-dos-dados-no-aparelho)). Os links de email do Auth (convite e recuperação) abrem a raiz do app (`site_url`), que leva a "definir senha"; link expirado ou já usado avisa no login. Abaixo da versão mínima (`app_settings`, lida com sinal a cada 10 min e ao voltar à aba), a guarda das duas interfaces (`RequireAccess`) mostra "Atualize o app" no lugar da interface: o botão ativa o worker novo, ou recarrega sem ele ([`min-version.ts`](../src/app/min-version.ts)). Sem resposta, nada é bloqueado.
 
 ## Técnico (celular, offline)
 
@@ -43,4 +44,4 @@ Depois do login: `technician` vai para a interface do técnico; `owner` e `manag
 - **2026-11-19** — A consulta do acesso vai sem as repetições automáticas do postgrest-js (`.retry(false)`). *Por quê:* em falha de rede ele repete o GET 3 vezes (1, 2 e 4 s), e sem sinal o app ficava ~7 s em "Carregando…" antes de usar o acesso guardado; quem decide sem resposta é o acesso guardado, não a espera. Achado pelo E2E S1 ([e2e.md](e2e.md)).
 - **2026-11-19** — Depois de "Enviar" (execução e complemento), com sinal o aviso é "Enviando…"; sem sinal, "o envio entrou na fila". *Por quê:* todo envio passa pela fila (queue.md, Q4), e o aviso só pelo retorno dizia "sem sinal" a quem tinha sinal; "enviado" seria antes da hora, porque as fotos ainda vão subir. Escolha do usuário. Achado pelo E2E E1 ([e2e.md](e2e.md), T7).
 - **2026-11-13** — Servidor de desenvolvimento na porta 3000 (`127.0.0.1`). *Por quê:* é o `site_url` do Auth local no backend; os links do convite e da senha abrem no app sem mudar o backend.
-
+- **2026-11-19** — Abaixo da versão mínima, a tela de atualizar substitui a interface inteira, e não um aviso por cima. *Por quê:* com a interface fechada, a fila da página não roda e o técnico não grava nada novo no formato velho; os itens já na fila ficam no banco local e vão depois de atualizar. Sem sinal, o app não trava: quem manda o técnico atualizar é o backend, quando responde.

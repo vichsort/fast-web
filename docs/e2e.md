@@ -34,6 +34,7 @@ O que mais custa se falhar, onde está no código, o que já é testado e como t
 | [`office/time-zone`](../tests/e2e/office/time-zone.spec.ts) | E4: o navegador num fuso que está agora em outro dia que o da empresa (UTC+14 ou UTC−11, pela hora em São Paulo); no detalhe da O.S., o prazo de hoje e o de ontem aparecem com o dia da empresa, e só o de ontem fica atrasado |
 | [`technician/relogin`](../tests/e2e/technician/relogin.spec.ts) | P3, a janela: técnico próprio com um envio na fila sem sinal sai da conta em outro aparelho (logout global). Com o sinal, a fila para pedindo login e o app fica na interface; "Entrar de novo" em Pendências leva ao login com a fila intacta, e entrar com a mesma conta manda o envio |
 | [`office/order-volume`](../tests/e2e/office/order-volume.spec.ts) | D4: empresa própria do teste com 1001 O.S. gravadas pela chave de serviço; a lista do escritório conta as 1001 e a busca acha a nº 1, a mais antiga. As O.S. são apagadas no fim |
+| [`technician/update-required`](../tests/e2e/technician/update-required.spec.ts) | versão mínima: com a leitura de `app_settings` trocada só na página, o app reabre em "Atualize o app", o início feito sem sinal fica no Dexie e nada sai; com a versão nova, atualizar recarrega e a fila manda o início |
 | [`technician/refused-submission`](../tests/e2e/technician/refused-submission.spec.ts) | P5: envio feito sem sinal numa O.S. que o escritório cancela. Com o sinal, o rascunho fica em "Precisam de você" com o motivo e o texto, continua ao reabrir, nada chega ao servidor e só sai quando o técnico apaga |
 
 ## Perda da prova
@@ -118,10 +119,10 @@ Mapa do que falta para app e backend evoluírem cada um no seu ritmo, com celula
 | --- | --- | --- |
 | Versão do app | feito em 2026-11-19: o momento do build em UTC e o commit (`2026.11.19.1530+abc1234`, [`version.ts`](../src/lib/version.ts)), no `define` do Vite e no Perfil das duas interfaces | — |
 | Versão nas chamadas | feito em 2026-11-19: `x-client-version` em toda chamada à API do Supabase, da página e do worker (`VERSION_HEADERS`); o PUT da foto no R2 vai sem ele. As Edge Functions o liberam no CORS e põem a versão no log de erro ([api.md](../../fast/docs/api.md) do backend). **Deploy:** o backend vai ao ar antes do front que manda o header; sem ele no CORS, o navegador barra as Edge Functions | o E2E `offline-execution` confere o header em todas as chamadas |
-| Versão mínima | não existe | o backend publica a versão mínima aceita (tabela de configuração ou RPC); abaixo dela, o app mostra "Atualize o app" e força a atualização do worker, sem apagar a fila |
+| Versão mínima | feito em 2026-11-19: `app_settings.min_client_version` no backend (01, R8); abaixo dela, "Atualize o app" no lugar da interface, que ativa o worker novo sem apagar a fila ([screens.md](screens.md#comum)). O worker não confere a mínima: o Background Sync de um app velho ainda manda, e por isso a função antiga fica no ar pelo prazo (P9) | E2E `update-required` |
 | Mudança de RPC ou Edge Function usada pela fila | regra na spec do backend (P9); sem ela, `PGRST202` deixaria o item `blocked` | P9: mudança só aditiva; mudança que quebra vira função nova (`_v2`) e a antiga fica pelo prazo offline (3 dias) mais o ciclo de atualização; aí sobe a versão mínima |
 | Formato dos itens da fila e do Dexie | sem versão | campo de versão no item; upgrade do Dexie com teste a partir dos dados da versão anterior |
-| No celular | só o aviso de versão nova | Perfil com a versão; aviso de atualização obrigatória quando abaixo da mínima |
+| No celular | feito em 2026-11-19: Perfil com a versão; "Atualize o app" abaixo da mínima | — |
 
 #### Listas do escritório
 

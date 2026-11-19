@@ -6,6 +6,7 @@ import { t } from '@/lib/i18n';
 import { pendingAuthLink } from '@/lib/supabase';
 import type { Access } from '../access';
 import { useAuth } from '../auth-context';
+import { updateApp, useUpdateRequired } from '../min-version';
 import { signOutAndWipe, useAccess } from '../session';
 
 function Loading() {
@@ -83,7 +84,21 @@ export function RequireAccess({
 }) {
   const { session, ready } = useAuth();
   const access = useAccess(session?.user.id);
+  const outdated = useUpdateRequired(Boolean(session));
   if (!ready || (session && !access.data)) return <Loading />;
   if (!session || access.data?.kind !== kind) return <Navigate to="/" />;
+  if (outdated) return <UpdateRequired />;
   return children(access.data);
+}
+
+/** Abaixo da versão mínima (min-version.ts): só atualizar. A interface, e com ela a fila da página, não abre. */
+function UpdateRequired() {
+  return (
+    <main className="flex min-h-svh flex-col items-center justify-center gap-4 p-4 text-center">
+      <h1 className="font-heading text-xl font-semibold">{t('update.title')}</h1>
+      <p className="max-w-sm text-muted-foreground">{t('update.description')}</p>
+      <Button onClick={() => void updateApp()}>{t('update.now')}</Button>
+      <p className="max-w-sm text-xs text-muted-foreground">{t('update.stillHere')}</p>
+    </main>
+  );
 }
