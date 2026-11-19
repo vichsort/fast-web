@@ -7,6 +7,7 @@ import { priorityVar, serviceTypeVar, statusVar, type Tone, toneVar } from '@/co
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
+import { usingMocks } from '@/lib/data-source';
 import {
   ORDER_PRIORITIES,
   ORDER_STATUSES,
@@ -109,6 +110,7 @@ export function ScratchScenario({
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
 }) {
+  if (!usingMocks) return null;
   return (
     // biome-ignore lint/a11y/noLabelWithoutControl: o Switch do Base UI é o controle dentro do label
     <label className="tone-soft flex cursor-pointer items-start gap-3 rounded-lg border border-dashed px-3 py-2.5 text-xs [--tone:var(--tone-progress)]">

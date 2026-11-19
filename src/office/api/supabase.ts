@@ -14,7 +14,7 @@ import {
   toClientListItem,
   toOrderDetail,
 } from '../derive';
-import type { AddressInput } from '../mocks';
+import type { AddressInput, OrderInput } from '../mocks';
 import type { OfficeApi } from './types';
 
 type Functions = Database['public']['Functions'];
@@ -127,14 +127,112 @@ async function officeListOrders(filters: OrderFilters = {}): Promise<OrderDetail
     .filter((o) => orderMatches(o, filters, current().timeZone));
 }
 
-/** Detalhe da O.S. por id ou número (o link do WhatsApp e a busca usam o número). */
+/** Detalhe da O.S. por id ou número (o link do WhatsApp e a busca usam o número), com as URLs das fotos. */
 async function officeGetOrder(id: string): Promise<OrderDetail | null> {
   const query = supabase
     .from('service_orders')
     .select(`${ORDER_SELECT}, ${HISTORY_SELECT}`)
     .eq('company_id', current().companyId);
-  const row = await maybe((/^\d+$/.test(id) ? query.eq('order_number', Number(id)) : query.eq('id', id)).maybeSingle());
-  return row ? toOrderDetail(row as unknown as OrderRow, Date.now()) : null;
+  const row = (await maybe(
+    (/^\d+$/.test(id) ? query.eq('order_number', Number(id)) : query.eq('id', id)).maybeSingle(),
+  )) as unknown as OrderRow | null;
+  if (!row) return null;
+  const photoIds = row.executions.flatMap((e) => e.photos.map((p) => p.id));
+  let urls = new Map<string, string>();
+  try {
+    urls = await photoUrls(photoIds);
+  } catch (error) {
+    // Sem as URLs (rede ou servidor), a O.S. abre mesmo assim; as fotos voltam ao recarregar.
+    if (!(error instanceof ApiError) || !['network', 'server'].includes(error.errorClass)) throw error;
+  }
+  return toOrderDetail(row, Date.now(), urls);
+}
+
+const PHOTO_URL_BATCH = 100;
+
+/** get_photo_urls (04): até 100 por chamada; a URL vale 5 minutos. */
+async function photoUrls(ids: string[]): Promise<Map<string, string>> {
+  const batches: string[][] = [];
+  for (let i = 0; i < ids.length; i += PHOTO_URL_BATCH) batches.push(ids.slice(i, i + PHOTO_URL_BATCH));
+  const results = await Promise.all(
+    batches.map((photo_ids) => invoke<{ photo_id: string; url: string }[]>('get_photo_urls', { photo_ids })),
+  );
+  return new Map(results.flat().map((r) => [r.photo_id, r.url]));
+}
+
+async function createOrder(input: OrderInput & { id: string }, _actor: PersonRef) {
+  // O gerador tipa o retorno como Record; a RPC devolve a linha de service_orders (03).
+  const order = (await rpc('create_order', {
+    p_id: input.id,
+    p_company_id: current().companyId,
+    p_client_id: input.client_id,
+    p_client_address_id: input.client_address_id ?? undefined,
+    p_service_type: input.service_type,
+    p_title: input.title,
+    p_instructions: blankToNull(input.instructions) ?? undefined,
+    p_priority: input.priority,
+    p_due_date: input.due_date ?? undefined,
+    p_materials_notes: blankToNull(input.materials_notes) ?? undefined,
+    p_assignee_ids: input.assignee_ids,
+  })) as unknown as { id: string; order_number: number };
+  return { id: order.id, order_number: order.order_number };
+}
+
+async function updateOrder(
+  id: string,
+  input: Omit<OrderInput, 'client_id' | 'materials_notes' | 'assignee_ids'>,
+  _actor: PersonRef,
+) {
+  await rpc('update_order', {
+    p_order_id: id,
+    p_title: input.title,
+    p_instructions: blankToNull(input.instructions) ?? undefined,
+    p_priority: input.priority,
+    p_due_date: input.due_date ?? undefined,
+    p_service_type: input.service_type,
+    p_client_address_id: input.client_address_id ?? undefined,
+  });
+}
+
+async function setAssignees(id: string, ids: string[], _actor: PersonRef) {
+  await rpc('set_assignees', { p_order_id: id, p_assignee_ids: ids });
+}
+
+async function updateMaterials(id: string, text: string | null, expected: string | null, _actor: PersonRef) {
+  await rpc('update_materials_notes', {
+    p_order_id: id,
+    p_text: blankToNull(text) ?? undefined,
+    p_expected: blankToNull(expected) ?? undefined,
+  });
+}
+
+async function cancelOrder(id: string, reason: string, _actor: PersonRef) {
+  await rpc('cancel_order', { p_order_id: id, p_reason: reason });
+}
+
+// ---------------------------------------------------------------- revisão (04)
+
+async function reviewExecution(
+  input: {
+    orderId: string;
+    executionId: string;
+    decision: 'approved' | 'rejected';
+    comment: string | null;
+    seenUntil: string | null;
+    simulateStale?: boolean;
+  },
+  _actor: PersonRef,
+) {
+  await rpc('review_execution', {
+    p_execution_id: input.executionId,
+    p_decision: input.decision,
+    p_comment: blankToNull(input.comment) ?? undefined,
+    p_seen_until: input.seenUntil ?? undefined,
+  });
+}
+
+async function acknowledgeSupplements(orderId: string, until: string, _actor: PersonRef) {
+  return rpc('acknowledge_supplements', { p_order_id: orderId, p_seen_until: until });
 }
 
 // ---------------------------------------------------------------- dashboard (05)
@@ -285,6 +383,19 @@ async function officeCompany() {
   return company;
 }
 
+/** Técnicos com vínculo ativo, para atribuir e filtrar (03, R7). */
+async function officeTechnicians(): Promise<PersonRef[]> {
+  const found = await rows(
+    supabase
+      .from('company_members')
+      .select(`user:profiles!company_members_user_id_fkey(${PERSON})`)
+      .eq('company_id', current().companyId)
+      .eq('role', 'technician')
+      .is('deleted_at', null),
+  );
+  return found.map((m) => m.user).sort((a, b) => a.full_name.localeCompare(b.full_name, 'pt-BR'));
+}
+
 /** O RLS de `profiles` mostra quem divide a empresa, inclusive os removidos (01). */
 async function officePeople(): Promise<PersonRef[]> {
   return rows(supabase.from('profiles').select(PERSON));
@@ -302,18 +413,18 @@ export const supabaseApi: OfficeApi = {
   officeListClients,
   officeGetClient,
   officeListMembers: pending('officeListMembers'),
-  officeTechnicians: pending('officeTechnicians'),
+  officeTechnicians,
   officeAudit: pending('officeAudit'),
   officePeople,
   officeCompany,
   officeSessionUser,
-  createOrder: pending('createOrder'),
-  updateOrder: pending('updateOrder'),
-  setAssignees: pending('setAssignees'),
-  updateMaterials: pending('updateMaterials'),
-  cancelOrder: pending('cancelOrder'),
-  reviewExecution: pending('reviewExecution'),
-  acknowledgeSupplements: pending('acknowledgeSupplements'),
+  createOrder,
+  updateOrder,
+  setAssignees,
+  updateMaterials,
+  cancelOrder,
+  reviewExecution,
+  acknowledgeSupplements,
   createClient,
   updateClient,
   addAddress,

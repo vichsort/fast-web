@@ -7,6 +7,7 @@ import { scratchToast } from '@/components/states';
 import { usingMocks } from '@/lib/data-source';
 import { errorMessage, t } from '@/lib/i18n';
 import type { Company, PersonRef, Profile } from '@/mocks';
+import { ApiError } from '@/offline/queue/errors';
 import { actionErrorCode } from './derive';
 
 export interface OfficeSession {
@@ -51,6 +52,10 @@ export function useOfficeAction() {
         return { ok: true, value };
       } catch (error) {
         const code = actionErrorCode(error);
+        // Recusa por regra quase sempre quer dizer tela desatualizada (conflito, revisão velha, status mudou).
+        if (error instanceof ApiError && error.errorClass === 'rule') {
+          void queryClient.invalidateQueries({ queryKey: ['office'] });
+        }
         if (!options.inline?.includes(code)) toast.error(errorMessage(code));
         return { ok: false, code };
       }

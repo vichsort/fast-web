@@ -336,7 +336,7 @@ export async function updateOrder(
   id: string,
   input: Omit<OrderInput, 'client_id' | 'materials_notes' | 'assignee_ids'>,
   actor: PersonRef,
-) {
+): Promise<void> {
   const s = await store();
   const o = findOrder(s, id);
   ensureEditable(o);
@@ -375,7 +375,7 @@ export async function updateOrder(
     Object.assign(o, Object.fromEntries(Object.entries(changes).map(([k, v]) => [k, v.to])));
     pushHistory(s, o, actor, 'updated', { changes });
   }
-  return wait(view(s, o));
+  return void (await wait(null));
 }
 
 function applyAssignees(s: Store, o: OrderDetail, ids: string[], actor: PersonRef, cause: string) {
@@ -410,29 +410,34 @@ function applyAssignees(s: Store, o: OrderDetail, ids: string[], actor: PersonRe
 }
 
 /** set_assignees: conjunto final dos técnicos. */
-export async function setAssignees(id: string, ids: string[], actor: PersonRef) {
+export async function setAssignees(id: string, ids: string[], actor: PersonRef): Promise<void> {
   const s = await store();
   const o = findOrder(s, id);
   ensureEditable(o);
   applyAssignees(s, o, ids, actor, 'unassigned');
-  return wait(view(s, o));
+  return void (await wait(null));
 }
 
 /** update_materials_notes com detecção de conflito (03, R11). */
-export async function updateMaterials(id: string, text: string | null, expected: string | null, actor: PersonRef) {
+export async function updateMaterials(
+  id: string,
+  text: string | null,
+  expected: string | null,
+  actor: PersonRef,
+): Promise<void> {
   const s = await store();
   const o = findOrder(s, id);
   ensureEditable(o);
   const next = blankToNull(text);
-  if (o.materials_notes === next) return wait(view(s, o));
+  if (o.materials_notes === next) return void (await wait(null));
   if (o.materials_notes !== blankToNull(expected)) fail('conflict');
   pushHistory(s, o, actor, 'materials_updated', { from: o.materials_notes, to: next });
   o.materials_notes = next;
-  return wait(view(s, o));
+  return void (await wait(null));
 }
 
 /** cancel_order: motivo obrigatório; tentativa pendente vira `voided` (03, R10). */
-export async function cancelOrder(id: string, reason: string, actor: PersonRef) {
+export async function cancelOrder(id: string, reason: string, actor: PersonRef): Promise<void> {
   const s = await store();
   const o = findOrder(s, id);
   if (!reason.trim()) fail('reason_required');
@@ -444,7 +449,7 @@ export async function cancelOrder(id: string, reason: string, actor: PersonRef) 
   o.cancel_reason = reason.trim();
   for (const a of o.attempts) if (a.review_status === 'pending') a.review_status = 'voided';
   pushHistory(s, o, actor, 'cancelled', { reason: reason.trim() });
-  return wait(view(s, o));
+  return void (await wait(null));
 }
 
 // ---------------------------------------------------------------- ações: revisão (04)
@@ -460,7 +465,7 @@ export async function reviewExecution(
     simulateStale?: boolean;
   },
   actor: PersonRef,
-) {
+): Promise<void> {
   const s = await store();
   const o = findOrder(s, input.orderId);
   const pending = o.attempts.find((a) => a.review_status === 'pending') ?? fail('no_pending_execution');
@@ -476,7 +481,7 @@ export async function reviewExecution(
   pending.reviewer = ref(actor);
   o.status = input.decision;
   pushHistory(s, o, actor, input.decision, { execution_id: pending.id, ...(comment ? { comment } : {}) });
-  return wait(view(s, o));
+  return void (await wait(null));
 }
 
 /** acknowledge_supplements: marca os tardios não vistos até `seenUntil`. Devolve quantos. */
