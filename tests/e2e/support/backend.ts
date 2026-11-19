@@ -1,7 +1,5 @@
 // Acesso direto ao stack local do backend para preparar e conferir os testes, com os usuários do seed
 // (../fast/supabase/seed.sql). Nada aqui passa pelo app.
-import { execFileSync } from 'node:child_process';
-import { resolve } from 'node:path';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { loadEnv } from 'vite';
 import type { Database } from '../../../src/lib/database.types';
@@ -208,7 +206,6 @@ export async function createCompanyWithOrders(count: number) {
   }));
   const inserted = await admin.from('service_orders').insert(orders);
   if (inserted.error) throw inserted.error;
-  analyze('companies', 'company_members', 'clients', 'service_orders');
 
   const remove = async () => {
     for (const table of ['service_order_history', 'service_orders', 'clients'] as const) {
@@ -217,20 +214,4 @@ export async function createCompanyWithOrders(count: number) {
     }
   };
   return { email, oldestTitle, remove };
-}
-
-/**
- * Atualiza as estatísticas do Postgres local. Logo depois de gravar centenas de linhas de uma vez, antes do autoanalyze,
- * o planejador estima uma linha para a empresa nova e a lista de O.S. passa do `statement_timeout` de 8 s (57014). Na
- * produção as O.S. chegam aos poucos (docs/e2e.md, D4).
- */
-function analyze(...tables: string[]) {
-  execFileSync(
-    'npx',
-    ['supabase', 'db', 'query', '--local', `analyze ${tables.map((t) => `public.${t}`).join(', ')}`],
-    {
-      cwd: resolve(process.cwd(), '../fast'),
-      stdio: ['ignore', 'ignore', 'pipe'],
-    },
-  );
 }

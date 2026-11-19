@@ -819,6 +819,9 @@ export type Database = {
         }
         Returns: string
       }
+      assigned_address_ids: { Args: never; Returns: string[] }
+      assigned_client_ids: { Args: never; Returns: string[] }
+      assigned_order_ids: { Args: never; Returns: string[] }
       authorize_photo_upload: {
         Args: { p_execution_id: string; p_order_id: string; p_photo_id: string }
         Returns: Record<string, unknown>
@@ -867,6 +870,7 @@ export type Database = {
         }
         Returns: number
       }
+      colleague_ids: { Args: never; Returns: string[] }
       create_client: {
         Args: {
           p_address?: Json
@@ -1024,6 +1028,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      member_company_ids: {
+        Args: { p_roles?: Database["public"]["Enums"]["member_role"][] }
+        Returns: string[]
       }
       member_role: {
         Args: { p_company_id: string }
@@ -1223,7 +1231,6 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      shares_company: { Args: { p_user_id: string }; Returns: boolean }
       start_execution: {
         Args: { p_client_started_at: string; p_order_id: string }
         Returns: {
