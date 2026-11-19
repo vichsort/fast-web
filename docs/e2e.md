@@ -1,6 +1,6 @@
 # E2E e pontos críticos
 
-O que mais custa se falhar, onde está no código, o que já é testado e como testar o resto. Análise de 2026-11-19, do código daqui e dos docs do backend. **⚠️** = achado ainda sem correção; **(verificar)** = suspeita que o primeiro teste confirma ou descarta.
+O que mais custa se falhar, onde está no código, o que já é testado e como testar o resto. Análise de 2026-11-19, do código daqui e dos docs do backend, revisada no mesmo dia depois dos E2E. **⚠️** = achado ainda sem correção.
 
 ## Como roda
 
@@ -35,12 +35,12 @@ O pior caso do produto: serviço feito que nunca chega ao escritório.
 | --- | --- | --- | --- | --- | --- |
 | P1 | IndexedDB sem `navigator.storage.persist()` | sem o pedido, o armazenamento é "best-effort": com o celular cheio, o Chrome pode apagar a origem inteira (rascunhos, fotos, fila) sem aviso | `offline/persistence.ts`, runtime do técnico | corrigido em 2026-11-19 ([queue.md](queue.md), Q12): pede ao abrir e avisa em Minhas O.S. se negado | unit; o despejo em si só em campo |
 | P2 | Logout com itens na fila apaga a prova | decisão do contrato (Q10); o aviso com a contagem é a única proteção | `logout-button.tsx`, `profile-page.tsx` | aceito | E2E barato: o aviso mostra a contagem certa e cancelar não apaga nada |
-| P3 | "Entre de novo para enviar" sem botão de login | verificado em 2026-11-19 no auth-js 2.119: com a renovação recusada e o token de acesso vencido, ele apaga a sessão, a guarda da rota (`gate.tsx`) leva ao login, e entrar com o mesmo usuário mantém a fila (Q3). Sobra uma janela de até 1 h: com o token de acesso ainda válido pelo relógio do aparelho, a sessão fica, e a única saída visível é o logout, que apaga a fila (P2) | `components/sync.tsx`, `gate.tsx` | unit; E2E desde 2026-11-19 (o caminho que mantém a fila); a janela de 1 h segue como risco menor | coberto |
-| P4 | Remoção do membro apaga tudo, inclusive envios não mandados | remoção por engano antes do sinal perde a prova (offline.md, proteção dos dados) | `gate.tsx`, `clearUser` | aceito | E2E: removido, ao abrir com sinal o aparelho limpa e vai ao login com o aviso |
+| P3 | "Entre de novo para enviar" sem botão de login | verificado em 2026-11-19 no auth-js 2.119: com a renovação recusada e o token de acesso vencido, ele apaga a sessão, a guarda da rota (`gate.tsx`) leva ao login, e entrar com o mesmo usuário mantém a fila (Q3). Sobra uma janela de até 1 h: com o token de acesso ainda válido pelo relógio do aparelho, a sessão fica, e a única saída visível é o logout, que apaga a fila (P2) | `components/sync.tsx`, `app/pages/gate.tsx` | unit; E2E desde 2026-11-19 (o caminho que mantém a fila); a janela de 1 h segue como risco menor | coberto; a janela, decisão em [Próximos passos](#próximos-passos) |
+| P4 | Remoção do membro apaga tudo, inclusive envios não mandados | remoção por engano antes do sinal perde a prova (offline.md, proteção dos dados) | `app/pages/gate.tsx`, `clearUser` | aceito | E2E: removido, ao abrir com sinal o aparelho limpa e vai ao login com o aviso |
 | P5 | Recusa por regra ao voltar o sinal (O.S. cancelada, técnico tirado da O.S.) | o rascunho tem de ficar `refused`, com o motivo, até o técnico apagar (offline.md, recusa definitiva) | `processor.ts` (`refuse`), Pendências | unit; E2E desde 2026-11-19 | coberto |
 | P6 | Upload interrompido no meio do envio | a retomada não pode reenviar foto confirmada nem duplicar (Q4) | `sendSubmit` | unit, com API falsa; E2E desde 2026-11-19 | coberto |
 | P7 | Dupla enviando sem sinal | o segundo envio vira complemento (04, R4); nenhuma prova pode ficar presa | backend; fila daqui | backend; E2E desde 2026-11-19 | coberto |
-| P8 | App atualizado com itens na fila | a versão nova lê prova gravada pela velha: schema do Dexie ou formato do item. Ex.: itens anteriores ao `waitingFor` (2026-11-19) ficam sem o campo e só voltam pelo timer | `offline/db.ts` | sem regra | unit de cada upgrade do Dexie a partir de dados da versão anterior |
+| P8 | App atualizado com itens na fila | a versão nova lê prova gravada pela velha: schema do Dexie ou formato do item. Nada foi publicado ainda (o Dexie está na versão 3); a partir do primeiro deploy, cada versão e cada formato de item têm de ler o anterior | `offline/db.ts`, tipos dos itens da fila | sem regra | unit de cada upgrade do Dexie a partir de dados da versão anterior |
 | P9 | Contrato do backend mudando com itens de versões antigas na fila | uma RPC com assinatura nova responde `PGRST202` e o item fica `blocked`: não perde, mas trava até o técnico atualizar e tocar em "Tentar agora" | contrato do backend | sem regra | sugestão para a spec do backend: RPC usada pela fila muda de forma retrocompatível por pelo menos o prazo offline (3 dias) mais o ciclo de atualização |
 
 ## Fila parada ou atrasada
@@ -84,18 +84,43 @@ O pior caso do produto: serviço feito que nunca chega ao escritório.
 | S3 | Isolamento entre empresas e técnicos | o RLS é a única barreira; o front usa a chave anon | backend | pgTAP no backend | não repetir aqui |
 | S4 | Aparelho compartilhado | cache, fila e fotos por usuário (Q3, Q10) | `clearUser`, `persist.ts` | unit | E2E barato: o técnico 1 sai, o técnico 2 entra e não vê nada do 1 |
 
-## Ordem sugerida
+## Próximos passos
 
-| # | E2E | Por quê |
-| --- | --- | --- |
-| 1 | ~~P5, recusa por regra~~ (feito) | é o exemplo do offline.md, e a prova não pode sumir |
-| 2 | ~~S1, abrir sem sinal~~ (feito) | é o começo do dia em campo |
-| 3 | ~~E1, ciclo de revisão~~ (feito) | fecha a O.S. |
-| 4 | ~~P3, sessão perdida com fila~~ (feito) | garante que o caminho que mantém a fila continua assim |
-| 5 | ~~P6, upload interrompido~~ (feito) | retomada sem duplicar |
-| 6 | ~~P7, dupla~~ (feito) | dois celulares voltando ao sinal juntos |
+Revisado em 2026-11-19, com a ordem antiga (P5, S1, E1, P3, P6, P7) toda feita. Ordem: o que bloqueia a produção, depois o que ainda pode perder prova, depois o escritório, depois medir e decidir.
 
-Correções fora do E2E, por decisão do usuário: D4, D5 (P1 e T2 corrigidos em 2026-11-19).
+### 1. Antes da produção
+
+| # | Item | Tipo | Por quê |
+| --- | --- | --- | --- |
+| 1 | P8, upgrade do Dexie | unit (`fake-indexeddb`): abrir o banco gravado em cada versão anterior, subir e conferir rascunhos, fotos e fila | depois do primeiro deploy, um erro aqui perde a prova de todos os aparelhos de uma vez; antes dele, é barato fixar a regra |
+| 2 | D4, D5, listas do escritório | correção: paginação, ordem e busca no banco (lista de O.S. e de clientes); se precisar de RPC ou índice, entra no contrato do backend primeiro | é o único ⚠️ aberto e corta em silêncio passado 1000; pesa no dia da importação da base da Fast |
+| 3 | P9, retrocompatibilidade das RPCs da fila | proposta para a spec do backend (decisão de arquitetura do sistema, vai lá) | sem a regra, um deploy do backend trava (`blocked`) a fila de quem está em campo com a versão velha |
+| 4 | Roteiro de campo | doc com o passo a passo para um Android real: Background Sync com o app fechado (T4), aba congelada (T5), despejo do armazenamento (P1), câmera e GPS reais, 2G de verdade (T3, D2) | é o que o Playwright não alcança (ver abaixo); roda uma vez antes do deploy e depois de mudança na fila |
+
+### 2. Prova no aparelho (E2E baratos)
+
+| # | Item | Teste | Por quê |
+| --- | --- | --- | --- |
+| 5 | P2, logout com fila | o aviso mostra a contagem certa; cancelar não apaga nada | é a única proteção do caminho que apaga a prova de propósito |
+| 6 | P4, membro removido | removido pelo `remove_member` no banco; ao abrir com sinal, o aparelho limpa e vai ao login com o aviso | confere a ligação gate → `clearUser` → login, que hoje só tem unit |
+| 7 | S4, aparelho compartilhado | o técnico 1 sai, o técnico 2 entra no mesmo contexto e não vê O.S., rascunho nem fila do 1 | o cache e a fila são por usuário só por convenção do código |
+| 8 | E2, `stale_review` | abrir a revisão, chegar um complemento (pelo banco), aprovar: aviso de recarregar, e a aprovação sai depois de recarregar | o escritório aprovaria sem ver a prova nova |
+
+### 3. Escritório
+
+| # | Item | Teste | Por quê |
+| --- | --- | --- | --- |
+| 9 | E3, cadastro pela tela | criar cliente e O.S., atribuir; o técnico vê a O.S. em Minhas O.S. | os E2E criam tudo direto no banco: o formulário real nunca roda |
+| 10 | E4, fuso | `timezoneId` diferente do fuso da empresa; o mesmo prazo e o mesmo "atrasada" na tela | prazo é fim do dia no fuso da empresa (03, R5) |
+
+### 4. Medir e decidir
+
+| # | Item | O que | Por quê |
+| --- | --- | --- | --- |
+| 11 | P3, janela de até 1 h | decisão do usuário: um "Entrar de novo" no aviso da fila que leva ao login sem apagar nada (Q3 mantém a fila do mesmo usuário) | hoje a única saída visível nessa janela é o logout, que apaga a prova |
+| 12 | D1, custo por foto | medir com `Network.emulateNetworkConditions` (2G); com os números, decidir se o backend entrega as URLs de várias fotos numa chamada | 3 idas e voltas por foto em série |
+| 13 | D6, auditoria | paginação | lacuna menor: só os 1000 eventos mais recentes |
+| 14 | D3, cache do técnico | observar o tamanho em campo | aceito no volume esperado |
 
 ## Fora do Playwright
 
