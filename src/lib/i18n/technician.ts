@@ -12,6 +12,9 @@ export const technicianTexts = {
     queueNoticeHint: 'Saem sozinhos quando houver sinal.',
     problemNotice: '{count} envio(s) precisam de você',
     problemNoticeHint: 'Recusados ou com erro. Toque para ver.',
+    storageDenied: 'O navegador pode apagar o que está no aparelho',
+    storageDeniedHint:
+      'Com o celular cheio, fotos e envios ainda não mandados podem sumir. Instale o app na tela inicial (menu do Chrome, "Instalar app") para protegê-los.',
     groups: {
       rejected: 'Refazer',
       rejectedHint: 'O escritório rejeitou. Veja o motivo e envie de novo.',

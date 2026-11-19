@@ -78,6 +78,7 @@ export const actions: Omit<
   | 'useSyncStatus'
   | 'useDraft'
   | 'useSimulatedOffline'
+  | 'useStorageProtection'
   | 'CameraSheet'
   | 'pickFromGallery'
 > = {

@@ -16,6 +16,7 @@ export const {
   useQueueDraft,
   useSyncStatus,
   useDraft,
+  useStorageProtection,
   useSimulatedOffline,
   notify,
   markSeen,

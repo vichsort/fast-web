@@ -12,6 +12,7 @@ import {
   useTechSession,
   useTimeZone,
 } from './reads';
+import { useStorageProtection } from './storage';
 
 export const realApi: TechnicianApi = {
   useTimeZone,
@@ -22,6 +23,7 @@ export const realApi: TechnicianApi = {
   useQueueDraft,
   useSyncStatus,
   useDraft,
+  useStorageProtection,
   useSimulatedOffline: () => null,
   ...actions,
   CameraSheet: RealCameraSheet,

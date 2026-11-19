@@ -27,7 +27,7 @@ O pior caso do produto: serviço feito que nunca chega ao escritório.
 
 | ID | Ponto | Por que pesa | Onde | Hoje | Teste |
 | --- | --- | --- | --- | --- | --- |
-| P1 | ⚠️ IndexedDB sem `navigator.storage.persist()` | sem o pedido, o armazenamento é "best-effort": com o celular cheio, o Chrome pode apagar a origem inteira (rascunhos, fotos, fila) sem aviso | nenhum código pede | lacuna | campo (o Playwright não reproduz despejo). Correção sugerida: pedir ao abrir a interface do técnico (PWA instalado costuma ganhar) e mostrar no perfil se foi negado |
+| P1 | IndexedDB sem `navigator.storage.persist()` | sem o pedido, o armazenamento é "best-effort": com o celular cheio, o Chrome pode apagar a origem inteira (rascunhos, fotos, fila) sem aviso | `offline/persistence.ts`, runtime do técnico | corrigido em 2026-11-19 ([queue.md](queue.md), Q12): pede ao abrir e avisa em Minhas O.S. se negado | unit; o despejo em si só em campo |
 | P2 | Logout com itens na fila apaga a prova | decisão do contrato (Q10); o aviso com a contagem é a única proteção | `logout-button.tsx`, `profile-page.tsx` | aceito | E2E barato: o aviso mostra a contagem certa e cancelar não apaga nada |
 | P3 | "Entre de novo para enviar" sem botão de login | verificado em 2026-11-19 no auth-js 2.119: com a renovação recusada e o token de acesso vencido, ele apaga a sessão, a guarda da rota (`gate.tsx`) leva ao login, e entrar com o mesmo usuário mantém a fila (Q3). Sobra uma janela de até 1 h: com o token de acesso ainda válido pelo relógio do aparelho, a sessão fica, e a única saída visível é o logout, que apaga a fila (P2) | `components/sync.tsx`, `gate.tsx` | risco menor | E2E: com itens na fila, estragar a sessão guardada e entrar de novo com o mesmo usuário; a fila precisa sair |
 | P4 | Remoção do membro apaga tudo, inclusive envios não mandados | remoção por engano antes do sinal perde a prova (offline.md, proteção dos dados) | `gate.tsx`, `clearUser` | aceito | E2E: removido, ao abrir com sinal o aparelho limpa e vai ao login com o aviso |
@@ -88,7 +88,7 @@ O pior caso do produto: serviço feito que nunca chega ao escritório.
 | 5 | P6, upload interrompido | retomada sem duplicar |
 | 6 | P7, dupla | dois celulares voltando ao sinal juntos |
 
-Correções fora do E2E, por decisão do usuário: P1, T2, D4, D5.
+Correções fora do E2E, por decisão do usuário: D4, D5 (P1 e T2 corrigidos em 2026-11-19).
 
 ## Fora do Playwright
 

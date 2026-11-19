@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { ChevronDown, CircleX, MessageSquareWarning, RotateCw } from 'lucide-react';
+import { ChevronDown, CircleX, HardDriveDownload, MessageSquareWarning, RotateCw } from 'lucide-react';
 import { OrderCard } from '@/components/order-card';
 import { EmptyState, ErrorState, LoadingList } from '@/components/states';
 import { SyncIndicator } from '@/components/sync';
@@ -10,7 +10,16 @@ import { Spinner } from '@/components/ui/spinner';
 import { firstName, formatTime } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
-import { type MyOrder, notify, useMyOrders, usePendingItems, useSyncStatus, useTechSession, useTimeZone } from './api';
+import {
+  type MyOrder,
+  notify,
+  useMyOrders,
+  usePendingItems,
+  useStorageProtection,
+  useSyncStatus,
+  useTechSession,
+  useTimeZone,
+} from './api';
 import { Callout, GroupHeading } from './parts';
 
 /** Minhas O.S.: as atribuídas, agrupadas pelo que o técnico tem de fazer (docs/screens-technician.md). */
@@ -19,6 +28,7 @@ export function OrdersPage() {
   const orders = useMyOrders();
   const session = useTechSession().data;
   const sync = useSyncStatus();
+  const storage = useStorageProtection();
   const pending = usePendingItems().data ?? [];
   const problems = pending.filter((i) => i.state === 'refused' || i.state === 'blocked').length;
 
@@ -60,6 +70,12 @@ export function OrdersPage() {
           {orders.isFetching ? <Spinner /> : <RotateCw className="size-5" />}
         </Button>
       </header>
+
+      {storage === 'denied' && (
+        <Callout tone="warning" icon={HardDriveDownload} title={t('technician.orders.storageDenied')}>
+          {t('technician.orders.storageDeniedHint')}
+        </Callout>
+      )}
 
       {problems > 0 ? (
         <Callout

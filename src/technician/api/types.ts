@@ -1,10 +1,12 @@
 // Contrato da API do técnico: o que as telas leem e chamam. Duas implementações cumprem o mesmo tipo: os dados de
 // exemplo (./mock.ts) e a real (./real), com Supabase, o Dexie e a fila offline. A escolha é em ./index.ts.
+
 import type * as React from 'react';
 import type { AttemptData } from '@/components/execution-card';
 import type { PhotoData } from '@/components/photos';
 import type { MemberRole } from '@/lib/enums';
 import type { Company, OrderDetail, OrderListItem, PendingItem, PersonRef, Profile, SyncState } from '@/mocks';
+import type { StorageProtection } from '@/offline/persistence';
 import type { PhotoInput } from '@/photos/process';
 
 /** Rascunho como a tela edita (no real, `drafts` e `photos` do Dexie). */
@@ -84,6 +86,8 @@ export interface TechnicianApi {
   useSyncStatus(): SyncState | undefined;
   /** Rascunho guardado para a chave (draftKey), ou `null` se ainda não há. */
   useDraft(key: string): Draft | null;
+  /** Armazenamento persistente (queue.md, Q12): `denied` é a prova que o navegador pode apagar; `null` enquanto pede. */
+  useStorageProtection(): StorageProtection | null;
   /** Só nos dados de exemplo: a chave "Simular sem sinal" do perfil. */
   useSimulatedOffline(): { offline: boolean; setOffline: (offline: boolean) => void } | null;
 

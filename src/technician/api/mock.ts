@@ -27,6 +27,7 @@ export const mockApi: TechnicianApi = {
   useQueueDraft,
   useSyncStatus,
   useDraft: (key) => useScratch().drafts[key] ?? null,
+  useStorageProtection: () => 'persisted',
   useSimulatedOffline: () => ({ offline: useScratch().offline, setOffline: scratch.setOffline }),
 
   notify: scratchToast,

@@ -15,6 +15,7 @@ import { bindTechnician } from './context';
 import { stopLocal, watchLocal } from './local';
 import { persistTechnicianCache } from './persist';
 import { hintConnectivity, kick, listenToWorker, onAfterRun, stopRunner } from './runner';
+import { requestStorageProtection } from './storage';
 
 export function TechnicianRuntime({ access, children }: { access: Access; children: React.ReactNode }) {
   if (usingMocks || !('companyId' in access)) return children;
@@ -43,6 +44,7 @@ function RealRuntime({
 
   React.useEffect(() => {
     if (!userId) return;
+    requestStorageProtection();
     watchLocal(userId);
     const [stopPersist, restoring] = persistTechnicianCache(queryClient, userId);
     void restoring.finally(() => setRestored(true));
