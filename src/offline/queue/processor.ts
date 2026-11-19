@@ -3,9 +3,9 @@ import type { FastDb, MaterialsPayload, QueueItem, SubmitPayload } from '../db';
 import type { Clock, QueueApi, QueueLock } from './api';
 import { ApiError } from './errors';
 
-/** Espera crescente (Q7): começa em 5 s, dobra a cada falha e para em 5 min. */
+/** Espera crescente (Q7): começa em 5 s, dobra a cada falha e para em 1 min. */
 const FIRST_WAIT_MS = 5_000;
-const MAX_WAIT_MS = 5 * 60_000;
+const MAX_WAIT_MS = 60_000;
 
 export interface QueueDeps {
   db: FastDb;

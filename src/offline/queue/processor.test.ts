@@ -45,7 +45,7 @@ describe('processQueue', () => {
     },
   );
 
-  it('Q7: the wait doubles at each failure, from 5 s up to 5 min', async () => {
+  it('Q7: the wait doubles at each failure, from 5 s up to 1 min', async () => {
     const db = newDb();
     const clock = fakeClock();
     const { api } = fakeApi({
@@ -63,7 +63,7 @@ describe('processQueue', () => {
       clock.advance(status.retryAt - clock.now());
     }
 
-    expect(waits).toEqual([5, 10, 20, 40, 80, 160, 300, 300]);
+    expect(waits).toEqual([5, 10, 20, 40, 60, 60, 60, 60]);
   });
 
   it('Q7: a success on any item clears the wait of the items waiting for the network', async () => {
