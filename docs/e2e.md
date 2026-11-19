@@ -87,7 +87,7 @@ O pior caso do produto: serviço feito que nunca chega ao escritório.
 | S2 | Relógio do aparelho errado | `client_started_at`, `client_submitted_at` e `captured_at` vêm dele e mudam os alertas (`late_delivery`, `gallery_before_start`) | 04 | aceito (os horários do servidor vão junto) | — |
 | S3 | Isolamento entre empresas e técnicos | o RLS é a única barreira; o front usa a chave anon | backend | pgTAP no backend | não repetir aqui |
 | S4 | Aparelho compartilhado | cache, fila e fotos por usuário (Q3, Q10) | `clearUser`, `persist.ts` | unit; E2E desde 2026-11-19. O teste achou o cache do técnico 1 de volta depois do logout (2 em 4 rodadas): uma gravação do cache no meio do logout, com a sessão ainda dele, depois do `clearUser`; corrigido ([queue.md](queue.md#decisões)) | coberto |
-| S5 | ⚠️ Logout encerra a sessão do usuário em todos os aparelhos | o `signOut()` do supabase-js é `scope: 'global'` por padrão: sair num celular derruba a sessão do mesmo técnico nos outros. Lá, a Edge Function passa a responder 401 e a fila para pedindo login (mantém a fila, Q3; mas a janela do P3 vale). Achado no S4 (2026-11-19), porque derrubava os outros testes com o mesmo usuário | `app/session.ts` (`signOutAndWipe`) | sem decisão | — |
+| S5 | Logout encerra a sessão do usuário em todos os aparelhos | o `signOut()` do supabase-js é `scope: 'global'` por padrão: sair num celular derruba a sessão do mesmo técnico nos outros. Lá, a Edge Function passa a responder 401 e a fila para pedindo login (mantém a fila, Q3; mas a janela do P3 vale). Achado no S4 (2026-11-19), porque derrubava os outros testes com o mesmo usuário | `app/session.ts` (`signOutAndWipe`) | global por decisão do usuário (2026-11-19, [queue.md](queue.md#decisões)) | os E2E que saem da conta usam técnico próprio |
 
 ## Próximos passos
 
@@ -122,7 +122,7 @@ Revisado em 2026-11-19, com a ordem antiga (P5, S1, E1, P3, P6, P7) toda feita. 
 
 | # | Item | O que | Por quê |
 | --- | --- | --- | --- |
-| 11 | S5, alcance do logout | decisão do usuário: `scope: 'local'` (sair só deste aparelho) ou manter o global | aparelho compartilhado e técnico com dois celulares; o global é mais seguro com celular perdido, o local não para a fila do outro aparelho |
+| 11 | ~~S5, alcance do logout~~ (decidido: global) | decisão do usuário: `scope: 'local'` (sair só deste aparelho) ou manter o global | aparelho compartilhado e técnico com dois celulares; o global é mais seguro com celular perdido, o local não para a fila do outro aparelho |
 | 12 | P3, janela de até 1 h | decisão do usuário: um "Entrar de novo" no aviso da fila que leva ao login sem apagar nada (Q3 mantém a fila do mesmo usuário) | hoje a única saída visível nessa janela é o logout, que apaga a prova |
 | 13 | D1, custo por foto | medir com `Network.emulateNetworkConditions` (2G); com os números, decidir se o backend entrega as URLs de várias fotos numa chamada | 3 idas e voltas por foto em série |
 | 14 | D6, auditoria | paginação | lacuna menor: só os 1000 eventos mais recentes |
