@@ -91,9 +91,9 @@ O pior caso do produto: serviço feito que nunca chega ao escritório.
 | 1 | ~~P5, recusa por regra~~ (feito) | é o exemplo do offline.md, e a prova não pode sumir |
 | 2 | ~~S1, abrir sem sinal~~ (feito) | é o começo do dia em campo |
 | 3 | ~~E1, ciclo de revisão~~ (feito) | fecha a O.S. |
-| ~~4 | P3, sessão perdida com fila~~ (feito) | garante que o caminho que mantém a fila continua assim |
-| ~~5 | P6, upload interrompido~~ (feito) | retomada sem duplicar |
-| ~~6 | P7, dupla~~ (feito) | dois celulares voltando ao sinal juntos |
+| 4 | ~~P3, sessão perdida com fila~~ (feito) | garante que o caminho que mantém a fila continua assim |
+| 5 | ~~P6, upload interrompido~~ (feito) | retomada sem duplicar |
+| 6 | ~~P7, dupla~~ (feito) | dois celulares voltando ao sinal juntos |
 
 Correções fora do E2E, por decisão do usuário: D4, D5 (P1 e T2 corrigidos em 2026-11-19).
 
