@@ -48,7 +48,7 @@ A fila roda na página e no worker ([`src/sw.ts`](../src/sw.ts)), com o mesmo c�
 | Registro e atualização | `useRegisterSW` no `TechnicianRuntime` (`registerType: 'prompt'`, `injectRegister: false`). Versão nova: aviso fixo (toast) com "Atualizar"; só ao toque o worker novo entra (`SKIP_WAITING`) e a página recarrega, então nunca no meio da câmera. Recarregar não perde nada: rascunhos, fotos e fila estão no Dexie |
 | Precache | o app inteiro, ícones inclusive (`globPatterns`); sem sinal, qualquer rota responde com o `index.html` do precache (`NavigationRoute`), então abrir direto numa O.S. funciona |
 | Rodar | `devOptions.enabled: false`: o worker só existe no build (`npm run build && npm run preview`) |
-| Playwright | pausado; quando voltar: `serviceWorkers: 'block'` nos testes comuns (o worker escapa do `page.route` e guarda arquivos velhos), liberado só nos do offline |
+| Playwright | `serviceWorkers: 'block'` nos testes comuns (o worker escapa do `page.route` e guarda arquivos velhos), liberado só nos do offline |
 
 ## Fora daqui
 

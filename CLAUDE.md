@@ -24,7 +24,7 @@ Regras de trabalho neste repositório. O backend (Supabase) fica no repositório
 
 - **Vitest, projeto `unit` (Node):** lógica sem DOM: fila, classificação de erros, alertas, limpeza do aparelho. IndexedDB pelo `fake-indexeddb` (já carregado no setup). Arquivos `*.test.ts`.
 - **Vitest, projeto `browser` (Chromium):** o que precisa de canvas, `Blob` de imagem ou APIs do navegador (compressão de foto). Arquivos `*.browser.test.ts`.
-- **Playwright (`tests/e2e`):** **pausado** ([roadmap](docs/roadmap.md#decisões)). Quando voltar: poucos fluxos críticos de ponta a ponta contra o stack local do backend (`npm run db:start` em `../fast`), com o seed dele. Celular emulado e `context.setOffline` no fluxo do técnico.
+- **Playwright (`tests/e2e`, `npm run test:e2e`):** poucos fluxos críticos de ponta a ponta contra o stack local do backend (`npm run db:start` em `../fast`), com o seed dele, e o app do build (`vite preview` na 4173). Projeto `office` (desktop) e `technician` (celular emulado, `context.setOffline` no offline); preparo e conferência direto no banco por [`tests/e2e/support/backend.ts`](tests/e2e/support/backend.ts). Fora do `npm run check`: roda antes de commitar o que mexe no fluxo coberto.
 - Tela simples, sem regra própria, não tem teste de componente.
 - Cada regra é testada num lugar só.
 - O teste dos textos confere as chaves de erro contra o catálogo do backend, lendo `../fast/docs/errors.md`: código novo lá quebra o teste aqui até ganhar texto.

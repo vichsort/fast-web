@@ -30,7 +30,7 @@ npm run check                     # lint, tipos e Vitest
 | `npm run dev`             | servidor de desenvolvimento                                |
 | `npm run build`           | tipos e build de produção (com o service worker)           |
 | `npm test`                | Vitest: projetos `unit` (Node) e `browser` (Chromium)      |
-| `npm run test:e2e`        | Playwright contra o stack local do backend, pausado        |
+| `npm run test:e2e`        | Playwright contra o stack local do backend                 |
 | `npm run lint` / `format` | Biome                                                      |
 | `npm run types`           | gera `src/lib/database.types.ts` do banco local do backend |
 | `npm run check`           | lint, tipos e Vitest                                       |

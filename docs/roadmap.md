@@ -21,7 +21,7 @@ Ordem de trabalho do front. Cada item é um comportamento: teste vermelho (quand
 - [x] shadcn/ui e tema.
 - [x] Service worker: fila no Background Sync, aviso de versão nova e rotas sem sinal ([queue.md](queue.md#service-worker)).
 - [x] Membro removido: conferir o vínculo ativo a cada recusa por regra da fila (ao abrir com sinal já confere); sem vínculo, `clearUser` e logout.
-- [ ] ~~Playwright contra o stack local do backend.~~ Pausado (ver Decisões).
+- [x] Playwright contra o stack local do backend: base, login por papel.
 
 ## 2b. Scratch visual (sem testes, dados de exemplo)
 
