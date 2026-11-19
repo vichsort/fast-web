@@ -2,7 +2,7 @@
 // na fila e chega ao servidor uma vez só quando o sinal volta (queue.md; ../fast/docs/offline.md).
 import { expect, type Page, test } from '@playwright/test';
 import { t } from '@/lib/i18n';
-import { login } from '../support/app';
+import { galleryJpeg, login } from '../support/app';
 import { createOrder, serverOrder, users } from '../support/backend';
 
 test.use({
@@ -12,24 +12,6 @@ test.use({
   geolocation: { latitude: -23.5505, longitude: -46.6333, accuracy: 12 },
   launchOptions: { args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] },
 });
-
-/** JPEG de verdade, desenhado no próprio navegador, para o seletor da galeria. */
-async function galleryJpeg(page: Page) {
-  const dataUrl = await page.evaluate(() => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 640;
-    canvas.height = 480;
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.fillStyle = '#1a57ad';
-      ctx.fillRect(0, 0, 640, 480);
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(160, 120, 320, 240);
-    }
-    return canvas.toDataURL('image/jpeg', 0.9);
-  });
-  return { name: 'galeria.jpg', mimeType: 'image/jpeg', buffer: Buffer.from(dataUrl.split(',')[1] ?? '', 'base64') };
-}
 
 /** Tipo e tentativas dos itens da fila no Dexie (src/offline/db.ts): a espera não aparece na tela. */
 function queueAttempts(page: Page) {

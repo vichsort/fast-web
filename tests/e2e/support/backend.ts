@@ -41,10 +41,11 @@ export async function createOrder(assignees: string[]) {
   const tag = crypto.randomUUID().slice(0, 8);
 
   const clientId = crypto.randomUUID();
+  const clientName = `Cliente E2E ${tag}`;
   const created = await client.rpc('create_client', {
     p_id: clientId,
     p_company_id: companyId,
-    p_name: `Cliente E2E ${tag}`,
+    p_name: clientName,
   });
   if (created.error) throw created.error;
 
@@ -59,7 +60,7 @@ export async function createOrder(assignees: string[]) {
   });
   if (order.error) throw order.error;
   const { id, order_number } = order.data as { id: string; order_number: number };
-  return { id, orderNumber: order_number, title };
+  return { id, orderNumber: order_number, title, clientName };
 }
 
 /** O que o servidor tem da O.S., visto pelo escritório. */
@@ -69,7 +70,8 @@ export async function serverOrder(orderId: string) {
   if (order.error) throw order.error;
   const executions = await client
     .from('service_order_executions')
-    .select('id, description, client_started_at, supplements_execution_id')
+    .select('id, description, client_started_at, supplements_execution_id, review_status, review_comment, received_at')
+    .order('received_at')
     .eq('service_order_id', orderId);
   if (executions.error) throw executions.error;
   const photos = await client
@@ -78,4 +80,11 @@ export async function serverOrder(orderId: string) {
     .eq('service_order_id', orderId);
   if (photos.error) throw photos.error;
   return { status: order.data.status, executions: executions.data, photos: photos.data };
+}
+
+/** O escritório cancela a O.S. (03, `cancel_order`). */
+export async function cancelOrder(orderId: string, reason: string) {
+  const { client } = await signIn(users.manager);
+  const { error } = await client.rpc('cancel_order', { p_order_id: orderId, p_reason: reason });
+  if (error) throw error;
 }

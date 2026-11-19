@@ -40,6 +40,7 @@ Esboço visual do sistema inteiro antes da integração real, pedido em 2026-11-
 - [x] Pendências.
 - [x] Fotos já vistas no aparelho sem sinal (offline.md, "Fotos já vistas"; [photos.md](photos.md), F8 a F10).
 - [x] E2E: execução offline com fotos chega ao servidor sem duplicar ([offline-execution.spec.ts](../tests/e2e/technician/offline-execution.spec.ts)); achou a fila parada com o sinal de volta, corrigida pelo indício de conexão ([queue.md](queue.md), Q7).
+- [x] E2E: envio recusado por O.S. cancelada fica com o motivo até o técnico apagar ([refused-submission.spec.ts](../tests/e2e/technician/refused-submission.spec.ts); [e2e.md](e2e.md), P5).
 
 ## 4. Escritório
 

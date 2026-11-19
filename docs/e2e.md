@@ -20,6 +20,7 @@ O que mais custa se falhar, onde está no código, o que já é testado e como t
 | [`office/login`](../tests/e2e/office/login.spec.ts) | o gerente entra e cai no dashboard |
 | [`technician/login`](../tests/e2e/technician/login.spec.ts) | o técnico entra e cai em Minhas O.S. |
 | [`technician/offline-execution`](../tests/e2e/technician/offline-execution.spec.ts) | início e envio sem sinal, com foto da câmera e da galeria. Depois de uma espera longa, o sinal volta e o envio chega em até 5 s: uma execução, 2 fotos, nada repetido ao reabrir |
+| [`technician/refused-submission`](../tests/e2e/technician/refused-submission.spec.ts) | P5: envio feito sem sinal numa O.S. que o escritório cancela. Com o sinal, o rascunho fica em "Precisam de você" com o motivo e o texto, continua ao reabrir, nada chega ao servidor e só sai quando o técnico apaga |
 
 ## Perda da prova
 
@@ -31,7 +32,7 @@ O pior caso do produto: serviço feito que nunca chega ao escritório.
 | P2 | Logout com itens na fila apaga a prova | decisão do contrato (Q10); o aviso com a contagem é a única proteção | `logout-button.tsx`, `profile-page.tsx` | aceito | E2E barato: o aviso mostra a contagem certa e cancelar não apaga nada |
 | P3 | "Entre de novo para enviar" sem botão de login | verificado em 2026-11-19 no auth-js 2.119: com a renovação recusada e o token de acesso vencido, ele apaga a sessão, a guarda da rota (`gate.tsx`) leva ao login, e entrar com o mesmo usuário mantém a fila (Q3). Sobra uma janela de até 1 h: com o token de acesso ainda válido pelo relógio do aparelho, a sessão fica, e a única saída visível é o logout, que apaga a fila (P2) | `components/sync.tsx`, `gate.tsx` | risco menor | E2E: com itens na fila, estragar a sessão guardada e entrar de novo com o mesmo usuário; a fila precisa sair |
 | P4 | Remoção do membro apaga tudo, inclusive envios não mandados | remoção por engano antes do sinal perde a prova (offline.md, proteção dos dados) | `gate.tsx`, `clearUser` | aceito | E2E: removido, ao abrir com sinal o aparelho limpa e vai ao login com o aviso |
-| P5 | Recusa por regra ao voltar o sinal (O.S. cancelada, técnico tirado da O.S.) | o rascunho tem de ficar `refused`, com o motivo, até o técnico apagar (offline.md, recusa definitiva) | `processor.ts` (`refuse`), Pendências | unit | E2E: o escritório cancela enquanto o técnico está sem sinal |
+| P5 | Recusa por regra ao voltar o sinal (O.S. cancelada, técnico tirado da O.S.) | o rascunho tem de ficar `refused`, com o motivo, até o técnico apagar (offline.md, recusa definitiva) | `processor.ts` (`refuse`), Pendências | unit; E2E desde 2026-11-19 | coberto |
 | P6 | Upload interrompido no meio do envio | a retomada não pode reenviar foto confirmada nem duplicar (Q4) | `sendSubmit` | unit, com API falsa | E2E: abortar uma vez o PUT da 2ª foto (`context.route`, worker bloqueado); 1 execução, e a 1ª foto não sobe de novo |
 | P7 | Dupla enviando sem sinal | o segundo envio vira complemento (04, R4); nenhuma prova pode ficar presa | backend; fila daqui | backend | E2E com dois contextos (dois celulares): nada fica `blocked` nem `refused` |
 | P8 | App atualizado com itens na fila | a versão nova lê prova gravada pela velha: schema do Dexie ou formato do item. Ex.: itens anteriores ao `waitingFor` (2026-11-19) ficam sem o campo e só voltam pelo timer | `offline/db.ts` | sem regra | unit de cada upgrade do Dexie a partir de dados da versão anterior |
@@ -81,7 +82,7 @@ O pior caso do produto: serviço feito que nunca chega ao escritório.
 
 | # | E2E | Por quê |
 | --- | --- | --- |
-| 1 | P5, recusa por regra | é o exemplo do offline.md, e a prova não pode sumir |
+| 1 | ~~P5, recusa por regra~~ (feito) | é o exemplo do offline.md, e a prova não pode sumir |
 | 2 | S1, abrir sem sinal | é o começo do dia em campo |
 | 3 | E1, ciclo de revisão | fecha a O.S. |
 | 4 | P3, sessão perdida com fila | garante que o caminho que mantém a fila continua assim |
