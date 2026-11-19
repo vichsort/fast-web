@@ -38,7 +38,7 @@ export const officeTexts = {
     backToList: 'Voltar para a lista',
     deletedBy: 'Excluído por {name}, {time}.',
     reason: 'Motivo: {reason}',
-    scenarioTitle: 'Cenário do scratch',
+    scenarioTitle: 'Cenário de exemplo',
     fieldRequired: 'Preencha este campo.',
   },
 
