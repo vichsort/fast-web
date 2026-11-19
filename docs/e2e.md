@@ -99,12 +99,56 @@ Revisado em 2026-11-19, com a ordem antiga (P5, S1, E1, P3, P6, P7) toda feita. 
 
 ### 1. Antes da produção
 
-| # | Item | Tipo | Por quê |
+Revisado com o usuário em 2026-11-19. Mapa e estimativa; as correções ficam para uma sessão própria.
+
+| # | Item | Decisão | O que fazer |
 | --- | --- | --- | --- |
-| 1 | P8, upgrade do Dexie | unit (`fake-indexeddb`): abrir o banco gravado em cada versão anterior, subir e conferir rascunhos, fotos e fila | depois do primeiro deploy, um erro aqui perde a prova de todos os aparelhos de uma vez; antes dele, é barato fixar a regra |
-| 2 | D4, D5, D6, listas do escritório | correção: paginação, ordem e busca no banco (lista de O.S., de clientes e a auditoria); se precisar de RPC ou índice, entra no contrato do backend primeiro | é o único ⚠️ aberto e corta em silêncio passado 1000; pesa no dia da importação da base da Fast |
-| 3 | P9, retrocompatibilidade das RPCs da fila | proposta para a spec do backend (decisão de arquitetura do sistema, vai lá) | sem a regra, um deploy do backend trava (`blocked`) a fila de quem está em campo com a versão velha |
-| 4 | Roteiro de campo | doc com o passo a passo para um Android real: Background Sync com o app fechado (T4), aba congelada (T5), despejo do armazenamento (P1), câmera e GPS reais, 2G de verdade (T3, D2) | é o que o Playwright não alcança (ver abaixo); roda uma vez antes do deploy e depois de mudança na fila |
+| 1 | P8, versionamento do app e do backend | dados de hoje são descartáveis: juntar as versões 1 a 3 do Dexie numa só, sem migração (apagar os dados do site nos aparelhos de teste) | o squash; depois, o mapa abaixo ([Versionamento](#versionamento)) vira itens, e cada mudança do Dexie ou do formato de item da fila ganha teste de upgrade (unit, `fake-indexeddb`) |
+| 2 | D4, D5, D6, listas do escritório | fazer antes de doer; estimativa em [Listas do escritório](#listas-do-escritório) | D4 primeiro; D5 leve; D6 sai (a auditoria cresce pouco) |
+| 3 | P9, retrocompatibilidade das RPCs da fila | aprovado: vai como regra na spec do backend (`../fast/docs/spec.md`) | escrever a regra lá; faz parte do [Versionamento](#versionamento) |
+| 4 | Campo em Android emulado | automatizar o que der num emulador; o resto vira um roteiro curto num celular real | plano em [Android emulado](#android-emulado) |
+| 5 | E2E no CI | a suíte roda hoje só na máquina, antes do commit | GitHub Actions: `supabase start` do `../fast`, build, `npm run test:e2e` a cada push; garante a consistência sem depender de lembrar de rodar |
+
+#### Versionamento
+
+Mapa do que falta para app e backend evoluírem cada um no seu ritmo, com celulares que ficam até 3 dias sem sinal e sem atualizar.
+
+| Peça | Hoje | Proposta |
+| --- | --- | --- |
+| Versão do app | não existe; o PWA só avisa que há versão nova ("Atualizar", [queue.md](queue.md#service-worker)) | número de versão no build (`define` do Vite), mostrado no Perfil do técnico e do escritório |
+| Versão nas chamadas | o backend não sabe qual app chama | header `x-client-version` no cliente do Supabase (página e worker); as Edge Functions e os logs passam a ver a versão |
+| Versão mínima | não existe | o backend publica a versão mínima aceita (tabela de configuração ou RPC); abaixo dela, o app mostra "Atualize o app" e força a atualização do worker, sem apagar a fila |
+| Mudança de RPC usada pela fila | `PGRST202` deixa o item `blocked` | P9: mudança só aditiva; mudança que quebra vira função nova (`_v2`) e a antiga fica pelo prazo offline (3 dias) mais o ciclo de atualização; aí sobe a versão mínima |
+| Formato dos itens da fila e do Dexie | sem versão | campo de versão no item; upgrade do Dexie com teste a partir dos dados da versão anterior |
+| No celular | só o aviso de versão nova | Perfil com a versão; aviso de atualização obrigatória quando abaixo da mínima |
+
+#### Listas do escritório
+
+Volume informado: ~500 clientes; no mínimo 4 O.S. por dia (~120 por mês). Medido no código em 2026-11-19.
+
+| Lista | Hoje | Quando dói | Correção | Tamanho |
+| --- | --- | --- | --- | --- |
+| D4, O.S. | traz todas as O.S. da empresa com cliente, endereço, atribuições e todas as execuções e fotos (`ORDER_SELECT`); status, prioridade, tipo, cliente e atraso filtram no banco; busca, técnico, intervalo de prazo e "sem técnico" filtram na tela | o corte de 1000 em ~8 meses; antes disso, o peso: cada visita à lista baixa o histórico inteiro | no backend, uma view `security_invoker` da lista com as colunas da linha (nome do cliente, ids dos técnicos, flag "sem técnico"), que vira contrato no 03; no front, a lista lê da view com todos os filtros no banco, paginação (`range` com contagem) e a busca por número, título e cliente (`ilike`); revisão e dashboard continuam com o select completo, que já é limitado pelo status | médio: ~2 dias de agente (view e doc no backend ~0,5; API, tipos, mocks, tela paginada, unit do mapeamento dos filtros e um E2E com mais de 1000 O.S. geradas no banco ~1,5) |
+| D5, clientes | traz todos com endereços e o status de cada O.S. deles; ordem e busca na tela; o seletor da O.S. nova carrega todos | ~500 clientes: longe do corte | ordem por nome no banco (o corte, se vier, fica previsível); paginação e busca no banco só se a base passar de ~800 | pequeno: ~2 h |
+| D6, auditoria | traz todos os eventos | quase nunca: só empresa, membros e papéis entram (05, R5) | nenhuma; reavaliar se a auditoria passar a cobrir O.S. | — |
+
+#### Android emulado
+
+Não é loucura: o emulador do Android roda o Chrome de verdade, com o service worker, o Background Sync e o Doze do sistema. O controle é pelo CDP (`adb forward tcp:9222 localabstract:chrome_devtools_remote` e `chromium.connectOverCDP` do Playwright, API estável; o `_android` do Playwright é experimental e fica fora) e pelo `adb` para o sistema.
+
+| Cenário | Como no emulador | Prova |
+| --- | --- | --- |
+| Envio com o app fechado (T4) | envio sem sinal (`adb shell cmd connectivity airplane-mode enable`), fecha a aba pelo CDP, devolve o sinal | o envio chega ao banco sem abrir o app |
+| Celular parado (T5, Doze) | `adb shell dumpsys deviceidle force-idle` com itens na fila; depois `unforce` e o sinal | o envio chega quando o sistema libera |
+| Rede ruim de verdade (T3, D1) | console do emulador: `network speed edge`, `network delay gprs` | tempos do envio comparáveis às [Medições](#medições) |
+| Câmera e GPS | câmera virtual do emulador; `adb emu geo fix` | foto com `captured_at` e localização no banco |
+| Armazenamento (P1) | encher o disco do emulador com itens na fila | o pedido de armazenamento persistente segura os dados |
+
+| Custo e limite | |
+| --- | --- |
+| Montagem | SDK, imagem do Android com Chrome, KVM, scripts: ~1 a 2 dias; começar por um spike de meio dia só com o envio de app fechado |
+| Rodada | minutos (boot do emulador); local antes de release, ou no CI (runners Linux com KVM) |
+| Fica para o celular real | economia de bateria dos fabricantes (Xiaomi, Samsung matam o Chrome em segundo plano), câmera e rádio de verdade, instalação do PWA: roteiro curto, ~15 min, antes do deploy |
 
 ### 2. Prova no aparelho (E2E baratos)
 
@@ -168,7 +212,8 @@ Revisado em 2026-11-19, com a ordem antiga (P5, S1, E1, P3, P6, P7) toda feita. 
 
 | O que | Como |
 | --- | --- |
-| Background Sync com o app fechado, despejo do armazenamento, aba congelada, câmera e GPS reais, 2G de verdade | roteiro num Android real antes da produção |
+| Background Sync com o app fechado, aba congelada (Doze), câmera e GPS, rede ruim, armazenamento cheio | Android emulado ([plano](#android-emulado)) |
+| Economia de bateria dos fabricantes, câmera e rádio de verdade, instalação do PWA | roteiro curto num celular real antes do deploy |
 
 ## Decisões
 

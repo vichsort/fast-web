@@ -68,7 +68,7 @@ Esboço visual do sistema inteiro antes da integração real, pedido em 2026-11-
 
 - [x] Manifest final e ícones gerados no build a partir de `public/logo.svg` (`pwa-assets.config.ts`).
 - [ ] Trocar `public/logo.svg` (hoje a marca provisória do app) pela logo da Fast, já pedida.
-- [ ] Antes do deploy: etapa 1 dos [próximos passos do e2e.md](e2e.md#próximos-passos) (upgrade do Dexie, listas do escritório, retrocompatibilidade da fila, roteiro de campo).
+- [ ] Antes do deploy: etapa 1 dos [próximos passos do e2e.md](e2e.md#1-antes-da-produção) (versionamento e squash do Dexie, listas do escritório, regra de retrocompatibilidade da fila na spec do backend, Android emulado, E2E no CI).
 - [ ] Cloudflare Pages ligado ao Supabase de produção.
 
 ## Decisões
