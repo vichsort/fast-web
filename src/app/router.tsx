@@ -3,7 +3,6 @@
 import { createRoute, createRouter } from '@tanstack/react-router';
 import { officeRouteTree } from '@/office/routes';
 import { technicianRouteTree } from '@/technician/routes';
-import { devRouteTree } from './dev/routes';
 import { ForgotPasswordPage } from './pages/forgot-password';
 import { Gate } from './pages/gate';
 import { LoginPage } from './pages/login';
@@ -39,7 +38,8 @@ const routeTree = rootRoute.addChildren([
   setPasswordRoute,
   technicianRouteTree,
   officeRouteTree,
-  ...(import.meta.env.DEV ? [devRouteTree] : []),
+  // A vitrine só no dev, por import dinâmico: o build de produção nem gera o pedaço dela.
+  ...(import.meta.env.DEV ? [(await import('./dev/routes')).devRouteTree] : []),
 ]);
 
 export const router = createRouter({ routeTree, defaultPreload: 'intent' });

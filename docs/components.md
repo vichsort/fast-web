@@ -111,7 +111,7 @@ Tudo em [`src/index.css`](../src/index.css), claro em `:root` e escuro em `.dark
 
 ## Dados de exemplo (`src/mocks/`)
 
-Linhas tipadas por `database.types.ts` em `data.ts` (datas relativas ao carregamento, para "atrasada" e "há 5 min" valerem em qualquer dia), fotos SVG locais em `images.ts`; os tipos são as views de `src/lib/views.ts`. Só as implementações de exemplo das áreas (`src/office/mocks.ts`, `src/technician/api/mock.ts`) e a vitrine `/dev` importam de `@/mocks`; as telas usam a API da área.
+Linhas tipadas por `database.types.ts` em `data.ts` (datas relativas ao carregamento, para "atrasada" e "há 5 min" valerem em qualquer dia), fotos SVG locais em `images.ts`; os tipos são as views de `src/lib/views.ts`. Só as implementações de exemplo das áreas (`src/office/mocks.ts`, `src/technician/api/mock.ts`) e a vitrine `/dev` importam de `@/mocks`; as telas usam a API da área. Fora do build de produção ([CLAUDE.md](../CLAUDE.md#convenções)).
 
 | Conjunto | Conteúdo |
 | --- | --- |
