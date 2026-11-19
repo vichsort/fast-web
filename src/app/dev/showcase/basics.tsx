@@ -368,7 +368,6 @@ export function UsersSection() {
               name={m.profile.full_name}
               seed={m.user_id}
               memberRole={m.role}
-              subtitle={m.email}
               isSelf={i === 1}
               size={(['sm', 'md', 'lg'] as const)[i]}
             />

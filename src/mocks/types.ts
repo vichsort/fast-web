@@ -106,8 +106,6 @@ export interface ClientDetail extends Client {
 
 export interface MemberView extends CompanyMember {
   profile: Profile;
-  /** Do Auth (no real, pela Edge Function de membros). */
-  email: string;
 }
 
 export interface AuditView extends AuditLog {

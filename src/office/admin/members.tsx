@@ -69,15 +69,7 @@ function MembersView() {
       header: t('office.members.columns.member'),
       label: t('office.members.columns.member'),
       sortValue: (m) => m.profile.full_name,
-      cell: (m) => (
-        <UserChip
-          name={m.profile.full_name}
-          seed={m.user_id}
-          subtitle={m.email}
-          isSelf={m.user_id === user.id}
-          size="sm"
-        />
-      ),
+      cell: (m) => <UserChip name={m.profile.full_name} seed={m.user_id} isSelf={m.user_id === user.id} size="sm" />,
     },
     {
       id: 'role',

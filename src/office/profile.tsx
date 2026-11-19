@@ -13,15 +13,13 @@ import { UserAvatar } from '@/components/user';
 import { formatPhone } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import { updateProfile } from './api';
-import { useMembers } from './queries';
 import { useOffice, useOfficeAction } from './session';
 
 export function ProfilePage() {
   const { user, role, company } = useOffice();
   const { session } = useAuth();
   const run = useOfficeAction();
-  const members = useMembers();
-  const email = members.data?.find((m) => m.user_id === user.id)?.email ?? '';
+  const email = session?.user.email ?? '';
   const [name, setName] = React.useState(user.full_name);
   const [phone, setPhone] = React.useState(user.phone ? formatPhone(user.phone) : '');
   const [saving, setSaving] = React.useState(false);

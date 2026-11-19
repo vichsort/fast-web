@@ -29,6 +29,7 @@ import {
   type PersonRef,
   type Profile,
 } from '@/mocks';
+import { emails } from '@/mocks/data';
 import { ApiError } from '@/offline/queue/errors';
 import { addressText, clientMatches, isOverdue, orderMatches, seenUntil } from './derive';
 
@@ -77,6 +78,8 @@ async function load(): Promise<Store> {
 }
 
 const profiles = new Map<string, Profile>();
+/** Email por usuário, só para o convite de exemplo achar quem já existe (no real, quem decide é o Auth). */
+const memberEmails = new Map<string, string>(Object.entries(emails));
 const now = () => new Date().toISOString();
 const ref = (p: PersonRef): PersonRef => ({ id: p.id, full_name: p.full_name });
 
@@ -723,7 +726,7 @@ export async function inviteMember(input: { email: string; full_name: string; ro
   const s = await store();
   const email = input.email.trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !input.full_name.trim()) fail('invalid_input');
-  const existing = s.members.find((m) => m.email.toLowerCase() === email);
+  const existing = s.members.find((m) => memberEmails.get(m.user_id)?.toLowerCase() === email);
   if (existing && existing.deleted_at === null) return wait({ member: existing, reactivated: false, already: true });
   if (existing) {
     Object.assign(existing, { deleted_at: null, deleted_by: null, delete_reason: null, role: input.role });
@@ -747,7 +750,6 @@ export async function inviteMember(input: { email: string; full_name: string; ro
     deleted_at: null,
     deleted_by: null,
     delete_reason: null,
-    email,
     profile: {
       id: userId,
       full_name: input.full_name.trim(),
@@ -758,6 +760,7 @@ export async function inviteMember(input: { email: string; full_name: string; ro
     },
   };
   s.members.push(member);
+  memberEmails.set(userId, email);
   audit(
     s,
     actor,

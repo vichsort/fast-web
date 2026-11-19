@@ -9,7 +9,6 @@ import {
   auditLogs,
   clients,
   company,
-  emails,
   executions,
   history,
   members,
@@ -316,7 +315,6 @@ export function listMembers(filters: { includeRemoved?: boolean } = {}): Promise
     .map((m) => ({
       ...m,
       profile: allProfiles.find((p) => p.id === m.user_id) as Profile,
-      email: emails[m.user_id] ?? '',
     }))
     .sort((a, b) => a.profile.full_name.localeCompare(b.profile.full_name, 'pt-BR'));
   return delay(list);

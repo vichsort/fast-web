@@ -380,19 +380,14 @@ async function deleteClient(id: string, reason: string, _actor: PersonRef) {
 
 // ---------------------------------------------------------------- empresa, membros, auditoria e perfil (01, 05, 06)
 
-/**
- * Vínculos da empresa com o perfil. O email fica só no Auth e nenhuma operação o devolve para os outros membros:
- * vem só o do próprio usuário, da sessão.
- */
+/** Vínculos da empresa com o perfil (sem email: decisão em docs/screens-office.md). */
 async function officeListMembers(filters: { includeRemoved?: boolean } = {}): Promise<MemberView[]> {
   let query = supabase
     .from('company_members')
     .select('*, profile:profiles!company_members_user_id_fkey(*)')
     .eq('company_id', current().companyId);
   if (!filters.includeRemoved) query = query.is('deleted_at', null);
-  const [found, session] = await Promise.all([rows(query.order('created_at')), supabase.auth.getSession()]);
-  const self = session.data.session?.user;
-  return found.map((m) => ({ ...m, email: m.user_id === self?.id ? (self.email ?? '') : '' }));
+  return rows(query.order('created_at'));
 }
 
 async function officeAudit(): Promise<AuditView[]> {
