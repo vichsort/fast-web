@@ -60,4 +60,5 @@ Esboço visual do sistema inteiro antes da integração real, pedido em 2026-11-
 ## Decisões
 
 - **2026-11-19** — Playwright de lado até segunda ordem: sem E2E, e o projeto `browser` do Vitest (que roda no Chromium do Playwright) sai do `npm test` e do `npm run check`, ficando em `npm run test:browser`. *Por quê:* pedido do usuário para entregar as funcionalidades primeiro; instalar e manter o navegador de teste fica para depois.
+- **2026-11-19** — Playwright de volta, com as funcionalidades entregues: o projeto `browser` volta ao `npm test` e ao `npm run check`, e começam os E2E. *Por quê:* pedido do usuário.
 - **2026-11-19** — Ícones do PWA gerados no build (`@vite-pwa/assets-generator`, pelo `pwaAssets` do plugin) a partir de um arquivo só, `public/logo.svg`; o maskable e o apple-touch levam o fundo da marca e margem para o recorte do Android. *Por quê:* a logo da Fast ainda não chegou; quando chegar, basta trocar o arquivo, sem mexer em tamanhos, manifest ou `<head>`.

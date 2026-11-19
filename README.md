@@ -19,7 +19,7 @@ Node 24 e o backend rodando localmente (`npm run db:start` em `../fast`) para ge
 
 ```bash
 npm install
-npx playwright install chromium   # só para `npm run test:browser` e o Playwright (pausados)
+npx playwright install chromium   # navegador dos testes (Vitest browser e Playwright)
 npm run check                     # lint, tipos e Vitest
 ```
 
@@ -29,8 +29,7 @@ npm run check                     # lint, tipos e Vitest
 | ------------------------- | ---------------------------------------------------------- |
 | `npm run dev`             | servidor de desenvolvimento                                |
 | `npm run build`           | tipos e build de produção (com o service worker)           |
-| `npm test`                | Vitest: projeto `unit` (Node)                              |
-| `npm run test:browser`    | Vitest: projeto `browser` (Chromium), pausado              |
+| `npm test`                | Vitest: projetos `unit` (Node) e `browser` (Chromium)      |
 | `npm run test:e2e`        | Playwright contra o stack local do backend, pausado        |
 | `npm run lint` / `format` | Biome                                                      |
 | `npm run types`           | gera `src/lib/database.types.ts` do banco local do backend |
