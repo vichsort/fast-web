@@ -73,6 +73,7 @@ Esboço visual do sistema inteiro antes da integração real, pedido em 2026-11-
   - [x] Listas do escritório, opção A (D4, D5, D6): select enxuto e leitura em blocos de 1000 ([order-volume.spec.ts](../tests/e2e/office/order-volume.spec.ts)).
   - [x] Regra de retrocompatibilidade da fila na spec do backend (P9), RPCs e Edge Functions de foto.
   - [x] Resto do [versionamento](e2e.md#versionamento): versão do build no Perfil, `x-client-version`, versão mínima e formato do item da fila.
+  - [x] Um pedaço do build por área, sem dados de exemplo nem vitrine na produção ([screens.md](screens.md#decisões)).
   - [ ] Android emulado.
   - [ ] E2E no CI.
 - [ ] Cloudflare Pages ligado ao Supabase de produção. No primeiro deploy:

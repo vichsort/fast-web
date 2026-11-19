@@ -16,7 +16,7 @@ Regras de trabalho neste repositório. O backend (Supabase) fica no repositório
 
 - **TDD sempre** no que tem regra própria. Primeiro o teste, ver falhar pelo motivo certo, o mínimo para passar, refatorar com tudo verde.
 - **O banco decide.** O front não reimplementa regra de negócio: mostra, chama a RPC e trata a resposta pela classe de erro ([errors.md](../fast/docs/errors.md#classes-de-erro)). Exceção: os alertas da prova fotográfica, que o doc 04 manda o front calcular.
-- **Offline só no técnico.** O escritório trabalha online; o código offline (Dexie, fila, service worker) é carregado só na interface do técnico.
+- **Offline só no técnico.** O escritório trabalha online; o código offline (banco local, fila, fotos, service worker) é carregado só na interface do técnico. Cada área é um pedaço do build: o `routes.tsx` dela carrega as telas de `src/<área>/pages.ts` com `lazyRouteComponent`, e nada fora da área importa essas telas. A biblioteca Dexie entra para todos porque guarda a sessão ([auth-storage.ts](src/lib/auth-storage.ts)).
 - **Sem escopo extra.** O que está em "Fora do escopo" na spec do backend fica fora.
 - **Textos em pt-BR, centralizados** (`t('chave')`); as chaves de erro são as do catálogo do backend. Código, nomes e commits em inglês.
 
@@ -33,7 +33,7 @@ Regras de trabalho neste repositório. O backend (Supabase) fica no repositório
 ## Convenções
 
 - **Estrutura:** `src/app` (rotas e layouts), `src/lib` (supabase, tipos gerados, views das telas, textos, utilidades), `src/offline` (Dexie e fila), `src/photos` (captura e processamento), `src/office` e `src/technician` (telas de cada interface).
-- **Cada área nos seus arquivos**, para trabalhos em paralelo não colidirem: técnico em `src/technician/**`, escritório em `src/office/**`, componentes em `src/components/**`; rotas em `src/<área>/routes.tsx`; textos em `src/lib/i18n/<área>.ts` (`ui`, `technician`, `office`).
+- **Cada área nos seus arquivos**, para trabalhos em paralelo não colidirem: técnico em `src/technician/**`, escritório em `src/office/**`, componentes em `src/components/**`; rotas em `src/<área>/routes.tsx`, telas expostas às rotas em `src/<área>/pages.ts`; textos em `src/lib/i18n/<área>.ts` (`ui`, `technician`, `office`).
 - **Dados de exemplo atrás de uma chave:** `src/mocks/` e os `mocks.ts` de cada área (tipados a partir de `database.types.ts`) imitam a forma das consultas reais. Com `VITE_DATA_SOURCE=mock` ([data-source.ts](src/lib/data-source.ts)) as telas leem deles e as ações só mostram o efeito, com o aviso de dados de exemplo (`ScratchBanner`, `scratchToast`); sem a chave, o Supabase. As telas nunca importam os mocks nem o Supabase direto: só a API da área (`src/office/api/`, `src/technician/api/`), cujo contrato (`OfficeApi`, `TechnicianApi` no `types.ts` de cada uma) as duas implementações cumprem. As formas que as telas leem ficam em `src/lib/views.ts`, não nos mocks; o Biome (`noRestrictedImports`) barra importar mocks fora das implementações de exemplo e da vitrine `/dev`. A implementação de exemplo entra no `api/index.ts` por `import()` com a chave lida ali mesmo (`import.meta.env.VITE_DATA_SOURCE === 'mock'`, não o `usingMocks`), e a vitrine também por `import()`: só assim o build de produção não empacota os dados de exemplo.
 - **Alias:** `@/` = `src/`.
 - **Tipos do banco:** `npm run types` gera `src/lib/database.types.ts` do stack local do backend. Nunca editar à mão.

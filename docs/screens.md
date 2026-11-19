@@ -38,6 +38,7 @@ Depois do login: `technician` vai para a interface do técnico; `owner` e `manag
 
 ## Decisões
 
+- **2026-11-19** — Um pedaço do build por área: as rotas carregam as telas do escritório e do técnico sob demanda (`pages.ts` de cada área), e os dados de exemplo e a vitrine `/dev` ficam fora do build de produção. Login baixa ~279 KB (gzip), escritório ~452 KB, técnico ~417 KB; antes, um arquivo só de 532 KB para todos. *Por quê:* revisão da arquitetura: o escritório baixava a fila, as fotos e a câmera, e o técnico em 2G baixava o escritório inteiro. Sem sinal, os pedaços vêm do precache do worker (S1 do [e2e.md](e2e.md) passa); depois de um deploy, um pedaço que sumiu faz o TanStack Router recarregar a página uma vez (`lazyRouteComponent`).
 - **2026-11-13** — Usuário em mais de uma empresa entra na do vínculo mais antigo; sem troca de empresa no MVP. *Por quê:* só há um cliente; a troca entra com o segundo.
 - **2026-11-13** — Platform admin sem vínculo vê um aviso e o botão de sair, sem tela. *Por quê:* a spec deixa a administração de empresas para o painel do Supabase até o segundo cliente; sem o aviso, ele seria tratado como removido.
 - **2026-11-13** — Sem sinal, o app abre com o último acesso guardado no aparelho; sem nada guardado, pede conexão. *Por quê:* falha de rede nunca pode ser lida como remoção, senão o app apagaria a prova de quem só está sem sinal.
