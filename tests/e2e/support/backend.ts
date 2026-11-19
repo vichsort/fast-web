@@ -77,7 +77,7 @@ export async function serverOrder(orderId: string) {
   if (executions.error) throw executions.error;
   const photos = await client
     .from('service_order_photos')
-    .select('id, execution_id, source')
+    .select('id, execution_id, source, file_size')
     .eq('service_order_id', orderId);
   if (photos.error) throw photos.error;
   return { status: order.data.status, dueAt: order.data.due_at, executions: executions.data, photos: photos.data };

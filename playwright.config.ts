@@ -22,6 +22,8 @@ export default defineConfig({
   projects: [
     { name: 'office', testMatch: 'office/**', use: { ...devices['Desktop Chrome'] } },
     { name: 'technician', testMatch: 'technician/**', use: { ...devices['Pixel 7'] } },
+    // Medições (docs/e2e.md, D1): fora da suíte; rodam com `MEASURE=1 npx playwright test --project measure`.
+    { name: 'measure', testMatch: 'measure/**', use: { ...devices['Pixel 7'] } },
   ],
   webServer: {
     command: `npm run build && npx vite preview --port ${port} --strictPort`,

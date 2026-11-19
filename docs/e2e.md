@@ -12,6 +12,7 @@ O que mais custa se falhar, onde está no código, o que já é testado e como t
 | Projetos | `office` (Desktop Chrome) e `technician` (Pixel 7) |
 | Worker | bloqueado por padrão ([queue.md](queue.md#service-worker)); liberado nos testes do offline |
 | Quando | fora do `npm run check`; antes de commitar o que mexe num fluxo coberto |
+| Medições | projeto `measure` (`tests/e2e/measure`), fora da suíte: `MEASURE=1 npx playwright test --project measure --workers 1`; rede de celular emulada pelo CDP do Chromium |
 
 ## Cobertos
 
@@ -66,12 +67,12 @@ O pior caso do produto: serviço feito que nunca chega ao escritório.
 
 | ID | Ponto | Por que pesa | Onde | Hoje | Teste |
 | --- | --- | --- | --- | --- | --- |
-| D1 | Cada foto custa 3 idas e voltas em série (2 Edge Functions e o PUT), mais o cold start da função | com o RTT alto do 2G, o custo fixo por foto pesa tanto quanto o arquivo | `sendSubmit`; 04 | por design | medir com `Network.emulateNetworkConditions` (CDP do Chromium). Melhoria possível: pedir as URLs de várias fotos numa chamada (contrato do backend) |
+| D1 | Cada foto custa 3 idas e voltas em série (2 Edge Functions e o PUT), mais o cold start da função | com o RTT alto do 2G, o custo fixo por foto pesa tanto quanto o arquivo | `sendSubmit`; 04 | por design; medido em 2026-11-19 ([Medições](#medições)): o arquivo domina, as idas e voltas são 7% do tempo da foto no 2G | [`measure/photo-cost`](../tests/e2e/measure/photo-cost.spec.ts) |
 | D2 | Compressão no thread principal | sem worker ([photos.md](photos.md#decisões)); várias fotos de 12 MP da galeria travam a tela em celular fraco | `photos/compress` | por design | aparelho real |
 | D3 | Cache do técnico gravado como um JSON só a cada mudança | cresce com as execuções e fotos de todas as O.S. da lista; e "a cada mudança" é literal: o gravador próprio (`persist.ts`) não espaça as gravações como os do TanStack (1 s), então cada evento do cache das consultas regrava o JSON inteiro | `persist.ts` | aceito no volume esperado | observar |
 | D4 | ⚠️ Lista de O.S. do escritório sem paginação | traz todas as O.S. da empresa, com execuções e fotos embutidas; busca, técnico e prazo filtram no front. Cresce com o histórico e, passado `max_rows = 1000` (PostgREST), corta em silêncio: ficam as 1000 mais novas, e a busca não acha as antigas | `officeListOrders` | lacuna | unit do recorte ou E2E com seed volumoso. Correção: paginação e busca no banco |
 | D5 | ⚠️ Lista de clientes sem ordem no banco e sem paginação | passado 1000 clientes, o PostgREST devolve 1000 quaisquer; a ordenação e a busca são no front. Cliente some do seletor da O.S. nova e da busca. Pesa se a base da Fast for importada | `officeListClients` | lacuna | idem D4 |
-| D6 | Auditoria sem paginação | só os 1000 eventos mais recentes aparecem | `audit_logs` no `supabase.ts` | lacuna menor | — |
+| D6 | Auditoria sem paginação | só os 1000 eventos mais recentes aparecem | `audit_logs` no `supabase.ts` | lacuna menor; vai junto com D4 e D5 (decisão do usuário) | — |
 
 ## Escritório
 
@@ -101,7 +102,7 @@ Revisado em 2026-11-19, com a ordem antiga (P5, S1, E1, P3, P6, P7) toda feita. 
 | # | Item | Tipo | Por quê |
 | --- | --- | --- | --- |
 | 1 | P8, upgrade do Dexie | unit (`fake-indexeddb`): abrir o banco gravado em cada versão anterior, subir e conferir rascunhos, fotos e fila | depois do primeiro deploy, um erro aqui perde a prova de todos os aparelhos de uma vez; antes dele, é barato fixar a regra |
-| 2 | D4, D5, listas do escritório | correção: paginação, ordem e busca no banco (lista de O.S. e de clientes); se precisar de RPC ou índice, entra no contrato do backend primeiro | é o único ⚠️ aberto e corta em silêncio passado 1000; pesa no dia da importação da base da Fast |
+| 2 | D4, D5, D6, listas do escritório | correção: paginação, ordem e busca no banco (lista de O.S., de clientes e a auditoria); se precisar de RPC ou índice, entra no contrato do backend primeiro | é o único ⚠️ aberto e corta em silêncio passado 1000; pesa no dia da importação da base da Fast |
 | 3 | P9, retrocompatibilidade das RPCs da fila | proposta para a spec do backend (decisão de arquitetura do sistema, vai lá) | sem a regra, um deploy do backend trava (`blocked`) a fila de quem está em campo com a versão velha |
 | 4 | Roteiro de campo | doc com o passo a passo para um Android real: Background Sync com o app fechado (T4), aba congelada (T5), despejo do armazenamento (P1), câmera e GPS reais, 2G de verdade (T3, D2) | é o que o Playwright não alcança (ver abaixo); roda uma vez antes do deploy e depois de mudança na fila |
 
@@ -127,9 +128,30 @@ Revisado em 2026-11-19, com a ordem antiga (P5, S1, E1, P3, P6, P7) toda feita. 
 | --- | --- | --- | --- |
 | 11 | ~~S5, alcance do logout~~ (decidido: global) | decisão do usuário: `scope: 'local'` (sair só deste aparelho) ou manter o global | aparelho compartilhado e técnico com dois celulares; o global é mais seguro com celular perdido, o local não para a fila do outro aparelho |
 | 12 | ~~P3, janela de até 1 h~~ (feito) | decisão do usuário: um "Entrar de novo" no aviso da fila que leva ao login sem apagar nada (Q3 mantém a fila do mesmo usuário) | hoje a única saída visível nessa janela é o logout, que apaga a prova |
-| 13 | D1, custo por foto | medir com `Network.emulateNetworkConditions` (2G); com os números, decidir se o backend entrega as URLs de várias fotos numa chamada | 3 idas e voltas por foto em série |
-| 14 | D6, auditoria | paginação | lacuna menor: só os 1000 eventos mais recentes |
-| 15 | D3, cache do técnico | observar o tamanho em campo | aceito no volume esperado |
+| 13 | ~~D1, custo por foto~~ (medido) | [Medições](#medições): o arquivo domina. Próximo: a observabilidade em produção (abaixo) e, se os números do campo forem ruins, decidir o tamanho da foto (F1) | é o envio da prova; sem número do campo, a decisão é no escuro |
+| 14 | ~~D6, auditoria~~ (vai com D4 e D5, item 2) | paginação, no mesmo padrão das listas do escritório | lacuna menor: só os 1000 eventos mais recentes |
+| 15 | Observabilidade do envio | 1º, sem mudar contrato: consulta no banco por envio (`received_at` − `client_submitted_at`, fotos, `file_size`, `uploaded_at` entre fotos). 2º, se não bastar: o aparelho manda junto as medidas do envio (início do envio, tentativas, bytes), o que muda o contrato do `submit_execution` no backend | o D1 mediu no laboratório; o campo (cold start, perda de pacote, 2G de verdade) só aparece em produção |
+| 16 | D3, cache do técnico | observar o tamanho em campo | aceito no volume esperado |
+
+## Medições
+
+### D1, custo por foto (2026-11-19)
+
+[`measure/photo-cost`](../tests/e2e/measure/photo-cost.spec.ts): envio com 3 fotos de galeria de 4000×3000, comprimidas pelo app (F1) para 333 KB em média, contra o stack local. Tempo do sinal de volta até as 3 fotos no banco; os passos são a média por foto.
+
+| Rede (ida e volta, descida/subida) | Por foto | Pedir URL | PUT | Confirmar | Idas e voltas no tempo da foto |
+| --- | --- | --- | --- | --- | --- |
+| sem limite | 0,4 s | 65 ms | 14 ms | 95 ms | 92% |
+| 4G (70 ms, 9/4 Mbit/s) | 1,1 s | 76 ms | 0,8 s | 91 ms | 18% |
+| 3G (300 ms, 1,6 Mbit/s/750 kbit/s) | 5,2 s | 0,3 s | 4,0 s | 0,3 s | 14% |
+| 2G EDGE (800 ms, 240/120 kbit/s) | 26 s | 1,0 s | 23,8 s | 0,9 s | 7% |
+
+| Leitura | |
+| --- | --- |
+| O que pesa | o tamanho do arquivo: no 2G, a subida de 333 KB leva 24 s; juntar as URLs numa chamada (contrato do backend) tiraria ~2 s de 26 |
+| Escala | 20 fotos: ~9 min no 2G, ~1,7 min no 3G, um item por vez (T3) |
+| Fora da medição | o cold start das Edge Functions no hospedado (aqui são locais) e a perda de pacote; os dois aumentam a parte das idas e voltas |
+| Alavanca | o tamanho da foto (F1, [photos.md](photos.md)): ~1280 px ou qualidade menor deixaria o arquivo perto da metade e o tempo também |
 
 ## Fora do Playwright
 
