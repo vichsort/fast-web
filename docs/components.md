@@ -33,7 +33,7 @@ Biblioteca visual das duas interfaces: componentes do domínio em [`src/componen
 | `EmptyState` | `states.tsx` | lista vazia ou sem resultado | `kind` (`default`/`filtered`), `title`, `description`, `action`, `bordered`, `size` | listas |
 | `ErrorState` | `states.tsx` | erro ao carregar com tentar de novo | `code` (catálogo) ou `message`, `onRetry`, `retrying`, `offline`, `layout` (`block`/`inline`) | toda leitura |
 | `LoadingList`, `LoadingDetail`, `LoadingInline` | `states.tsx` | skeletons | `variant` (`card`/`row`/`table`), `count`, `columns` | toda leitura |
-| `ScratchBanner`, `scratchToast(ação)` | `states.tsx` | aviso do scratch (dados fictícios, ação sem efeito) | — | telas do scratch |
+| `ScratchBanner`, `scratchToast(ação)` | `states.tsx` | aviso dos dados de exemplo (dados fictícios, ação sem efeito) | — | telas com `VITE_DATA_SOURCE=mock` |
 | `OrderCard` | `order-card.tsx` | O.S. em lista no celular: número, tipo, título, cliente, endereço curto, prazo, status, prioridade, atrasada, tardio, "Nova" | `order`, `timeZone`, `isNew`, `showAssignees`, `hideStatus`, `density`, `render`/`href`/`onClick`, `selected` | Minhas O.S., dashboard estreito, cliente |
 | `DueLabel` | `order-card.tsx` | prazo curto ("amanhã"), vermelho se atrasada | `dueAt`, `overdue`, `timeZone` | cartões, detalhe |
 | `DataTable` | `data-table.tsx` | tabela genérica: ordenação, paginação, colunas que somem no estreito, carregando, vazio, linha clicável | `rows`, `columns` (`id`, `header`, `cell`, `sortValue`, `align`, `hideBelow`), `getRowId`, `sort`/`defaultSort`/`onSortChange`, `pageSize` (0 desliga), `onRowClick`, `selectedId`, `loading`, `empty`, `density` | O.S., clientes, membros, auditoria |

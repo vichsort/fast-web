@@ -33,6 +33,8 @@ Regras de trabalho neste repositório. O backend (Supabase) fica no repositório
 ## Convenções
 
 - **Estrutura:** `src/app` (rotas e layouts), `src/lib` (supabase, tipos gerados, textos, utilidades), `src/offline` (Dexie e fila), `src/photos` (captura e processamento), `src/office` e `src/technician` (telas de cada interface).
+- **Cada área nos seus arquivos**, para trabalhos em paralelo não colidirem: técnico em `src/technician/**`, escritório em `src/office/**`, componentes em `src/components/**`; rotas em `src/<área>/routes.tsx`; textos em `src/lib/i18n/<área>.ts` (`ui`, `technician`, `office`).
+- **Dados de exemplo atrás de uma chave:** `src/mocks/` e os `mocks.ts` de cada área (tipados a partir de `database.types.ts`) imitam a forma das consultas reais. Com `VITE_DATA_SOURCE=mock` ([data-source.ts](src/lib/data-source.ts)) as telas leem deles e as ações só mostram o efeito, com o aviso de dados de exemplo (`ScratchBanner`, `scratchToast`); sem a chave, o Supabase. As telas nunca importam os mocks nem o Supabase direto: só a API da área (`src/office/api/`, `src/technician/api/`), cuja implementação real tem o mesmo tipo da de exemplo.
 - **Alias:** `@/` = `src/`.
 - **Tipos do banco:** `npm run types` gera `src/lib/database.types.ts` do stack local do backend. Nunca editar à mão.
 - **IDs** de registros criados no aparelho: `crypto.randomUUID()`.
@@ -49,16 +51,6 @@ Regras de trabalho neste repositório. O backend (Supabase) fica no repositório
 4. O mínimo para passar.
 5. `npm run check` verde (lint, tipos e Vitest `unit`).
 6. Refatorar com tudo verde, marcar o roadmap e commitar.
-
-## Scratch visual
-
-Etapa 2b do [roadmap](docs/roadmap.md): esboço da estrutura visual, pedido pelo usuário em 2026-11-13. Enquanto durar, valem estas exceções às regras acima, só para as telas e componentes do scratch:
-
-- **Sem TDD e sem testes novos** para telas e componentes visuais. `npm run check` continua verde (lint, tipos, testes existentes).
-- **Dados de exemplo atrás de uma chave:** `src/mocks/` (tipados a partir de `database.types.ts`) imitam a forma das consultas reais. Com `VITE_DATA_SOURCE=mock` ([data-source.ts](src/lib/data-source.ts)) as telas leem deles e as ações só mostram o efeito, com aviso de scratch; sem a chave, o Supabase. As telas nunca importam `mocks` nem o Supabase direto: só a API da área (`src/office/api/`), cuja implementação real tem o mesmo tipo da de exemplo.
-- **Sem integrações precisas:** nada de fila real, service worker, câmera real ou chamadas às RPCs.
-- **Cada área nos seus arquivos**, para trabalhos em paralelo não colidirem: técnico em `src/technician/**`, escritório em `src/office/**`, componentes em `src/components/**`; rotas em `src/<área>/routes.tsx`; textos em `src/lib/i18n/<área>.ts` (`ui`, `technician`, `office`). Os textos continuam centralizados, sem frase solta no JSX.
-- As regras de negócio dos docs do backend continuam valendo para o que a tela mostra e permite (quem pode o quê, status, motivo obrigatório, alertas).
 
 ## Git
 

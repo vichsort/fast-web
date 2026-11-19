@@ -25,7 +25,7 @@ Ordem de trabalho do front. Cada item é um comportamento: teste vermelho (quand
 
 ## 2b. Scratch visual (sem testes, dados de exemplo)
 
-Esboço da estrutura visual do sistema inteiro, antes da integração real. Regras em [CLAUDE.md](../CLAUDE.md#scratch-visual). Os itens que faltam da etapa 2 (service worker com a fila, conferência do vínculo nas recusas da fila, Playwright) ficam para depois do scratch, junto com as etapas 3 e 4 de verdade.
+Esboço visual do sistema inteiro antes da integração real, pedido em 2026-11-13: telas com dados de exemplo e sem testes de tela. Concluído; as etapas 3 e 4 ligaram as telas ao Supabase, e os dados de exemplo ficaram atrás da chave `VITE_DATA_SOURCE` ([CLAUDE.md](../CLAUDE.md#convenções)).
 
 - [x] Componentes reutilizáveis, dados de exemplo compartilhados e a vitrine em `/dev/components`.
 - [x] Telas do técnico (etapa 3) em scratch ([screens-technician.md](screens-technician.md)).

@@ -42,7 +42,7 @@ Mapa das telas da interface do técnico ([screens.md](screens.md#técnico-celula
 | --- | --- | --- |
 | Leituras | O.S. pelo RLS (03, R14) com o select do escritório (`src/lib/orders-query.ts`); cache do TanStack Query no Dexie (`cache`, por usuário, 3 dias) | `src/mocks` + estado em memória |
 | Efeito local | rascunhos, fotos, fila e recusas do Dexie (`liveQuery`), juntos com o servidor em [`derive.ts`](../src/technician/derive.ts): iniciada no aparelho conta como em execução; materiais na fila e `conflict` por cima do texto do servidor | o mesmo, em memória |
-| Ações | gravam no Dexie e acordam a fila (`processQueue` sob o `webLock`); o perfil é update direto, só com sinal | efeito em memória e aviso de scratch |
+| Ações | gravam no Dexie e acordam a fila (`processQueue` sob o `webLock`); o perfil é update direto, só com sinal | efeito em memória e aviso dos dados de exemplo |
 | Fila | roda ao abrir, ao voltar o sinal, ao voltar para a aba e depois de cada ação; esperando rede, tenta de novo na hora marcada | — |
 | Técnico logado | sessão real; o fuso é o da empresa | Marcos dos mocks |
 | Câmera e galeria | `getUserMedia` (câmera traseira), posição pelo `watchPosition`, aviso de pouco espaço; galeria pelo seletor de arquivo; `src/photos` processa | visor e galeria de exemplo |
