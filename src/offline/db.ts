@@ -1,7 +1,8 @@
 // Banco local do aparelho (IndexedDB, Dexie): rascunhos, fotos comprimidas e a fila de envio do técnico.
 // É o contrato entre a fila (src/offline/queue) e as fotos (src/photos): docs/queue.md e docs/photos.md.
 // Tudo fica preso ao usuário que criou (userId): a fila de quem saiu não é enviada por outro usuário.
-// Mudou o schema? Nova versão em db.version(n), nunca editar uma versão que já foi para produção.
+// Mudou o schema? Nova versão em db.version(n), com teste de upgrade a partir dos dados da anterior; nunca editar uma
+// versão que já foi para produção. A versão 1 junta as de antes do primeiro deploy (docs/e2e.md, P8).
 import Dexie, { type EntityTable } from 'dexie';
 import type { Database } from '@/lib/database.types';
 
@@ -149,12 +150,8 @@ export class FastDb extends Dexie {
       photos: 'id, draftId, userId, orderId',
       queue: '++id, userId, orderId, [userId+orderId], nextAttemptAt',
       refusals: '++id, userId, orderId',
-    });
-    this.version(2).stores({
       seen: '[userId+orderId], userId',
       cache: 'userId',
-    });
-    this.version(3).stores({
       seenPhotos: '[userId+photoId], userId, [userId+orderId]',
     });
   }
