@@ -49,7 +49,7 @@ Esboço da estrutura visual do sistema inteiro, antes da integração real. Regr
 - [x] O.S.: criar, editar, atribuir, cancelar, histórico.
 - [x] Revisão: aprovar, rejeitar, ciência dos tardios, alertas.
 - [x] Empresa, membros e auditoria (owner).
-- [ ] Pendências do escritório: serviço de CEP (hoje a tabela de exemplo; decidido o ViaCEP em 2026-11-19, a fazer depois). Sem tela de importação de clientes ([screens-office.md](screens-office.md#decisões)). Email dos membros: decidido em 2026-11-19 não mostrar na lista ([screens-office.md](screens-office.md#decisões)).
+- [x] Pendências do escritório: CEP pelo ViaCEP. Sem tela de importação de clientes e sem email na lista de membros ([screens-office.md](screens-office.md#decisões)).
 
 ## 5. Produção
 

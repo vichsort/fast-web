@@ -1,5 +1,5 @@
-// Campos de endereço (02: formato de endereço) com CEP de preenchimento automático só visual, e o diálogo de
-// adicionar ou editar endereço do cliente.
+// Campos de endereço (02: formato de endereço) com o preenchimento pelo CEP (ViaCEP; tabela de exemplo com os dados
+// de exemplo), e o diálogo de adicionar ou editar endereço do cliente.
 import { CircleCheck, Search, TriangleExclamationPoint } from 'lucide-react';
 import * as React from 'react';
 import { FormDialog } from '@/components/dialogs';
@@ -12,7 +12,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { formatZipCode } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import type { ClientAddress } from '@/mocks';
-import { type AddressInput, addAddress, updateAddress } from '../api';
+import { type AddressInput, addAddress, lookupZip, updateAddress } from '../api';
 import { useOfficeAction } from '../session';
 import { useCreateId, useStayOpen } from '../shared';
 
@@ -59,21 +59,12 @@ export const addressValid = (d: AddressDraft) => Boolean(d.street.trim() && d.ci
 
 const UFS = 'AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO'.split(' ');
 
-/** CEPs de exemplo para o preenchimento automático (no real, um serviço de CEP chamado pelo front). */
-const SAMPLE_ZIPS: Record<string, Pick<AddressDraft, 'street' | 'district' | 'city' | 'state'>> = {
-  '01310100': { street: 'Avenida Paulista', district: 'Bela Vista', city: 'São Paulo', state: 'SP' },
-  '04101300': { street: 'Rua Vergueiro', district: 'Vila Mariana', city: 'São Paulo', state: 'SP' },
-  '04532060': { street: 'Rua Joaquim Floriano', district: 'Itaim Bibi', city: 'São Paulo', state: 'SP' },
-  '09015000': { street: 'Rua Coronel Oliveira Lima', district: 'Centro', city: 'Santo André', state: 'SP' },
-  '20040020': { street: 'Avenida Rio Branco', district: 'Centro', city: 'Rio de Janeiro', state: 'RJ' },
-};
-
 const maskZip = (value: string) => {
   const digits = value.replace(/\D/g, '').slice(0, 8);
   return digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
 };
 
-type ZipState = 'idle' | 'searching' | 'found' | 'not_found';
+type ZipState = 'idle' | 'searching' | 'found' | 'not_found' | 'unavailable';
 
 export function AddressFields({
   value,
@@ -87,23 +78,24 @@ export function AddressFields({
 }) {
   const id = React.useId();
   const [zip, setZip] = React.useState<ZipState>('idle');
-  const timer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  React.useEffect(() => () => clearTimeout(timer.current), []);
+  // A busca é assíncrona: aplica só a resposta do último CEP digitado, sobre os campos como estão quando ela chega.
+  const latest = React.useRef(value);
+  latest.current = value;
+  const search = React.useRef(0);
   const set = (key: keyof AddressDraft) => (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     onChange({ ...value, [key]: event.target.value });
 
-  function changeZip(raw: string) {
+  async function changeZip(raw: string) {
     const masked = maskZip(raw);
     onChange({ ...value, zip_code: masked });
-    clearTimeout(timer.current);
+    const current = ++search.current;
     const digits = masked.replace(/\D/g, '');
     if (digits.length !== 8) return setZip('idle');
     setZip('searching');
-    timer.current = setTimeout(() => {
-      const found = SAMPLE_ZIPS[digits];
-      setZip(found ? 'found' : 'not_found');
-      if (found) onChange({ ...value, zip_code: masked, ...found });
-    }, 600);
+    const result = await lookupZip(digits);
+    if (current !== search.current) return;
+    setZip(result.kind);
+    if (result.kind === 'found') onChange({ ...latest.current, ...result.address });
   }
 
   const missing = (key: 'street' | 'city' | 'state') => showErrors && !value[key].trim();
@@ -129,7 +121,7 @@ export function AddressFields({
               id={`${id}-zip`}
               inputMode="numeric"
               value={value.zip_code}
-              onChange={(event) => changeZip(event.target.value)}
+              onChange={(event) => void changeZip(event.target.value)}
               placeholder={t('office.address.zipPlaceholder')}
             />
             <InputGroupAddon align="inline-end">
@@ -140,14 +132,18 @@ export function AddressFields({
       </div>
       <p className="-mt-2 flex items-center gap-1.5 text-xs text-muted-foreground" aria-live="polite">
         {zip === 'found' && <CircleCheck aria-hidden className="size-3.5 text-(--tone-success)" />}
-        {zip === 'not_found' && <TriangleExclamationPoint aria-hidden className="size-3.5 text-(--tone-warning)" />}
+        {(zip === 'not_found' || zip === 'unavailable') && (
+          <TriangleExclamationPoint aria-hidden className="size-3.5 text-(--tone-warning)" />
+        )}
         {zip === 'searching'
           ? t('office.address.zipSearching')
           : zip === 'found'
             ? t('office.address.zipFound')
             : zip === 'not_found'
               ? t('office.address.zipNotFound')
-              : t('office.address.zipHint')}
+              : zip === 'unavailable'
+                ? t('office.address.zipUnavailable')
+                : t('office.address.zipHint')}
       </p>
       <div className="grid gap-4 sm:grid-cols-[1fr_7rem]">
         <Field data-invalid={missing('street') || undefined}>

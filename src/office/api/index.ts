@@ -39,6 +39,7 @@ export const {
   updateMemberRole,
   removeMember,
   updateProfile,
+  lookupZip,
 } = api;
 
 /** Liga o usuário e a empresa da sessão real (os dados de exemplo usam o usuário de exemplo do papel). */

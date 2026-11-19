@@ -31,6 +31,7 @@ import {
 } from '@/mocks';
 import { emails } from '@/mocks/data';
 import { ApiError } from '@/offline/queue/errors';
+import type { ZipLookup } from './api/viacep';
 import { addressText, clientMatches, isOverdue, orderMatches, seenUntil } from './derive';
 
 const LATENCY = 150;
@@ -612,6 +613,21 @@ export async function updateAddress(addressId: string, input: AddressInput) {
   const next = newAddress(s, c.id, input, a.is_primary);
   Object.assign(a, { ...next, id: a.id, created_at: a.created_at });
   return wait(a);
+}
+
+/** CEPs de exemplo do preenchimento automático (no Supabase, o ViaCEP: ./api/viacep.ts). */
+const SAMPLE_ZIPS: Record<string, { street: string; district: string; city: string; state: string }> = {
+  '01310100': { street: 'Avenida Paulista', district: 'Bela Vista', city: 'São Paulo', state: 'SP' },
+  '04101300': { street: 'Rua Vergueiro', district: 'Vila Mariana', city: 'São Paulo', state: 'SP' },
+  '04532060': { street: 'Rua Joaquim Floriano', district: 'Itaim Bibi', city: 'São Paulo', state: 'SP' },
+  '09015000': { street: 'Rua Coronel Oliveira Lima', district: 'Centro', city: 'Santo André', state: 'SP' },
+  '20040020': { street: 'Avenida Rio Branco', district: 'Centro', city: 'Rio de Janeiro', state: 'RJ' },
+};
+
+/** Endereço pelo CEP (8 dígitos). */
+export async function lookupZip(digits: string): Promise<ZipLookup> {
+  const address = SAMPLE_ZIPS[digits];
+  return wait(address ? { kind: 'found', address } : { kind: 'not_found' });
 }
 
 /** set_primary_address. */

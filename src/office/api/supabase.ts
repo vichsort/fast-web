@@ -27,6 +27,7 @@ import {
 } from '../derive';
 import type { AddressInput, OrderInput } from '../mocks';
 import type { OfficeApi } from './types';
+import { createZipLookup } from './viacep';
 
 type Functions = Database['public']['Functions'];
 
@@ -504,4 +505,5 @@ export const supabaseApi: OfficeApi = {
   updateMemberRole,
   removeMember,
   updateProfile,
+  lookupZip: createZipLookup(),
 };

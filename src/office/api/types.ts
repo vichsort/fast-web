@@ -35,4 +35,5 @@ export type OfficeApi = Pick<
   | 'updateMemberRole'
   | 'removeMember'
   | 'updateProfile'
+  | 'lookupZip'
 >;
