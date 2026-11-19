@@ -122,6 +122,15 @@ export interface CachedQueries {
   savedAt: string;
 }
 
+/** Foto do servidor já vista no aparelho, guardada como arquivo para abrir sem sinal (photos.md, F8 a F10). */
+export interface SeenPhoto {
+  userId: string;
+  photoId: string;
+  orderId: string;
+  blob: Blob;
+  savedAt: string;
+}
+
 export class FastDb extends Dexie {
   drafts!: EntityTable<Draft, 'id'>;
   photos!: EntityTable<DraftPhoto, 'id'>;
@@ -129,6 +138,7 @@ export class FastDb extends Dexie {
   refusals!: EntityTable<QueueRefusal, 'id'>;
   seen!: EntityTable<SeenOrder, 'orderId'>;
   cache!: EntityTable<CachedQueries, 'userId'>;
+  seenPhotos!: EntityTable<SeenPhoto, 'photoId'>;
 
   constructor(name = 'fast') {
     super(name);
@@ -141,6 +151,9 @@ export class FastDb extends Dexie {
     this.version(2).stores({
       seen: '[userId+orderId], userId',
       cache: 'userId',
+    });
+    this.version(3).stores({
+      seenPhotos: '[userId+photoId], userId, [userId+orderId]',
     });
   }
 }

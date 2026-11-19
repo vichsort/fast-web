@@ -1,6 +1,6 @@
 import type { OrderDetail } from '@/mocks';
 import type { Draft, DraftPhoto, QueueItem, QueueRefusal } from '@/offline/db';
-import { type LocalState, pendingItems, toMyOrder, toTechOrder } from './derive';
+import { type LocalState, pendingItems, toMyOrder, toTechOrder, withLocalPhotos } from './derive';
 
 const NOW = Date.parse('2026-11-19T12:00:00Z');
 const ME = 'u-me';
@@ -261,5 +261,25 @@ describe('pendingItems', () => {
       ['draft:d9', 'submit', 'refused', 'order_closed'],
       ['refusal:4', 'start', 'refused', 'not_assigned'],
     ]);
+  });
+});
+
+describe('withLocalPhotos', () => {
+  it('F9: shows the file kept on the device when there is one, else the signed URL', () => {
+    const photo = (id: string) => ({ id, url: `signed-${id}` }) as OrderDetail['attempts'][number]['photos'][number];
+    const attempt = {
+      id: 'e1',
+      photos: [photo('p1'), photo('p2')],
+      supplements: [{ id: 'e2', photos: [photo('p3')] }],
+    } as unknown as OrderDetail['attempts'][number];
+    const local = new Map([
+      ['p1', 'blob:p1'],
+      ['p3', 'blob:p3'],
+    ]);
+
+    const [shown] = withLocalPhotos([attempt], (id) => local.get(id) ?? null);
+
+    expect(shown?.photos.map((p) => p.url)).toEqual(['blob:p1', 'signed-p2']);
+    expect(shown?.supplements[0]?.photos.map((p) => p.url)).toEqual(['blob:p3']);
   });
 });

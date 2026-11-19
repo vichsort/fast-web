@@ -38,7 +38,7 @@ Esboço da estrutura visual do sistema inteiro, antes da integração real. Regr
 - [x] Execução: câmera, galeria, rascunho, enviar.
 - [x] Complemento.
 - [x] Pendências.
-- [ ] Fotos já vistas no aparelho sem sinal (offline.md, "Fotos já vistas"): hoje as URLs assinadas vencem e a foto do servidor não abre offline.
+- [x] Fotos já vistas no aparelho sem sinal (offline.md, "Fotos já vistas"; [photos.md](photos.md), F8 a F10).
 - [ ] ~~E2E: execução offline com fotos chega ao servidor sem duplicar.~~ Pausado (ver Decisões).
 
 ## 4. Escritório

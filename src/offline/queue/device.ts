@@ -2,11 +2,11 @@
 import type { FastDb, QueueRefusal } from '../db';
 
 /**
- * Logout ou remoção do membro: apaga rascunhos, fotos, fila, recusas, O.S. vistas e o cache do usuário, numa transação. Seguro com o
+ * Logout ou remoção do membro: apaga rascunhos, fotos, fila, recusas, O.S. e fotos vistas e o cache do usuário, numa transação. Seguro com o
  * processador no meio de um item: ele relê o item antes de gravar e não acha mais nada.
  */
 export async function clearUser(db: FastDb, userId: string): Promise<void> {
-  const tables = [db.drafts, db.photos, db.queue, db.refusals, db.seen, db.cache];
+  const tables = [db.drafts, db.photos, db.queue, db.refusals, db.seen, db.seenPhotos, db.cache];
   await db.transaction('rw', tables, async () => {
     await Promise.all(tables.map((table) => table.where('userId').equals(userId).delete()));
   });

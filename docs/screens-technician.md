@@ -48,6 +48,7 @@ Mapa das telas da interface do técnico ([screens.md](screens.md#técnico-celula
 | Câmera e galeria | `getUserMedia` (câmera traseira), posição pelo `watchPosition`, aviso de pouco espaço; galeria pelo seletor de arquivo; `src/photos` processa | visor e galeria de exemplo |
 | Sem sinal | "online" = último request que deu certo (queue.md, Q7) | chave "Simular sem sinal" no perfil |
 | "Nova" | tabela `seen` do Dexie, por usuário | em memória |
+| Fotos do servidor | guardadas como arquivo ao abrir a O.S. e mostradas pelo arquivo, inclusive sem sinal ([photos.md](photos.md), F8 a F10) | URLs de exemplo |
 | Mapa | desenho local, sem tiles | o mesmo |
 
 ## Decisões

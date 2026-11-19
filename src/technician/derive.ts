@@ -168,3 +168,16 @@ export function withAlerts(photos: PhotoData[], startedAt: string | null): Photo
     alerts: photoAlerts({ source: p.source, capturedAt: p.captured_at }, { clientStartedAt: startedAt }),
   }));
 }
+
+/** F9 (photos.md): a foto abre pelo arquivo guardado no aparelho quando há; senão pela URL assinada. */
+export function withLocalPhotos<A extends { photos: PhotoData[]; supplements: { photos: PhotoData[] }[] }>(
+  attempts: A[],
+  localUrl: (photoId: string) => string | null,
+): A[] {
+  const swap = (photos: PhotoData[]) => photos.map((p) => ({ ...p, url: localUrl(p.id) ?? p.url }));
+  return attempts.map((a) => ({
+    ...a,
+    photos: swap(a.photos),
+    supplements: a.supplements.map((s) => ({ ...s, photos: swap(s.photos) })),
+  }));
+}

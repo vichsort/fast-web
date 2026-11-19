@@ -5,11 +5,13 @@ import { HISTORY_SELECT, ORDER_SELECT, photoUrls } from '@/lib/orders-query';
 import { supabase } from '@/lib/supabase';
 import type { OrderDetail, PendingItem, SyncState } from '@/mocks';
 import { type OrderRow, toOrderDetail } from '@/office/derive';
+import { db } from '@/offline/db';
 import { ApiError, classifyFunctionError, classifyRpcError } from '@/offline/queue/errors';
-import { pendingItems, toMyOrder, toTechOrder, withAlerts } from '../../derive';
+import { pruneSeenPhotos, saveSeenPhotos } from '@/offline/seen-photos';
+import { pendingItems, toMyOrder, toTechOrder, withAlerts, withLocalPhotos } from '../../derive';
 import type { Draft, MyOrder, Read, TechOrder, TechSession } from '../types';
 import { current } from './context';
-import { parseDraftKey, photoData, useLocal } from './local';
+import { parseDraftKey, photoData, seenPhotoUrl, useLocal } from './local';
 import { markOnline, useRunner } from './runner';
 
 async function invoke<T>(name: string, body: Record<string, unknown>): Promise<T> {
@@ -38,7 +40,20 @@ async function fetchOrders(): Promise<OrderDetail[]> {
   if (error) throw classifyRpcError(error, status);
   const now = Date.now();
   // O RLS mostra só as O.S. com atribuição ativa do técnico (03, R14).
-  return (data as unknown as OrderRow[]).map((row) => toOrderDetail(row, now));
+  const rows = data as unknown as OrderRow[];
+  // F10: as fotos guardadas saem junto com a O.S.
+  void pruneSeenPhotos(
+    db,
+    current().userId,
+    rows.map((r) => r.id),
+  );
+  return rows.map((row) => toOrderDetail(row, now));
+}
+
+async function download(url: string): Promise<Blob> {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`photo download ${response.status}`);
+  return response.blob();
 }
 
 async function fetchOrder(id: string): Promise<OrderDetail | null> {
@@ -59,6 +74,13 @@ async function fetchOrder(id: string): Promise<OrderDetail | null> {
   } catch (error) {
     if (!(error instanceof ApiError) || !['network', 'server'].includes(error.errorClass)) throw error;
   }
+  // F8: guarda como arquivo, em segundo plano, as fotos que ainda não estão no aparelho.
+  void saveSeenPhotos(db, {
+    userId: current().userId,
+    orderId: id,
+    photos: [...urls].map(([photoId, url]) => ({ id: photoId, url })),
+    download,
+  });
   return toOrderDetail(row, Date.now(), urls);
 }
 
@@ -111,7 +133,9 @@ export function useTechOrder(orderId: string): Read<TechOrder | null> {
   const local = useLocal();
   const data = React.useMemo(() => {
     if (query.data === undefined || !local) return undefined;
-    return query.data ? toTechOrder(query.data, local, Date.now()) : null;
+    if (!query.data) return null;
+    const order = toTechOrder(query.data, local, Date.now());
+    return { ...order, attempts: withLocalPhotos(order.attempts, seenPhotoUrl) };
   }, [query.data, local]);
   return { ...query, data, isPending: (query.isPending && !query.isPlaceholderData) || !local };
 }

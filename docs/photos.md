@@ -1,6 +1,6 @@
 # Fotos
 
-Do arquivo da câmera ou da galeria até a foto guardada no rascunho, e os alertas da prova fotográfica. As regras da prova (origem, horário, alertas, compressão) são as do [04](../../fast/docs/modules/04-execution-photos.md#prova-fotográfica) do backend; aqui fica como o aparelho as cumpre. **Código:** `src/photos/`. **Banco local:** `photos` em [`src/offline/db.ts`](../src/offline/db.ts).
+Do arquivo da câmera ou da galeria até a foto guardada no rascunho, os alertas da prova fotográfica e as fotos do servidor guardadas para abrir sem sinal. As regras da prova (origem, horário, alertas, compressão) são as do [04](../../fast/docs/modules/04-execution-photos.md#prova-fotográfica) do backend; aqui fica como o aparelho as cumpre. **Código:** `src/photos/` e [`src/offline/seen-photos.ts`](../src/offline/seen-photos.ts). **Banco local:** `photos` e `seenPhotos` em [`src/offline/db.ts`](../src/offline/db.ts).
 
 ## Regras
 
@@ -27,6 +27,12 @@ Do arquivo da câmera ou da galeria até a foto guardada no rascunho, e os alert
 
 A tela traduz o código (`t('alerts.<código>')`).
 
+**Fotos já vistas** ([offline.md](../../fast/docs/offline.md#o-que-fica-no-aparelho): "como arquivo, nunca a URL assinada"):
+
+- **F8.** Ao abrir a O.S. com sinal, as fotos dela que o usuário ainda não tem no aparelho são baixadas pela URL assinada, uma por vez, em segundo plano, e guardadas como arquivo (`seenPhotos`, com o usuário e a O.S.). Melhor esforço: download que falha pula a foto (vem na próxima abertura); gravação recusada (sem espaço) para, sem aviso.
+- **F9.** A tela mostra a foto pelo arquivo do aparelho quando há; senão, pela URL assinada.
+- **F10.** Saem junto com a O.S.: a cada leitura de "Minhas O.S." que dá certo, ficam só as fotos das O.S. da lista; logout e remoção apagam todas ([queue.md](queue.md), Q10).
+
 ## Fora daqui
 
 - A tela da câmera (`getUserMedia`) e o seletor da galeria: entram com as telas do técnico ([screens.md](screens.md)). Este módulo recebe o arquivo (`Blob`), a origem, o horário do clique e a posição.
@@ -44,3 +50,4 @@ A tela traduz o código (`t('alerts.<código>')`).
 - **2026-11-13** — Coordenada fora da faixa (latitude além de ±90, longitude além de ±180), não numérica ou sem a referência N/S/E/W zera a localização inteira; a precisão só fica com latitude e longitude, e só se for número ≥ 0. _Por quê:_ o banco recusa esses valores (CHECK de `service_order_photos`), e o `submit_execution` recusaria o envio todo com `invalid_input`: perder a localização é melhor que perder a prova.
 - **2026-11-13** — Compressão com `browser-image-compression` sem web worker (`useWebWorker: false`). _Por quê:_ o worker da biblioteca baixa o próprio script de uma CDN, o que falha sem sinal, justamente onde o técnico está. A biblioteca também nunca devolve arquivo maior que o original (baixa a qualidade de ~80% até ficar menor): aceito, porque economiza banda e a foto de origem já era menor.
 - **2026-11-13** — Acima de 5 MB (5.242.880 bytes, o CHECK do R16), a compressão baixa só a qualidade, nunca a resolução: a biblioteca tenta em passos de 5% e, se não bastar, recomeça do original com metade da qualidade, até caber. _Por quê:_ o F1 manda reduzir a qualidade; recomeçar do original evita compressão em cima de compressão. Com 1600 px, um JPEG de qualidade mínima tem poucas centenas de KB, então o laço sempre termina.
+- **2026-11-19** — Fotos já vistas: guardadas ao abrir a O.S., não ao baixar a lista. *Por quê:* o offline.md guarda as fotos "já vistas"; baixar todas as fotos de todas as O.S. gastaria dados móveis e espaço com fotos que o técnico talvez nunca abra. O download é um `fetch` da página à URL assinada, que depende do CORS do storage no `GET`, como o upload da fila já depende no `PUT`.

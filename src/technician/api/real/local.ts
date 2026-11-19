@@ -3,11 +3,11 @@
 import { liveQuery, type Subscription } from 'dexie';
 import * as React from 'react';
 import type { PhotoData } from '@/components/photos';
-import { type DraftPhoto, db } from '@/offline/db';
+import { type DraftPhoto, db, type SeenPhoto } from '@/offline/db';
 import type { LocalState } from '../../derive';
 
 let userId: string | null = null;
-let snapshot: (LocalState & { photoRows: DraftPhoto[] }) | null = null;
+let snapshot: (LocalState & { photoRows: DraftPhoto[]; seenPhotos: Map<string, SeenPhoto> }) | null = null;
 let subscription: Subscription | null = null;
 const listeners = new Set<() => void>();
 
@@ -22,16 +22,17 @@ export function watchLocal(next: string) {
   userId = next;
   snapshot = null;
   subscription = liveQuery(async () => {
-    const [drafts, photoRows, queue, refusals, seen] = await Promise.all([
+    const [drafts, photoRows, queue, refusals, seen, seenPhotos] = await Promise.all([
       db.drafts.where('userId').equals(next).toArray(),
       db.photos.where('userId').equals(next).toArray(),
       db.queue.where('userId').equals(next).toArray(),
       db.refusals.where('userId').equals(next).toArray(),
       db.seen.where('userId').equals(next).toArray(),
+      db.seenPhotos.where('userId').equals(next).toArray(),
     ]);
-    return { drafts, photoRows, queue, refusals, seen };
+    return { drafts, photoRows, queue, refusals, seen, seenPhotos };
   }).subscribe({
-    next: ({ drafts, photoRows, queue, refusals, seen }) => {
+    next: ({ drafts, photoRows, queue, refusals, seen, seenPhotos }) => {
       snapshot = {
         userId: next,
         drafts,
@@ -40,8 +41,9 @@ export function watchLocal(next: string) {
         queue,
         refusals,
         seen: new Set(seen.map((s) => s.orderId)),
+        seenPhotos: new Map(seenPhotos.map((p) => [p.photoId, p])),
       };
-      releaseUrls(new Set(photoRows.map((p) => p.id)));
+      releaseUrls(new Set([...photoRows.map((p) => p.id), ...seenPhotos.map((p) => p.photoId)]));
       emit();
     },
     error: (error) => console.error('leitura do banco local falhou', error),
@@ -71,10 +73,25 @@ export function localSnapshot() {
   return snapshot;
 }
 
-// ---------------------------------------------------------------- fotos do rascunho
+// ---------------------------------------------------------------- fotos no aparelho
 
-/** URL de objeto por foto local: criada uma vez e revogada quando a foto sai do aparelho. */
+/** URL de objeto por foto local (do rascunho ou já vista): criada uma vez e revogada quando a foto sai do aparelho. */
 const urls = new Map<string, string>();
+
+function objectUrl(id: string, blob: Blob): string {
+  let url = urls.get(id);
+  if (!url) {
+    url = URL.createObjectURL(blob);
+    urls.set(id, url);
+  }
+  return url;
+}
+
+/** F9 (photos.md): URL do arquivo de uma foto do servidor guardada no aparelho, ou `null`. */
+export function seenPhotoUrl(photoId: string): string | null {
+  const row = snapshot?.seenPhotos.get(photoId);
+  return row ? objectUrl(photoId, row.blob) : null;
+}
 
 function releaseUrls(keep: Set<string>) {
   for (const [id, url] of urls) {
@@ -86,14 +103,9 @@ function releaseUrls(keep: Set<string>) {
 }
 
 export function photoData(row: DraftPhoto): PhotoData {
-  let url = urls.get(row.id);
-  if (!url) {
-    url = URL.createObjectURL(row.blob);
-    urls.set(row.id, url);
-  }
   return {
     id: row.id,
-    url,
+    url: objectUrl(row.id, row.blob),
     source: row.source,
     captured_at: row.capturedAt,
     accuracy_m: row.accuracyM,
