@@ -7,7 +7,7 @@ O que mais custa se falhar, onde está no código, o que já é testado e como t
 | Parte | Como |
 | --- | --- |
 | Testes | `tests/e2e`, `npm run test:e2e`; configuração em [`playwright.config.ts`](../playwright.config.ts) |
-| Backend | stack local (`npm run db:start` em `../fast`) com o seed; preparo e conferência direto no banco por [`support/backend.ts`](../tests/e2e/support/backend.ts) |
+| Backend | stack local (`npm run db:start` em `../fast`) com o seed; preparo e conferência direto no banco por [`support/backend.ts`](../tests/e2e/support/backend.ts). Usuário que o teste remove ou tira do aparelho é criado só para ele (`createTechnician`, com a chave de serviço que o `globalSetup` lê do `supabase status`): mexer num usuário do seed derruba os testes em paralelo |
 | App | build e `vite preview` na 4173, com o service worker |
 | Projetos | `office` (Desktop Chrome) e `technician` (Pixel 7) |
 | Worker | bloqueado por padrão ([queue.md](queue.md#service-worker)); liberado nos testes do offline |
@@ -25,6 +25,7 @@ O que mais custa se falhar, onde está no código, o que já é testado e como t
 | [`technician/lost-session`](../tests/e2e/technician/lost-session.spec.ts) | P3: envio na fila sem sinal; a sessão guardada vence e a renovação é recusada. Ao abrir com sinal, vai ao login com a fila intacta, e entrar de novo com o mesmo usuário manda o envio |
 | [`technician/interrupted-upload`](../tests/e2e/technician/interrupted-upload.spec.ts) | P6: envio com sinal e 2 fotos; o 1º PUT da 2ª foto cai (`context.route`). A retomada chega sozinha: 1 execução, 2 fotos, a 1ª enviada uma vez e a 2ª duas |
 | [`technician/pair-offline`](../tests/e2e/technician/pair-offline.spec.ts) | P7: a dupla envia sem sinal, cada um no seu celular (dois contextos), e os dois voltam ao sinal juntos. No banco: uma tentativa e um complemento dela, 2 fotos; as Pendências dos dois ficam vazias |
+| [`technician/removed-member`](../tests/e2e/technician/removed-member.spec.ts) | P4: técnico próprio do teste (usuário pela chave de serviço, vínculo pelo `invite_member`), com um envio na fila sem sinal; o owner o remove. Ao abrir com sinal, vai ao login com o aviso, nada dele fica no Dexie e nada chega ao servidor |
 | [`technician/refused-submission`](../tests/e2e/technician/refused-submission.spec.ts) | P5: envio feito sem sinal numa O.S. que o escritório cancela. Com o sinal, o rascunho fica em "Precisam de você" com o motivo e o texto, continua ao reabrir, nada chega ao servidor e só sai quando o técnico apaga |
 
 ## Perda da prova
@@ -36,7 +37,7 @@ O pior caso do produto: serviço feito que nunca chega ao escritório.
 | P1 | IndexedDB sem `navigator.storage.persist()` | sem o pedido, o armazenamento é "best-effort": com o celular cheio, o Chrome pode apagar a origem inteira (rascunhos, fotos, fila) sem aviso | `offline/persistence.ts`, runtime do técnico | corrigido em 2026-11-19 ([queue.md](queue.md), Q12): pede ao abrir e avisa em Minhas O.S. se negado | unit; o despejo em si só em campo |
 | P2 | Logout com itens na fila apaga a prova | decisão do contrato (Q10); o aviso com a contagem é a única proteção | `logout-button.tsx`, `profile-page.tsx` | aceito | E2E barato: o aviso mostra a contagem certa e cancelar não apaga nada |
 | P3 | "Entre de novo para enviar" sem botão de login | verificado em 2026-11-19 no auth-js 2.119: com a renovação recusada e o token de acesso vencido, ele apaga a sessão, a guarda da rota (`gate.tsx`) leva ao login, e entrar com o mesmo usuário mantém a fila (Q3). Sobra uma janela de até 1 h: com o token de acesso ainda válido pelo relógio do aparelho, a sessão fica, e a única saída visível é o logout, que apaga a fila (P2) | `components/sync.tsx`, `app/pages/gate.tsx` | unit; E2E desde 2026-11-19 (o caminho que mantém a fila); a janela de 1 h segue como risco menor | coberto; a janela, decisão em [Próximos passos](#próximos-passos) |
-| P4 | Remoção do membro apaga tudo, inclusive envios não mandados | remoção por engano antes do sinal perde a prova (offline.md, proteção dos dados) | `app/pages/gate.tsx`, `clearUser` | aceito | E2E: removido, ao abrir com sinal o aparelho limpa e vai ao login com o aviso |
+| P4 | Remoção do membro apaga tudo, inclusive envios não mandados | remoção por engano antes do sinal perde a prova (offline.md, proteção dos dados) | `app/pages/gate.tsx`, `clearUser` | aceito; E2E desde 2026-11-19 | coberto |
 | P5 | Recusa por regra ao voltar o sinal (O.S. cancelada, técnico tirado da O.S.) | o rascunho tem de ficar `refused`, com o motivo, até o técnico apagar (offline.md, recusa definitiva) | `processor.ts` (`refuse`), Pendências | unit; E2E desde 2026-11-19 | coberto |
 | P6 | Upload interrompido no meio do envio | a retomada não pode reenviar foto confirmada nem duplicar (Q4) | `sendSubmit` | unit, com API falsa; E2E desde 2026-11-19 | coberto |
 | P7 | Dupla enviando sem sinal | o segundo envio vira complemento (04, R4); nenhuma prova pode ficar presa | backend; fila daqui | backend; E2E desde 2026-11-19 | coberto |
@@ -102,7 +103,7 @@ Revisado em 2026-11-19, com a ordem antiga (P5, S1, E1, P3, P6, P7) toda feita. 
 | # | Item | Teste | Por quê |
 | --- | --- | --- | --- |
 | 5 | P2, logout com fila | o aviso mostra a contagem certa; cancelar não apaga nada | é a única proteção do caminho que apaga a prova de propósito |
-| 6 | P4, membro removido | removido pelo `remove_member` no banco; ao abrir com sinal, o aparelho limpa e vai ao login com o aviso | confere a ligação gate → `clearUser` → login, que hoje só tem unit |
+| 6 | ~~P4, membro removido~~ (feito) | removido pelo `remove_member` no banco; ao abrir com sinal, o aparelho limpa e vai ao login com o aviso | confere a ligação gate → `clearUser` → login, que hoje só tem unit |
 | 7 | S4, aparelho compartilhado | o técnico 1 sai, o técnico 2 entra no mesmo contexto e não vê O.S., rascunho nem fila do 1 | o cache e a fila são por usuário só por convenção do código |
 | 8 | E2, `stale_review` | abrir a revisão, chegar um complemento (pelo banco), aprovar: aviso de recarregar, e a aprovação sai depois de recarregar | o escritório aprovaria sem ver a prova nova |
 

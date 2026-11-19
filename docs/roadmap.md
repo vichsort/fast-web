@@ -46,6 +46,7 @@ Esboço visual do sistema inteiro antes da integração real, pedido em 2026-11-
 - [x] E2E: sessão perdida com envios na fila, entrar de novo manda a fila ([lost-session.spec.ts](../tests/e2e/technician/lost-session.spec.ts); [e2e.md](e2e.md), P3).
 - [x] E2E: upload interrompido retoma sem reenviar a foto confirmada nem duplicar ([interrupted-upload.spec.ts](../tests/e2e/technician/interrupted-upload.spec.ts); [e2e.md](e2e.md), P6).
 - [x] E2E: dupla enviando sem sinal, um envio e um complemento, nada preso ([pair-offline.spec.ts](../tests/e2e/technician/pair-offline.spec.ts); [e2e.md](e2e.md), P7).
+- [x] E2E: membro removido, ao abrir com sinal o aparelho limpa e vai ao login com o aviso ([removed-member.spec.ts](../tests/e2e/technician/removed-member.spec.ts); [e2e.md](e2e.md), P4).
 
 ## 4. Escritório
 

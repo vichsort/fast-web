@@ -88,3 +88,48 @@ export async function cancelOrder(orderId: string, reason: string) {
   const { error } = await client.rpc('cancel_order', { p_order_id: orderId, p_reason: reason });
   if (error) throw error;
 }
+
+/** Técnico novo, só do teste, na empresa da Fast: usuário pela chave de serviço, vínculo pelo convite do owner (06). */
+export async function createTechnician(): Promise<{ email: string; userId: string; memberId: string }> {
+  const serviceKey = process.env.E2E_SERVICE_ROLE_KEY;
+  if (!serviceKey) throw new Error('E2E_SERVICE_ROLE_KEY ausente: o globalSetup não leu a chave do stack local.');
+  const admin = createClient<Database>(supabaseUrl, serviceKey, { auth: { persistSession: false } });
+  const tag = crypto.randomUUID().slice(0, 8);
+  const email = `e2e-${tag}@fast.test`;
+  const fullName = `Técnico E2E ${tag}`;
+  const created = await admin.auth.admin.createUser({
+    email,
+    password: PASSWORD,
+    email_confirm: true,
+    user_metadata: { full_name: fullName },
+  });
+  if (created.error) throw created.error;
+
+  const { client, userId: ownerId } = await signIn(users.owner);
+  const invited = await client.functions.invoke<{ member_id: string; user_id: string }>('invite_member', {
+    body: { company_id: await companyOf(client, ownerId), email, full_name: fullName, role: 'technician' },
+  });
+  if (invited.error || !invited.data) throw invited.error ?? new Error('invite_member sem resposta');
+  return { email, userId: invited.data.user_id, memberId: invited.data.member_id };
+}
+
+/** O owner remove o membro (06, `remove_member`). */
+export async function removeMember(memberId: string) {
+  const { client } = await signIn(users.owner);
+  const { error } = await client.functions.invoke('remove_member', { body: { member_id: memberId, reason: 'E2E' } });
+  if (error) throw error;
+}
+
+/** Complemento só com texto da tentativa pendente, enviado pelo técnico direto no banco (04, `submit_execution`). */
+export async function submitSupplement(orderId: string, executionId: string, email: string, description: string) {
+  const { client, userId } = await signIn(email);
+  const { error } = await client.rpc('submit_execution', {
+    p_execution_id: crypto.randomUUID(),
+    p_order_id: orderId,
+    p_supplements_execution_id: executionId,
+    p_description: description,
+    p_participants: [userId],
+    p_client_submitted_at: new Date().toISOString(),
+  });
+  if (error) throw error;
+}
