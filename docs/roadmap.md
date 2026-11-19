@@ -47,7 +47,8 @@ Esboço da estrutura visual do sistema inteiro, antes da integração real. Regr
 - [x] Clientes e endereços (a importação espera o `import_clients`, etapa 9 do backend).
 - [x] O.S.: criar, editar, atribuir, cancelar, histórico.
 - [x] Revisão: aprovar, rejeitar, ciência dos tardios, alertas.
-- [ ] Empresa, membros e auditoria (owner).
+- [x] Empresa, membros e auditoria (owner).
+- [ ] Pendências do escritório: email dos outros membros (o backend não devolve: só o do próprio usuário, pela sessão); serviço de CEP (hoje a tabela de exemplo); importação de clientes (etapa 9 do backend).
 
 ## 5. Produção
 

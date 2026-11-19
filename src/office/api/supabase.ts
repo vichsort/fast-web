@@ -2,8 +2,18 @@
 // Functions (api.md do backend). Toda falha vira `ApiError` classificada; a tela trata pelo código (session.tsx).
 import type { PostgrestError } from '@supabase/supabase-js';
 import type { Database } from '@/lib/database.types';
+import type { MemberRole } from '@/lib/enums';
 import { supabase } from '@/lib/supabase';
-import type { DashboardCounts, LateSupplementItem, OrderDetail, OrderFilters, PersonRef } from '@/mocks';
+import type {
+  AuditView,
+  Company,
+  DashboardCounts,
+  LateSupplementItem,
+  MemberView,
+  OrderDetail,
+  OrderFilters,
+  PersonRef,
+} from '@/mocks';
 import { ApiError, classifyFunctionError, classifyRpcError } from '@/offline/queue/errors';
 import {
   type ClientRow,
@@ -81,13 +91,6 @@ async function update<R extends Response>(query: PromiseLike<R>): Promise<Data<R
 const blankToNull = (v: string | null | undefined) => (v && v.trim() !== '' ? v.trim() : null);
 /** Telefone só com dígitos, como os dados de exemplo (o link do WhatsApp e a busca usam os dígitos). */
 const phoneDigits = (v: string | null) => blankToNull(v?.replace(/\D/g, '') ?? null);
-
-/** Ainda sem integração: a tela mostra o erro genérico em vez de fingir que gravou. */
-const pending =
-  (name: string) =>
-  async (..._args: unknown[]): Promise<never> => {
-    throw new ApiError('bug', null, `${name}: integração pendente`);
-  };
 
 // ---------------------------------------------------------------- O.S.
 
@@ -375,6 +378,102 @@ async function deleteClient(id: string, reason: string, _actor: PersonRef) {
   return rpc('delete_client', { p_client_id: id, p_reason: reason });
 }
 
+// ---------------------------------------------------------------- empresa, membros, auditoria e perfil (01, 05, 06)
+
+/**
+ * Vínculos da empresa com o perfil. O email fica só no Auth e nenhuma operação o devolve para os outros membros:
+ * vem só o do próprio usuário, da sessão.
+ */
+async function officeListMembers(filters: { includeRemoved?: boolean } = {}): Promise<MemberView[]> {
+  let query = supabase
+    .from('company_members')
+    .select('*, profile:profiles!company_members_user_id_fkey(*)')
+    .eq('company_id', current().companyId);
+  if (!filters.includeRemoved) query = query.is('deleted_at', null);
+  const [found, session] = await Promise.all([rows(query.order('created_at')), supabase.auth.getSession()]);
+  const self = session.data.session?.user;
+  return found.map((m) => ({ ...m, email: m.user_id === self?.id ? (self.email ?? '') : '' }));
+}
+
+async function officeAudit(): Promise<AuditView[]> {
+  const [logs, members, company] = await Promise.all([
+    rows(
+      supabase
+        .from('audit_logs')
+        .select(`*, actor:profiles!audit_logs_actor_id_fkey(${PERSON})`)
+        .eq('company_id', current().companyId)
+        .order('created_at', { ascending: false }),
+    ),
+    officeListMembers({ includeRemoved: true }),
+    officeCompany(),
+  ]);
+  const memberName = new Map(members.map((m) => [m.id, m.profile.full_name]));
+  return logs.map((log) => ({
+    ...log,
+    target_name: log.entity_type === 'company' ? company.name : (memberName.get(log.entity_id) ?? '—'),
+  }));
+}
+
+async function updateCompany(
+  input: Pick<Company, 'name' | 'document' | 'phone' | 'email' | 'timezone'>,
+  _actor: PersonRef,
+) {
+  return update(
+    supabase
+      .from('companies')
+      .update({
+        name: input.name.trim(),
+        document: blankToNull(input.document),
+        phone: blankToNull(input.phone),
+        email: blankToNull(input.email),
+        timezone: input.timezone,
+      })
+      .eq('id', current().companyId)
+      .select('*')
+      .maybeSingle(),
+  );
+}
+
+/** invite_member (06). Convite de quem já é membro ativo devolve o vínculo existente: `already`. */
+async function inviteMember(input: { email: string; full_name: string; role: MemberRole }, _actor: PersonRef) {
+  const before = await officeListMembers();
+  const result = await invoke<{ member_id: string; user_id: string; reactivated: boolean }>('invite_member', {
+    company_id: current().companyId,
+    email: input.email.trim(),
+    full_name: input.full_name.trim(),
+    role: input.role,
+  });
+  const after = await officeListMembers();
+  const member = after.find((m) => m.id === result.member_id);
+  if (!member) throw new ApiError('rule', 'not_found', 'not_found');
+  return {
+    member,
+    reactivated: result.reactivated,
+    already: before.some((m) => m.id === result.member_id),
+  };
+}
+
+async function updateMemberRole(memberId: string, role: MemberRole, _actor: PersonRef) {
+  const result = await invoke<{ closed_assignments: number }>('update_member_role', { member_id: memberId, role });
+  return { closed_assignments: result.closed_assignments };
+}
+
+async function removeMember(memberId: string, reason: string, _actor: PersonRef) {
+  const result = await invoke<{ closed_assignments: number }>('remove_member', { member_id: memberId, reason });
+  return { closed_assignments: result.closed_assignments };
+}
+
+async function updateProfile(id: string, input: { full_name: string; phone: string | null }) {
+  return update(
+    supabase
+      .from('profiles')
+      .update({ full_name: input.full_name.trim(), phone: blankToNull(input.phone) })
+      .eq('id', id)
+      .select('*')
+      .maybeSingle(),
+  );
+}
+
 // ---------------------------------------------------------------- empresa e usuário
 
 async function officeCompany() {
@@ -412,9 +511,9 @@ export const supabaseApi: OfficeApi = {
   officeLateSupplements,
   officeListClients,
   officeGetClient,
-  officeListMembers: pending('officeListMembers'),
+  officeListMembers,
   officeTechnicians,
-  officeAudit: pending('officeAudit'),
+  officeAudit,
   officePeople,
   officeCompany,
   officeSessionUser,
@@ -432,9 +531,9 @@ export const supabaseApi: OfficeApi = {
   setPrimaryAddress,
   deleteAddress,
   deleteClient,
-  updateCompany: pending('updateCompany'),
-  inviteMember: pending('inviteMember'),
-  updateMemberRole: pending('updateMemberRole'),
-  removeMember: pending('removeMember'),
-  updateProfile: pending('updateProfile'),
+  updateCompany,
+  inviteMember,
+  updateMemberRole,
+  removeMember,
+  updateProfile,
 };
