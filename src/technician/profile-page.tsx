@@ -1,6 +1,9 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from '@tanstack/react-router';
 import { FlaskConical, LogOut, Save, WifiOff } from 'lucide-react';
 import * as React from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 import { useAuth } from '@/app/auth-context';
 import { signOutAndWipe } from '@/app/session';
 import { AppVersion } from '@/components/app-version';
@@ -15,10 +18,14 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { UserAvatar } from '@/components/user';
 import { formatPhone } from '@/lib/format';
+import { requiredText } from '@/lib/forms';
 import { t } from '@/lib/i18n';
 import { phoneDigitsOrNull } from '@/lib/input';
 import { act, useOffline } from './act';
 import { saveProfile, usePendingItems, useSimulatedOffline, useTechSession } from './api';
+
+/** Nome obrigatório (React Hook Form + Zod); o erro aparece ao sair do campo ou ao salvar. */
+const profileSchema = z.object({ name: requiredText(t('technician.profile.nameRequired')), phone: z.string() });
 
 /** Meu perfil: nome e telefone (01, update direto do próprio perfil, só com sinal) e sair (docs/screens-technician.md). */
 export function ProfilePage() {
@@ -33,11 +40,14 @@ function Profile({ data }: { data: NonNullable<ReturnType<typeof useTechSession>
   const simulated = useSimulatedOffline();
   const offline = useOffline();
   const pending = usePendingItems().data?.length ?? 0;
-  const [name, setName] = React.useState(data.profile.full_name);
-  const [phone, setPhone] = React.useState(formatPhone(data.profile.phone));
-  const [touched, setTouched] = React.useState(false);
+  const form = useForm<z.infer<typeof profileSchema>>({
+    resolver: zodResolver(profileSchema),
+    mode: 'onTouched',
+    defaultValues: { name: data.profile.full_name, phone: formatPhone(data.profile.phone) },
+  });
+  const { register, setValue } = form;
+  const nameError = form.formState.errors.name?.message;
   const [logout, setLogout] = React.useState(false);
-  const nameInvalid = name.trim() === '';
   const ids = { name: React.useId(), phone: React.useId(), offline: React.useId() };
 
   return (
@@ -63,29 +73,24 @@ function Profile({ data }: { data: NonNullable<ReturnType<typeof useTechSession>
       <Section density="touch">
         <form
           className="flex flex-col gap-4"
-          onSubmit={(event) => {
-            event.preventDefault();
-            setTouched(true);
-            if (nameInvalid) return;
+          onSubmit={form.handleSubmit(({ name, phone }) => {
             void act(
               saveProfile({ full_name: name.trim(), phone: phoneDigitsOrNull(phone) }),
               t('technician.profile.save'),
             );
-          }}
+          })}
         >
           <FieldGroup>
-            <Field data-invalid={touched && nameInvalid}>
+            <Field data-invalid={Boolean(nameError)}>
               <FieldLabel htmlFor={ids.name}>{t('technician.profile.name')}</FieldLabel>
               <Input
                 id={ids.name}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                onBlur={() => setTouched(true)}
-                aria-invalid={touched && nameInvalid}
+                aria-invalid={Boolean(nameError)}
                 autoComplete="name"
                 className="h-12 text-base"
+                {...register('name')}
               />
-              {touched && nameInvalid && <FieldError>{t('technician.profile.nameRequired')}</FieldError>}
+              {nameError && <FieldError>{nameError}</FieldError>}
             </Field>
             <Field>
               <FieldLabel htmlFor={ids.phone}>{t('technician.profile.phone')}</FieldLabel>
@@ -93,12 +98,13 @@ function Profile({ data }: { data: NonNullable<ReturnType<typeof useTechSession>
                 id={ids.phone}
                 type="tel"
                 inputMode="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                onBlur={() => setPhone(formatPhone(phone))}
                 placeholder={t('technician.profile.phonePlaceholder')}
                 autoComplete="tel"
                 className="h-12 text-base"
+                {...register('phone', {
+                  onBlur: (event: React.FocusEvent<HTMLInputElement>) =>
+                    setValue('phone', formatPhone(event.target.value)),
+                })}
               />
               <FieldDescription>{t('technician.profile.phoneHint')}</FieldDescription>
             </Field>
