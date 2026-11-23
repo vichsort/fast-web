@@ -23,22 +23,28 @@ test('abaixo da versão mínima: pede para atualizar, guarda a fila e manda depo
     .poll(async () => (await readStore<{ type: string }>(page, 'queue')).map((i) => i.type))
     .toEqual(['start']);
 
+  // O app é fechado ainda sem sinal. Uma página aberta antes de a mínima subir manda ao voltar o sinal, como o
+  // worker de um app velho (P9); o que se prova aqui é o app que abre já abaixo da mínima.
+  const execution = page.url();
+  await page.close();
+
   // O backend sobe a versão mínima acima deste build. Daqui até atualizar, a fila não pode mandar nada.
+  const app = await context.newPage();
   let starts = 0;
-  page.on('request', (request) => {
+  app.on('request', (request) => {
     if (request.url().includes('/rpc/start_execution')) starts += 1;
   });
-  await page.route(APP_SETTINGS, (route) => route.fulfill({ json: [{ min_client_version: '9999.12.31.2359' }] }));
+  await app.route(APP_SETTINGS, (route) => route.fulfill({ json: [{ min_client_version: '9999.12.31.2359' }] }));
   await context.setOffline(false);
-  await page.reload();
-  await expect(page.getByRole('heading', { name: t('update.title') })).toBeVisible();
-  expect((await readStore<{ type: string }>(page, 'queue')).map((i) => i.type)).toEqual(['start']);
+  await app.goto(execution);
+  await expect(app.getByRole('heading', { name: t('update.title') })).toBeVisible();
+  expect((await readStore<{ type: string }>(app, 'queue')).map((i) => i.type)).toEqual(['start']);
   expect(starts).toBe(0);
   expect((await serverOrder(order.id)).status).toBe('open');
 
   // A versão nova chegou: atualizar recarrega o app, e a fila manda o que estava guardado.
-  await page.unroute(APP_SETTINGS);
-  await page.getByRole('button', { name: t('update.now') }).click();
-  await expect(page.getByRole('heading', { name: t('update.title') })).toBeHidden();
+  await app.unroute(APP_SETTINGS);
+  await app.getByRole('button', { name: t('update.now') }).click();
+  await expect(app.getByRole('heading', { name: t('update.title') })).toBeHidden();
   await expect.poll(async () => (await serverOrder(order.id)).status).toBe('in_progress');
 });
