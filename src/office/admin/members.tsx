@@ -1,7 +1,11 @@
 // Membros (owner, 06): convidar, trocar papel, remover com motivo; last_owner quando a empresa ficaria sem dono.
+// O convite é React Hook Form + Zod: nome obrigatório e email no formato.
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Ellipsis, MailPlus, ShieldAlert, UserRoundCog, UserRoundX } from 'lucide-react';
 import * as React from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
+import { z } from 'zod';
 import { RoleBadge, ToneBadge } from '@/components/badges';
 import { DataTable, type DataTableColumn } from '@/components/data-table';
 import { FormDialog, ReasonDialog } from '@/components/dialogs';
@@ -23,6 +27,7 @@ import { Switch } from '@/components/ui/switch';
 import { UserChip } from '@/components/user';
 import { MEMBER_ROLES, type MemberRole } from '@/lib/enums';
 import { formatDate, formatRelative } from '@/lib/format';
+import { emailText, requiredText } from '@/lib/forms';
 import { errorMessage, t } from '@/lib/i18n';
 import type { MemberView } from '@/lib/views';
 import { inviteMember, removeMember, updateMemberRole } from '../api';
@@ -204,34 +209,33 @@ function MembersView() {
   );
 }
 
+const inviteSchema = z.object({
+  name: requiredText(t('office.common.fieldRequired')),
+  email: emailText(t('auth.invalidEmail')),
+  role: z.enum(MEMBER_ROLES),
+});
+type InviteValues = z.infer<typeof inviteSchema>;
+const emptyInvite: InviteValues = { name: '', email: '', role: 'technician' };
+
 function InviteDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const { actor } = useOffice();
   const run = useOfficeAction();
   const [handleOpenChange, stayOpen] = useStayOpen(onOpenChange);
-  const [name, setName] = React.useState('');
-  const [email, setEmail] = React.useState('');
-  const [role, setRole] = React.useState<MemberRole>('technician');
-  const [showErrors, setShowErrors] = React.useState(false);
+  const form = useForm<InviteValues>({ resolver: zodResolver(inviteSchema), defaultValues: emptyInvite });
+  const { register } = form;
+  const { errors } = form.formState;
+  const { reset } = form;
   React.useEffect(() => {
-    if (!open) return;
-    setName('');
-    setEmail('');
-    setRole('technician');
-    setShowErrors(false);
-  }, [open]);
-  const emailInvalid = !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+    if (open) reset(emptyInvite);
+  }, [open, reset]);
 
-  async function submit() {
-    if (!name.trim() || emailInvalid) {
-      setShowErrors(true);
-      return stayOpen();
-    }
+  const submit = form.handleSubmit(async ({ name, email, role }) => {
     const result = await run(t('office.members.invited'), () => inviteMember({ email, full_name: name, role }, actor));
     if (!result.ok) return stayOpen();
     const { member, reactivated, already } = result.value;
     if (already) toast.message(t('office.members.alreadyMember', { name: member.profile.full_name }));
     else if (reactivated) toast.message(t('office.members.reactivated', { name: member.profile.full_name }));
-  }
+  }, stayOpen);
 
   return (
     <FormDialog
@@ -240,26 +244,32 @@ function InviteDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (op
       title={t('office.members.invite')}
       description={t('office.members.inviteDescription')}
       submitLabel={t('office.members.inviteAction')}
-      onSubmit={submit}
+      onSubmit={() => submit()}
     >
       <FieldGroup className="gap-4">
-        <Field data-invalid={(showErrors && !name.trim()) || undefined}>
+        <Field data-invalid={Boolean(errors.name) || undefined}>
           <FieldLabel htmlFor="invite-name">{t('office.members.name')}</FieldLabel>
-          <Input id="invite-name" autoFocus value={name} onChange={(event) => setName(event.target.value)} />
-          {showErrors && !name.trim() && <FieldError>{t('office.common.fieldRequired')}</FieldError>}
+          <Input id="invite-name" autoFocus {...register('name')} />
+          {errors.name && <FieldError>{errors.name.message}</FieldError>}
         </Field>
-        <Field data-invalid={(showErrors && emailInvalid) || undefined}>
+        <Field data-invalid={Boolean(errors.email) || undefined}>
           <FieldLabel htmlFor="invite-email">{t('office.members.email')}</FieldLabel>
-          <Input id="invite-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} />
-          {showErrors && emailInvalid && <FieldError>{t('auth.invalidEmail')}</FieldError>}
+          <Input id="invite-email" type="email" {...register('email')} />
+          {errors.email && <FieldError>{errors.email.message}</FieldError>}
         </Field>
         <Field>
           <FieldLabel>{t('office.members.role')}</FieldLabel>
-          <ChoiceCards
-            aria-label={t('office.members.role')}
-            value={role}
-            onValueChange={setRole}
-            options={roleOptions}
+          <Controller
+            control={form.control}
+            name="role"
+            render={({ field }) => (
+              <ChoiceCards
+                aria-label={t('office.members.role')}
+                value={field.value}
+                onValueChange={field.onChange}
+                options={roleOptions}
+              />
+            )}
           />
         </Field>
       </FieldGroup>
