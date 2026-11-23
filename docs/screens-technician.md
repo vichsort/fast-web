@@ -36,6 +36,14 @@ Mapa das telas da interface do técnico ([screens.md](screens.md#técnico-celula
 | envio da O.S. na fila | nenhum: "quando ele chegar, dá para mandar complemento" |
 | `cancelled` | nenhum |
 
+## Seções das telas
+
+Cada bloco visual das telas grandes é um componente com nome, na ordem da tela, para apontar numa revisão.
+
+| Rota | Pasta | Seções |
+| --- | --- | --- |
+| `/technician/orders/$orderId` | [`order-detail/`](../src/technician/order-detail/) | `OrderDetailHeader`; `StatusNotices` (`CancelledNotice`, `RejectedNotice`, `WaitingNotice`, `ApprovedNotice`); `QueueNotice` (fila ou problema, com "ver pendências"); `OrderSummarySection` (prazo, tipo, dupla); `InstructionsSection`; `AddressSection` (prévia de mapa); `ClientSection`; `MaterialsSection` ([`materials-section.tsx`](../src/technician/materials-section.tsx)); `OrderAttemptsSection` (envios); `PrimaryAction` (barra de ação) |
+
 ## Dados
 
 | Parte | Real (`api/real/`) | Dados de exemplo |
