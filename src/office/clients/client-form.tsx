@@ -1,6 +1,9 @@
 // Formulários de cliente: cadastro completo (painel lateral, com endereço opcional), cadastro rápido (só nome e
-// telefone, do formulário da O.S.) e edição dos dados (02).
+// telefone, do formulário da O.S.) e edição dos dados (02). React Hook Form + Zod, com o endereço de address-schema.ts.
+import { zodResolver } from '@hookform/resolvers/zod';
 import * as React from 'react';
+import { Controller, FormProvider, useForm, useFormContext } from 'react-hook-form';
+import { z } from 'zod';
 import { FormDialog, FormPanel } from '@/components/dialogs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
@@ -8,45 +11,51 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { formatPhone } from '@/lib/format';
+import { requiredText } from '@/lib/forms';
 import { t } from '@/lib/i18n';
 import type { Client } from '@/lib/views';
 import { createClient, updateClient } from '../api';
 import { useOfficeAction } from '../session';
 import { useCreateId, useStayOpen } from '../shared';
-import { AddressFields, addressValid, draftToInput, emptyAddress } from './address-form';
+import { AddressFields } from './address-form';
+import { type AddressDraft, addressSchema, draftToInput, emptyAddress } from './address-schema';
 
-interface ClientDraft {
-  name: string;
-  phone: string;
-  notes: string;
-}
+const clientSchema = z.object({
+  name: requiredText(t('office.common.fieldRequired')),
+  phone: z.string(),
+  notes: z.string(),
+});
+type ClientValues = z.infer<typeof clientSchema>;
 
-function ClientFields({
-  value,
-  onChange,
-  showErrors,
-  withNotes = true,
-}: {
-  value: ClientDraft;
-  onChange: (next: ClientDraft) => void;
-  showErrors: boolean;
-  withNotes?: boolean;
-}) {
+const emptyClient: ClientValues = { name: '', phone: '', notes: '' };
+
+// O endereço só conta com "cadastrar endereço" marcado; os erros de cada campo dele aparecem no AddressFields.
+const newClientSchema = clientSchema
+  .extend({ withAddress: z.boolean(), address: z.custom<AddressDraft>() })
+  .superRefine((value, ctx) => {
+    if (value.withAddress && !addressSchema.safeParse(value.address).success) {
+      ctx.addIssue({ code: 'custom', path: ['address'], message: t('office.common.fieldRequired') });
+    }
+  });
+type NewClientValues = z.infer<typeof newClientSchema>;
+
+/** Nome, telefone e observações, ligados ao formulário de quem os usa (FormProvider). */
+function ClientFields({ withNotes = true }: { withNotes?: boolean }) {
   const id = React.useId();
-  const nameMissing = showErrors && !value.name.trim();
+  const { register, setValue, formState } = useFormContext<ClientValues>();
+  const nameError = formState.errors.name?.message;
   return (
     <FieldGroup className="gap-4">
-      <Field data-invalid={nameMissing || undefined}>
+      <Field data-invalid={Boolean(nameError) || undefined}>
         <FieldLabel htmlFor={`${id}-name`}>{t('office.clientForm.name')}</FieldLabel>
         <Input
           id={`${id}-name`}
           autoFocus
-          value={value.name}
-          onChange={(event) => onChange({ ...value, name: event.target.value })}
           placeholder={t('office.clientForm.namePlaceholder')}
-          aria-invalid={nameMissing || undefined}
+          aria-invalid={Boolean(nameError) || undefined}
+          {...register('name')}
         />
-        {nameMissing && <FieldError>{t('office.common.fieldRequired')}</FieldError>}
+        {nameError && <FieldError>{nameError}</FieldError>}
       </Field>
       <Field>
         <FieldLabel htmlFor={`${id}-phone`}>
@@ -57,10 +66,11 @@ function ClientFields({
           id={`${id}-phone`}
           type="tel"
           inputMode="tel"
-          value={value.phone}
-          onChange={(event) => onChange({ ...value, phone: event.target.value })}
-          onBlur={() => value.phone && onChange({ ...value, phone: formatPhone(value.phone) })}
           placeholder={t('office.clientForm.phonePlaceholder')}
+          {...register('phone', {
+            onBlur: (event: React.FocusEvent<HTMLInputElement>) =>
+              event.target.value && setValue('phone', formatPhone(event.target.value)),
+          })}
         />
       </Field>
       {withNotes && (
@@ -72,9 +82,8 @@ function ClientFields({
           <Textarea
             id={`${id}-notes`}
             rows={3}
-            value={value.notes}
-            onChange={(event) => onChange({ ...value, notes: event.target.value })}
             placeholder={t('office.clientForm.notesPlaceholder')}
+            {...register('notes')}
           />
         </Field>
       )}
@@ -94,30 +103,24 @@ export function NewClientPanel({
 }) {
   const run = useOfficeAction();
   const [handleOpenChange, stayOpen] = useStayOpen(onOpenChange);
-  const [draft, setDraft] = React.useState<ClientDraft>({ name: '', phone: '', notes: '' });
-  const [withAddress, setWithAddress] = React.useState(false);
-  const [address, setAddress] = React.useState(emptyAddress);
-  const [showErrors, setShowErrors] = React.useState(false);
+  const form = useForm<NewClientValues>({
+    resolver: zodResolver(newClientSchema),
+    defaultValues: { ...emptyClient, withAddress: false, address: emptyAddress },
+  });
   const id = useCreateId(open);
+  const { reset } = form;
   React.useEffect(() => {
-    if (!open) return;
-    setDraft({ name: '', phone: '', notes: '' });
-    setWithAddress(false);
-    setAddress(emptyAddress);
-    setShowErrors(false);
-  }, [open]);
+    if (open) reset({ ...emptyClient, withAddress: false, address: emptyAddress });
+  }, [open, reset]);
+  const withAddress = form.watch('withAddress');
 
-  async function submit() {
-    if (!draft.name.trim() || (withAddress && !addressValid(address))) {
-      setShowErrors(true);
-      return stayOpen();
-    }
+  const submit = form.handleSubmit(async ({ withAddress, address, ...client }) => {
     const result = await run(t('office.clientForm.create'), () =>
-      createClient({ id, ...draft, address: withAddress ? draftToInput(address) : null }),
+      createClient({ id, ...client, address: withAddress ? draftToInput(address) : null }),
     );
     if (result.ok) onCreated(result.value.client_id);
     else stayOpen();
-  }
+  }, stayOpen);
 
   return (
     <FormPanel
@@ -127,18 +130,34 @@ export function NewClientPanel({
       description={t('office.clientForm.newDescription')}
       submitLabel={t('office.clientForm.create')}
       size="lg"
-      onSubmit={submit}
+      onSubmit={() => submit()}
     >
-      <div className="flex flex-col gap-5">
-        <ClientFields value={draft} onChange={setDraft} showErrors={showErrors} />
-        <Separator />
-        {/* biome-ignore lint/a11y/noLabelWithoutControl: o Checkbox do Base UI é o controle dentro do label */}
-        <label className="flex items-center gap-2 text-sm font-medium">
-          <Checkbox checked={withAddress} onCheckedChange={(checked) => setWithAddress(checked === true)} />
-          {t('office.clientForm.withAddress')}
-        </label>
-        {withAddress && <AddressFields value={address} onChange={setAddress} showErrors={showErrors} />}
-      </div>
+      <FormProvider {...form}>
+        <div className="flex flex-col gap-5">
+          <ClientFields />
+          <Separator />
+          {/* biome-ignore lint/a11y/noLabelWithoutControl: o Checkbox do Base UI é o controle dentro do label */}
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <Controller
+              control={form.control}
+              name="withAddress"
+              render={({ field }) => (
+                <Checkbox checked={field.value} onCheckedChange={(checked) => field.onChange(checked === true)} />
+              )}
+            />
+            {t('office.clientForm.withAddress')}
+          </label>
+          {withAddress && (
+            <Controller
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <AddressFields value={field.value} onChange={field.onChange} showErrors={form.formState.isSubmitted} />
+              )}
+            />
+          )}
+        </div>
+      </FormProvider>
     </FormPanel>
   );
 }
@@ -157,26 +176,20 @@ export function QuickClientDialog({
 }) {
   const run = useOfficeAction();
   const [handleOpenChange, stayOpen] = useStayOpen(onOpenChange);
-  const [draft, setDraft] = React.useState<ClientDraft>({ name: '', phone: '', notes: '' });
-  const [showErrors, setShowErrors] = React.useState(false);
+  const form = useForm<ClientValues>({ resolver: zodResolver(clientSchema), defaultValues: emptyClient });
   const id = useCreateId(open);
+  const { reset } = form;
   React.useEffect(() => {
-    if (!open) return;
-    setDraft({ name: initialName, phone: '', notes: '' });
-    setShowErrors(false);
-  }, [open, initialName]);
+    if (open) reset({ ...emptyClient, name: initialName });
+  }, [open, initialName, reset]);
 
-  async function submit() {
-    if (!draft.name.trim()) {
-      setShowErrors(true);
-      return stayOpen();
-    }
+  const submit = form.handleSubmit(async ({ name, phone }) => {
     const result = await run(t('office.orderForm.quickClientAction'), () =>
-      createClient({ id, name: draft.name, phone: draft.phone, notes: null, address: null }),
+      createClient({ id, name, phone, notes: null, address: null }),
     );
     if (result.ok) onCreated(result.value.client_id);
     else stayOpen();
-  }
+  }, stayOpen);
 
   return (
     <FormDialog
@@ -186,9 +199,11 @@ export function QuickClientDialog({
       description={t('office.orderForm.quickClientDescription')}
       submitLabel={t('office.orderForm.quickClientAction')}
       size="sm"
-      onSubmit={submit}
+      onSubmit={() => submit()}
     >
-      <ClientFields value={draft} onChange={setDraft} showErrors={showErrors} withNotes={false} />
+      <FormProvider {...form}>
+        <ClientFields withNotes={false} />
+      </FormProvider>
     </FormDialog>
   );
 }
@@ -205,22 +220,17 @@ export function EditClientDialog({
 }) {
   const run = useOfficeAction();
   const [handleOpenChange, stayOpen] = useStayOpen(onOpenChange);
-  const [draft, setDraft] = React.useState<ClientDraft>({ name: '', phone: '', notes: '' });
-  const [showErrors, setShowErrors] = React.useState(false);
+  const form = useForm<ClientValues>({ resolver: zodResolver(clientSchema), defaultValues: emptyClient });
+  const { reset } = form;
   React.useEffect(() => {
     if (!open) return;
-    setDraft({ name: client.name, phone: client.phone ? formatPhone(client.phone) : '', notes: client.notes ?? '' });
-    setShowErrors(false);
-  }, [open, client]);
+    reset({ name: client.name, phone: client.phone ? formatPhone(client.phone) : '', notes: client.notes ?? '' });
+  }, [open, client, reset]);
 
-  async function submit() {
-    if (!draft.name.trim()) {
-      setShowErrors(true);
-      return stayOpen();
-    }
-    const result = await run(t('office.clientForm.editTitle'), () => updateClient(client.id, draft));
+  const submit = form.handleSubmit(async (values) => {
+    const result = await run(t('office.clientForm.editTitle'), () => updateClient(client.id, values));
     if (!result.ok) stayOpen();
-  }
+  }, stayOpen);
 
   return (
     <FormDialog
@@ -228,9 +238,11 @@ export function EditClientDialog({
       onOpenChange={handleOpenChange}
       title={t('office.clientForm.editTitle')}
       submitLabel={t('office.common.saveChanges')}
-      onSubmit={submit}
+      onSubmit={() => submit()}
     >
-      <ClientFields value={draft} onChange={setDraft} showErrors={showErrors} />
+      <FormProvider {...form}>
+        <ClientFields />
+      </FormProvider>
     </FormDialog>
   );
 }

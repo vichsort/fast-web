@@ -1,7 +1,10 @@
 // Campos de endereço (02: formato de endereço) com o preenchimento pelo CEP (ViaCEP; tabela de exemplo com os dados
-// de exemplo), e o diálogo de adicionar ou editar endereço do cliente.
+// de exemplo), e o diálogo de adicionar ou editar endereço do cliente (React Hook Form + o schema de address-schema.ts).
+import { zodResolver } from '@hookform/resolvers/zod';
 import { CircleCheck, Search, TriangleExclamationPoint } from 'lucide-react';
 import * as React from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import { z } from 'zod';
 import { FormDialog } from '@/components/dialogs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
@@ -9,53 +12,19 @@ import { Input } from '@/components/ui/input';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
 import { Spinner } from '@/components/ui/spinner';
-import { formatZipCode } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import type { ClientAddress } from '@/lib/views';
-import { type AddressInput, addAddress, lookupZip, updateAddress } from '../api';
+import { addAddress, lookupZip, updateAddress } from '../api';
 import { useOfficeAction } from '../session';
 import { useCreateId, useStayOpen } from '../shared';
-
-export type AddressDraft = Record<keyof AddressInput, string>;
-
-export const emptyAddress: AddressDraft = {
-  label: '',
-  zip_code: '',
-  street: '',
-  number: '',
-  complement: '',
-  district: '',
-  city: '',
-  state: '',
-  reference: '',
-};
-
-export const draftFromAddress = (a: ClientAddress): AddressDraft => ({
-  label: a.label ?? '',
-  zip_code: a.zip_code ? formatZipCode(a.zip_code) : '',
-  street: a.street,
-  number: a.number ?? '',
-  complement: a.complement ?? '',
-  district: a.district ?? '',
-  city: a.city,
-  state: a.state,
-  reference: a.reference ?? '',
-});
-
-export const draftToInput = (d: AddressDraft): AddressInput => ({
-  label: d.label || null,
-  zip_code: d.zip_code || null,
-  street: d.street,
-  number: d.number || null,
-  complement: d.complement || null,
-  district: d.district || null,
-  city: d.city,
-  state: d.state,
-  reference: d.reference || null,
-});
-
-/** 02, R2: rua, cidade e UF. */
-export const addressValid = (d: AddressDraft) => Boolean(d.street.trim() && d.city.trim() && d.state.trim());
+import {
+  type AddressDraft,
+  addressErrors,
+  addressSchema,
+  draftFromAddress,
+  draftToInput,
+  emptyAddress,
+} from './address-schema';
 
 const UFS = 'AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO'.split(' ');
 
@@ -73,7 +42,7 @@ export function AddressFields({
 }: {
   value: AddressDraft;
   onChange: (next: AddressDraft) => void;
-  /** Mostra os obrigatórios vazios (depois de tentar salvar). */
+  /** Mostra os campos com problema pelo schema do endereço (depois de tentar salvar). */
   showErrors?: boolean;
 }) {
   const id = React.useId();
@@ -98,7 +67,8 @@ export function AddressFields({
     if (result.kind === 'found') onChange({ ...latest.current, ...result.address });
   }
 
-  const missing = (key: 'street' | 'city' | 'state') => showErrors && !value[key].trim();
+  const errors = showErrors ? addressErrors(value) : {};
+  const missing = (key: 'street' | 'city' | 'state') => errors[key];
   return (
     <FieldGroup className="gap-4">
       <div className="grid gap-4 sm:grid-cols-[1fr_11rem]">
@@ -146,15 +116,15 @@ export function AddressFields({
                 : t('office.address.zipHint')}
       </p>
       <div className="grid gap-4 sm:grid-cols-[1fr_7rem]">
-        <Field data-invalid={missing('street') || undefined}>
+        <Field data-invalid={Boolean(missing('street')) || undefined}>
           <FieldLabel htmlFor={`${id}-street`}>{t('office.address.street')}</FieldLabel>
           <Input
             id={`${id}-street`}
             value={value.street}
             onChange={set('street')}
-            aria-invalid={missing('street') || undefined}
+            aria-invalid={Boolean(missing('street')) || undefined}
           />
-          {missing('street') && <FieldError>{t('office.common.fieldRequired')}</FieldError>}
+          {missing('street') && <FieldError>{missing('street')}</FieldError>}
         </Field>
         <Field>
           <FieldLabel htmlFor={`${id}-number`}>{t('office.address.number')}</FieldLabel>
@@ -172,24 +142,24 @@ export function AddressFields({
         </Field>
       </div>
       <div className="grid gap-4 sm:grid-cols-[1fr_7rem]">
-        <Field data-invalid={missing('city') || undefined}>
+        <Field data-invalid={Boolean(missing('city')) || undefined}>
           <FieldLabel htmlFor={`${id}-city`}>{t('office.address.city')}</FieldLabel>
           <Input
             id={`${id}-city`}
             value={value.city}
             onChange={set('city')}
-            aria-invalid={missing('city') || undefined}
+            aria-invalid={Boolean(missing('city')) || undefined}
           />
-          {missing('city') && <FieldError>{t('office.common.fieldRequired')}</FieldError>}
+          {missing('city') && <FieldError>{missing('city')}</FieldError>}
         </Field>
-        <Field data-invalid={missing('state') || undefined}>
+        <Field data-invalid={Boolean(missing('state')) || undefined}>
           <FieldLabel htmlFor={`${id}-state`}>{t('office.address.state')}</FieldLabel>
           <NativeSelect
             id={`${id}-state`}
             value={value.state}
             onChange={set('state')}
             className="w-full"
-            aria-invalid={missing('state') || undefined}
+            aria-invalid={Boolean(missing('state')) || undefined}
           >
             <NativeSelectOption value="">—</NativeSelectOption>
             {UFS.map((uf) => (
@@ -198,7 +168,7 @@ export function AddressFields({
               </NativeSelectOption>
             ))}
           </NativeSelect>
-          {missing('state') && <FieldError>{t('office.common.fieldRequired')}</FieldError>}
+          {missing('state') && <FieldError>{missing('state')}</FieldError>}
         </Field>
       </div>
       <Field>
@@ -214,6 +184,9 @@ export function AddressFields({
     </FieldGroup>
   );
 }
+
+const addressFormSchema = z.object({ address: addressSchema, primary: z.boolean() });
+type AddressValues = z.infer<typeof addressFormSchema>;
 
 /** Adicionar (sem `address`) ou editar um endereço do cliente. Devolve o id do endereço em `onSaved`. */
 export function AddressDialog({
@@ -234,22 +207,17 @@ export function AddressDialog({
 }) {
   const run = useOfficeAction();
   const [handleOpenChange, stayOpen] = useStayOpen(onOpenChange);
-  const [draft, setDraft] = React.useState<AddressDraft>(emptyAddress);
-  const [primary, setPrimary] = React.useState(false);
-  const [showErrors, setShowErrors] = React.useState(false);
+  const form = useForm<AddressValues>({
+    resolver: zodResolver(addressFormSchema),
+    defaultValues: { address: emptyAddress, primary: false },
+  });
   const createId = useCreateId(open);
+  const { reset } = form;
   React.useEffect(() => {
-    if (!open) return;
-    setDraft(address ? draftFromAddress(address) : emptyAddress);
-    setPrimary(false);
-    setShowErrors(false);
-  }, [open, address]);
+    if (open) reset({ address: address ? draftFromAddress(address) : emptyAddress, primary: false });
+  }, [open, address, reset]);
 
-  async function submit() {
-    if (!addressValid(draft)) {
-      setShowErrors(true);
-      return stayOpen();
-    }
+  const submit = form.handleSubmit(async ({ address: draft, primary }) => {
     const result = address
       ? await run(t('office.address.editTitle'), () =>
           updateAddress(address.id, draftToInput(draft)).then(() => address.id),
@@ -259,7 +227,7 @@ export function AddressDialog({
         );
     if (result.ok) onSaved?.(result.value);
     else stayOpen();
-  }
+  }, stayOpen);
 
   return (
     <FormDialog
@@ -267,14 +235,26 @@ export function AddressDialog({
       onOpenChange={handleOpenChange}
       title={t(address ? 'office.address.editTitle' : 'office.address.addTitle')}
       size="lg"
-      onSubmit={submit}
+      onSubmit={() => submit()}
     >
       <div className="flex flex-col gap-4">
-        <AddressFields value={draft} onChange={setDraft} showErrors={showErrors} />
+        <Controller
+          control={form.control}
+          name="address"
+          render={({ field }) => (
+            <AddressFields value={field.value} onChange={field.onChange} showErrors={form.formState.isSubmitted} />
+          )}
+        />
         {!address && canBePrimary && (
           // biome-ignore lint/a11y/noLabelWithoutControl: o Checkbox do Base UI é o controle dentro do label
           <label className="flex items-center gap-2 text-sm">
-            <Checkbox checked={primary} onCheckedChange={(checked) => setPrimary(checked === true)} />
+            <Controller
+              control={form.control}
+              name="primary"
+              render={({ field }) => (
+                <Checkbox checked={field.value} onCheckedChange={(checked) => field.onChange(checked === true)} />
+              )}
+            />
             {t('office.address.makePrimary')}
           </label>
         )}

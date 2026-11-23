@@ -11,6 +11,7 @@ Biblioteca visual das duas interfaces: componentes do domínio em [`src/componen
 - **Variantes comuns:** `size` (`sm`/`md`/`lg`), `density` (`compact`/`comfortable`/`touch`), `variant`, e `className` repassado ao elemento raiz.
 - **Acessibilidade.** Selo sempre com texto (nunca só cor); só-ícone ganha `aria-label`; linhas e cartões clicáveis navegam por teclado; textos de leitor de tela em pt-BR.
 - **Textos** em `ui.ts` (`t('ui.…')`); rótulos dos enums em `ui.status`, `ui.priority`, `ui.serviceType`, `ui.role`, `ui.review`, `ui.photoSource`; alertas em `alerts.<código>` (longo) e `ui.alertShort.<código>` (selo).
+- **Formulários:** React Hook Form + Zod (`zodResolver`). O schema confere só o que a tela já conferia (obrigatório, formato); as peças comuns ficam em [`src/lib/forms.ts`](../src/lib/forms.ts) (`requiredText`, `emailText`, `requiredChoice`) e o endereço em [`address-schema.ts`](../src/office/clients/address-schema.ts). Input nativo por `register`; combobox, cartões, data e caixas de seleção por `Controller`. Os erros aparecem depois de tentar salvar e se refazem a cada mudança; as mensagens vêm do schema (`t()`).
 - **shadcn/ui** (`src/components/ui/`) é a base; os componentes de domínio o compõem. Para algo genérico (input, select, tabs, tooltip…), use o de `ui/` direto.
 
 ## Catálogo
@@ -144,6 +145,7 @@ Linhas tipadas por `database.types.ts` em `data.ts` (datas relativas ao carregam
 
 ## Decisões
 
+- **2026-11-23** — Formulários com React Hook Form + Zod, sem estado e validação à mão em cada tela. *Por quê:* cada tela repetia `useState` por campo, `showErrors` e a conferência dos obrigatórios; o schema junta numa peça só o que bloqueia o envio e a mensagem de cada campo, e o endereço é conferido igual no diálogo e no cadastro do cliente. As bibliotecas já eram do projeto (login).
 - **2026-11-13** — Cores por tom com `color-mix` em oklab, uma cor por significado. *Por quê:* um lugar só para trocar; oklch interpolaria o matiz pelo caminho curto e o âmbar misturado ao azul-marinho viraria rosa.
 - **2026-11-13** — Componentes sem router, navegação por `render`. *Por quê:* as duas interfaces e a vitrine usam as mesmas peças; o tipo da rota fica na tela.
 - **2026-11-13** — Tipos de props estruturais, não as views dos mocks. *Por quê:* a integração troca `src/mocks` sem mexer nos componentes.
