@@ -441,23 +441,26 @@ async function updateCompany(
   );
 }
 
-/** invite_member (06). Convite de quem já é membro ativo devolve o vínculo existente: `already`. */
+/** invite_member (06). Convite de quem já é membro ativo devolve o vínculo existente, com `already`. */
 async function inviteMember(input: { email: string; full_name: string; role: MemberRole }, _actor: PersonRef) {
-  const before = await officeListMembers();
-  const result = await invokeFunction<{ member_id: string; user_id: string; reactivated: boolean }>('invite_member', {
-    company_id: current().companyId,
-    email: input.email.trim(),
-    full_name: input.full_name.trim(),
-    role: input.role,
-  });
-  const after = await officeListMembers();
-  const member = after.find((m) => m.id === result.member_id);
+  const result = await invokeFunction<{ member_id: string; user_id: string; reactivated: boolean; already: boolean }>(
+    'invite_member',
+    {
+      company_id: current().companyId,
+      email: input.email.trim(),
+      full_name: input.full_name.trim(),
+      role: input.role,
+    },
+  );
+  const member = await maybe(
+    supabase
+      .from('company_members')
+      .select('*, profile:profiles!company_members_user_id_fkey(*)')
+      .eq('id', result.member_id)
+      .maybeSingle(),
+  );
   if (!member) throw new ApiError('rule', 'not_found', 'not_found');
-  return {
-    member,
-    reactivated: result.reactivated,
-    already: before.some((m) => m.id === result.member_id),
-  };
+  return { member, reactivated: result.reactivated, already: result.already };
 }
 
 async function updateMemberRole(memberId: string, role: MemberRole, _actor: PersonRef) {
