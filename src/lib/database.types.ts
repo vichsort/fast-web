@@ -837,6 +837,47 @@ export type Database = {
         }
         Returns: string
       }
+      apply_materials_notes: {
+        Args: {
+          p_expected: string
+          p_order: Database["public"]["Tables"]["service_orders"]["Row"]
+          p_text: string
+        }
+        Returns: {
+          address: string | null
+          cancel_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          client_address_id: string | null
+          client_id: string
+          company_id: string
+          created_at: string
+          created_by: string
+          due_at: string | null
+          id: string
+          instructions: string | null
+          materials_notes: string | null
+          order_number: number
+          priority: Database["public"]["Enums"]["order_priority"]
+          service_type: Database["public"]["Enums"]["service_type"]
+          status: Database["public"]["Enums"]["order_status"]
+          title: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "service_orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      apply_order_assignees: {
+        Args: {
+          p_assignee_ids: string[]
+          p_order: Database["public"]["Tables"]["service_orders"]["Row"]
+        }
+        Returns: undefined
+      }
       assigned_address_ids: { Args: never; Returns: string[] }
       assigned_client_ids: { Args: never; Returns: string[] }
       assigned_order_ids: { Args: never; Returns: string[] }
@@ -989,6 +1030,10 @@ export type Database = {
       }
       is_assigned: { Args: { p_service_order_id: string }; Returns: boolean }
       is_platform_admin: { Args: never; Returns: boolean }
+      lock_assignee_memberships: {
+        Args: { p_assignee_ids: string[]; p_order_id: string }
+        Returns: undefined
+      }
       lock_client_for_write: { Args: { p_client_id: string }; Returns: string }
       lock_company_members: {
         Args: { p_company_id: string }
@@ -1351,13 +1396,17 @@ export type Database = {
       }
       update_order: {
         Args: {
+          p_assignee_ids?: string[]
           p_client_address_id?: string
           p_due_date?: string
           p_instructions?: string
+          p_materials_expected?: string
+          p_materials_notes?: string
           p_order_id: string
           p_priority: Database["public"]["Enums"]["order_priority"]
           p_service_type: Database["public"]["Enums"]["service_type"]
           p_title: string
+          p_update_materials?: boolean
         }
         Returns: {
           address: string | null
