@@ -32,6 +32,14 @@ O papel vem do `RequireAccess`; tela de owner aberta por manager mostra `forbidd
 | `/office/audit` | quando, quem, ação e alvo, detalhes (papel, de → para, motivo, campos mudados, atribuições fechadas) | buscar, filtrar por ação, autor e período | sem resultado | 05 |
 | `/office/profile` | nome, telefone, email (só leitura), papel, empresa, versão do app | salvar, sair (logout real) | — | 01 |
 
+## Seções das telas
+
+Cada bloco visual das telas grandes é um componente com nome, na ordem da tela, para apontar numa revisão.
+
+| Rota | Pasta | Seções |
+| --- | --- | --- |
+| `/office/orders/$orderId` | [`orders/detail/`](../src/office/orders/detail/) | `OrderHeader` (topo e ações); `OrderNotices` (faixas `CancelledNotice`, `ApprovedNotice`, `PendingReviewNotice`, `LateSupplementsNotice`); principal: `OrderDataSection` (dados), `MaterialsSection`, `ExecutionsSection` (tentativas); lateral: `ClientSection` (cliente e local), `TechniciansSection`, `HistorySection`; diálogos `CancelOrderDialog`, `ReassignDialog` |
+
 ## Erros de regra na tela
 
 O texto é sempre o do catálogo ([errors.md](../../fast/docs/errors.md), `errorMessage`). O que pede uma ação do usuário fica na tela; o resto vai num aviso que some.
