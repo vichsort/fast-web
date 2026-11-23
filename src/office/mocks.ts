@@ -13,6 +13,7 @@ import type {
   ClientAddress,
   ClientDetail,
   ClientListItem,
+  ClientName,
   Company,
   DashboardCounts,
   HistoryView,
@@ -237,6 +238,16 @@ export async function officeListClients(filters: { includeDeleted?: boolean } = 
     s.clients
       .filter((c) => filters.includeDeleted || c.deleted_at === null)
       .map((c) => clientListItem(s, c))
+      .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')),
+  );
+}
+
+/** Id, nome e exclusão de todos os clientes (filtro da lista de O.S.). */
+export async function officeClientNames(): Promise<ClientName[]> {
+  const s = await store();
+  return wait(
+    s.clients
+      .map((c) => ({ id: c.id, name: c.name, deleted_at: c.deleted_at }))
       .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')),
   );
 }

@@ -11,6 +11,7 @@ import { HISTORY_SELECT, ORDER_SELECT, PERSON, photoUrls } from '@/lib/orders-qu
 import { supabase } from '@/lib/supabase';
 import type {
   AuditView,
+  ClientName,
   Company,
   DashboardCounts,
   LateSupplementItem,
@@ -285,6 +286,22 @@ async function officeListClients(filters: { includeDeleted?: boolean } = {}) {
   return found.map(toClientListItem).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
 }
 
+/** Id, nome e exclusão de todos os clientes, para o filtro da lista de O.S. (que mostra O.S. de excluídos). */
+async function officeClientNames(): Promise<ClientName[]> {
+  const found = await readAll((from, to) =>
+    rows(
+      supabase
+        .from('clients')
+        .select('id, name, deleted_at')
+        .eq('company_id', current().companyId)
+        .order('name')
+        .order('id')
+        .range(from, to),
+    ),
+  );
+  return found.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+}
+
 async function officeGetClient(id: string) {
   const [found, orders] = await Promise.all([clientRows((q) => q.eq('id', id)), officeListOrders({ client_id: id })]);
   const row = found[0];
@@ -502,6 +519,7 @@ export const supabaseApi: OfficeApi = {
   officeDashboard,
   officeLateSupplements,
   officeListClients,
+  officeClientNames,
   officeGetClient,
   officeListMembers,
   officeTechnicians,

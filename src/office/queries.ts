@@ -4,6 +4,7 @@ import * as React from 'react';
 import type { ClientListItem, OfficeOrderListItem, OrderFilters } from '@/lib/views';
 import {
   officeAudit,
+  officeClientNames,
   officeDashboard,
   officeGetClient,
   officeGetOrder,
@@ -59,6 +60,10 @@ export function useClients(filters: { search?: string; includeDeleted?: boolean 
     select,
   });
 }
+
+/** Id e nome de todos os clientes, inclusive excluídos: o filtro de cliente da lista de O.S. */
+export const useClientNames = () =>
+  useQuery({ queryKey: ['office', 'client-names'], queryFn: () => officeClientNames() });
 
 export const useClient = (id: string | null) =>
   useQuery({

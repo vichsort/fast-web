@@ -7,6 +7,7 @@ import type {
   ClientAddress,
   ClientDetail,
   ClientListItem,
+  ClientName,
   Company,
   DashboardCounts,
   LateSupplementItem,
@@ -56,6 +57,8 @@ export interface OfficeApi {
   officeLateSupplements(): Promise<LateSupplementItem[]>;
   /** Ativos, ou também os excluídos; a busca filtra na tela (queries.ts). */
   officeListClients(filters?: { includeDeleted?: boolean }): Promise<ClientListItem[]>;
+  /** Todos os clientes, inclusive excluídos, só com id, nome e exclusão (filtro de cliente da lista de O.S.). */
+  officeClientNames(): Promise<ClientName[]>;
   officeGetClient(id: string): Promise<(ClientDetail & { open_orders: number }) | null>;
   officeListMembers(filters?: { includeRemoved?: boolean }): Promise<MemberView[]>;
   /** Técnicos ativos (para atribuir e filtrar). */

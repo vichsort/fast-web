@@ -115,6 +115,9 @@ export interface ClientListItem extends Client {
   open_orders: number;
 }
 
+/** Cliente só para escolher num filtro: id, nome e se foi excluído. */
+export type ClientName = Pick<Client, 'id' | 'name' | 'deleted_at'>;
+
 export interface ClientDetail extends Client {
   addresses: ClientAddress[];
   orders: OfficeOrderListItem[];

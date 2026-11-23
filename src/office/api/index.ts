@@ -15,6 +15,7 @@ export const {
   officeDashboard,
   officeLateSupplements,
   officeListClients,
+  officeClientNames,
   officeGetClient,
   officeListMembers,
   officeTechnicians,

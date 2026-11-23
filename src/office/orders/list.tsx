@@ -10,7 +10,7 @@ import { Toggle } from '@/components/ui/toggle';
 import { formatNumber } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import type { OfficeOrderListItem, OrderFilters } from '@/lib/views';
-import { useClients, useOrders, useTechnicians } from '../queries';
+import { useClientNames, useOrders, useTechnicians } from '../queries';
 import { useOffice } from '../session';
 import { priorityOptions, serviceTypeOptions, statusOptions } from '../shared';
 import type { OrdersSearch } from './search';
@@ -22,7 +22,7 @@ export function OrdersPage() {
   const search = route.useSearch();
   const navigate = useNavigate({ from: '/office/orders' });
   const technicians = useTechnicians();
-  const clients = useClients({ includeDeleted: true });
+  const clients = useClientNames();
 
   const filters: OrderFilters = {
     search: search.q,
