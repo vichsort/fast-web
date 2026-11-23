@@ -5,7 +5,7 @@ import {
   FunctionsFetchError,
   FunctionsHttpError,
 } from '@supabase/supabase-js';
-import { ApiError } from './errors';
+import { ApiError } from '@/lib/errors';
 import { createSupabaseQueueApi, type QueueSupabaseClient } from './supabase-api';
 
 // Imita só o que o adaptador usa do @supabase/supabase-js 2.119: rpc(...).abortSignal(...), functions.invoke e

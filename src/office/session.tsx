@@ -5,9 +5,9 @@ import * as React from 'react';
 import { toast } from 'sonner';
 import { scratchToast } from '@/components/states';
 import { usingMocks } from '@/lib/data-source';
+import { ApiError } from '@/lib/errors';
 import { errorMessage, t } from '@/lib/i18n';
 import type { Company, PersonRef, Profile } from '@/lib/views';
-import { ApiError } from '@/offline/queue/errors';
 import { actionErrorCode } from './derive';
 
 export interface OfficeSession {

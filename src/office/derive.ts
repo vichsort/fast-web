@@ -1,6 +1,7 @@
 // Funções puras do escritório: montam as views das telas a partir das linhas do banco (select com relações
 // embutidas) e traduzem a falha de uma ação no código do texto. Valem para os dados reais e para os de exemplo.
 import { ACTIVE_ORDER_STATUSES } from '@/lib/enums';
+import { ApiError, classifyRpcError, type RpcError } from '@/lib/errors';
 import { calendarDay } from '@/lib/format';
 import type {
   Assignment,
@@ -18,7 +19,6 @@ import type {
   Photo,
   ServiceOrder,
 } from '@/lib/views';
-import { ApiError, classifyRpcError, type RpcError } from '@/offline/queue/errors';
 import { executionAlerts, photoAlerts } from '@/photos/alerts';
 
 export interface ExecutionRow extends Execution {

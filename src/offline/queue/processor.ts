@@ -1,7 +1,8 @@
 // Processador da fila (docs/queue.md): escolhe o próximo item, executa e trata a resposta pela classe de erro.
+
+import { ApiError } from '@/lib/errors';
 import { type FastDb, type MaterialsPayload, QUEUE_ITEM_FORMAT, type QueueItem, type SubmitPayload } from '../db';
 import type { Clock, QueueApi, QueueLock } from './api';
-import { ApiError } from './errors';
 
 /** Espera crescente (Q7): começa em 5 s, dobra a cada falha e para em 1 min. */
 const FIRST_WAIT_MS = 5_000;

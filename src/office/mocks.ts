@@ -3,6 +3,7 @@
 // As leituras têm a forma das consultas reais; as ações imitam as RPCs e Edge Functions (03, 04, 02, 01, 06), inclusive
 // os erros de regra que o banco devolveria. Nada sai do navegador. Na integração, cada função vira a chamada real.
 import { ACTIVE_ORDER_STATUSES, type MemberRole } from '@/lib/enums';
+import { ApiError } from '@/lib/errors';
 import { calendarDay } from '@/lib/format';
 import type {
   AuditView,
@@ -33,7 +34,6 @@ import {
   MOCK_USER_IDS,
 } from '@/mocks';
 import { emails } from '@/mocks/data';
-import { ApiError } from '@/offline/queue/errors';
 import type { AddressInput, OrderInput } from './api/types';
 import type { ZipLookup } from './api/viacep';
 import { addressText, clientMatches, isOverdue, orderMatches, seenUntil } from './derive';

@@ -57,6 +57,7 @@ A fila roda na página e no worker ([`src/sw.ts`](../src/sw.ts)), com o mesmo c�
 ## Fora daqui
 
 - Telas: [screens.md](screens.md).
+- Classificação dos erros (Q6): [`src/lib/errors.ts`](../src/lib/errors.ts), comum às duas interfaces.
 
 ## Decisões
 
@@ -82,3 +83,4 @@ A fila roda na página e no worker ([`src/sw.ts`](../src/sw.ts)), com o mesmo c�
 - **2026-11-19** — Logout e remoção: a sessão sai antes de apagar os dados do usuário (`signOutAndWipe`). *Por quê:* o cache das leituras grava a cada mudança e só confere a sessão antes de gravar (`persist.ts`); apagando antes, uma gravação no meio do logout, ainda com a sessão do usuário, trazia o cache de volta, e o próximo técnico do aparelho ficava com as O.S. do anterior no Dexie. Achado pelo E2E S4 ([e2e.md](e2e.md)).
 - **2026-11-19** — Logout global (o padrão do supabase-js): sair num aparelho encerra a sessão do usuário em todos. Nos outros, a fila para pedindo login e mantém os itens (Q3). *Por quê:* escolha do usuário; com celular perdido ou trocado, sair de qualquer aparelho corta o acesso do perdido. Custo aceito: quem usa dois celulares precisa entrar de novo no outro para a fila andar ([e2e.md](e2e.md), S5).
 - **2026-11-19** — Fila parada pedindo login: Pendências mostra "Entrar de novo", que encerra só a sessão deste aparelho (`scope: 'local'`), sem apagar nada, e leva ao login. *Por quê:* com a sessão revogada no servidor (o logout global em outro aparelho, S5) e o token de acesso ainda válido pelo relógio, o app não ia ao login sozinho por até 1 h, e a única saída à vista era "Sair da conta", que apaga a prova ([e2e.md](e2e.md), P3). Entrando com a mesma conta, a fila sai (Q3); com outra, os dados ficam no aparelho, fora da vista.
+- **2026-11-23** — A classificação dos erros (`ApiError`, `classifyRpcError`, `classifyFunctionError`, `classifyFetchFailure`, `classifyHttpStatus`) sai de `src/offline/queue/errors.ts` para [`src/lib/errors.ts`](../src/lib/errors.ts); a fila importa de lá e `index.ts` continua reexportando `ApiError`. *Por quê:* revisão do código: o escritório, que não tem código offline, importava a classificação de dentro da fila; as classes são as do errors.md e valem para toda chamada, não só para a fila.

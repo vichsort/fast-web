@@ -2,8 +2,8 @@
 import type { Session } from '@supabase/supabase-js';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import { classifyRpcError } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
-import { classifyRpcError } from '@/offline/queue/errors';
 import { type Access, type AccessLookup, type Membership, type ResolvedAccess, resolveAccess } from './access';
 
 /** Sessão atual do Supabase; `ready` fica falso até a sessão guardada (ou a do link de email) ser lida. */

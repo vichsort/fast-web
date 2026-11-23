@@ -1,5 +1,5 @@
 // Classes de erro (errors.md do backend, "Classes de erro") a partir das formas que o @supabase/supabase-js devolve.
-// A fila decide pela classe, nunca pela mensagem (docs/queue.md, Q6).
+// Valem para as duas interfaces: as telas e a fila decidem pela classe, nunca pela mensagem (docs/queue.md, Q6).
 
 export type ErrorClass = 'network' | 'server' | 'session' | 'rule' | 'bug';
 

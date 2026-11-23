@@ -3,6 +3,7 @@
 import type { PostgrestError } from '@supabase/supabase-js';
 import type { Database } from '@/lib/database.types';
 import type { MemberRole } from '@/lib/enums';
+import { ApiError, classifyFunctionError, classifyRpcError } from '@/lib/errors';
 import { HISTORY_SELECT, ORDER_SELECT, PERSON, photoUrls } from '@/lib/orders-query';
 import { supabase } from '@/lib/supabase';
 import type {
@@ -16,7 +17,6 @@ import type {
   OrderFilters,
   PersonRef,
 } from '@/lib/views';
-import { ApiError, classifyFunctionError, classifyRpcError } from '@/offline/queue/errors';
 import {
   type ClientRow,
   clientMatches,

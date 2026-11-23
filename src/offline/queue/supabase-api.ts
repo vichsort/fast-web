@@ -1,9 +1,15 @@
 // API real da fila (docs/queue.md, Q11) sobre o @supabase/supabase-js: RPCs, Edge Functions das fotos, renovação
-// da sessão e o PUT da foto com `fetch`. Toda falha vira `ApiError` classificada (./errors).
+// da sessão e o PUT da foto com `fetch`. Toda falha vira `ApiError` classificada (src/lib/errors.ts).
 import { isAuthRefreshDiscardedError, isAuthRetryableFetchError, type SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/database.types';
+import {
+  ApiError,
+  classifyFetchFailure,
+  classifyFunctionError,
+  classifyHttpStatus,
+  classifyRpcError,
+} from '@/lib/errors';
 import type { PhotoRef, QueueApi } from './api';
-import { ApiError, classifyFetchFailure, classifyFunctionError, classifyHttpStatus, classifyRpcError } from './errors';
 
 export type QueueSupabaseClient = SupabaseClient<Database>;
 

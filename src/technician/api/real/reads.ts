@@ -1,12 +1,12 @@
 // Leituras do técnico: o servidor (com o cache persistido para abrir sem sinal) mais o que está no aparelho.
 import { useQuery } from '@tanstack/react-query';
 import * as React from 'react';
+import { ApiError, classifyFunctionError, classifyRpcError } from '@/lib/errors';
 import { HISTORY_SELECT, ORDER_SELECT, photoUrls } from '@/lib/orders-query';
 import { supabase } from '@/lib/supabase';
 import type { OrderDetail, PendingItem, SyncState } from '@/lib/views';
 import { type OrderRow, toOrderDetail } from '@/office/derive';
 import { db } from '@/offline/db';
-import { ApiError, classifyFunctionError, classifyRpcError } from '@/offline/queue/errors';
 import { pruneSeenPhotos, saveSeenPhotos } from '@/offline/seen-photos';
 import {
   closedCutoff,

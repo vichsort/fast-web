@@ -1,9 +1,9 @@
 // Ações do técnico: gravam no aparelho primeiro (Dexie) e acordam a fila; nada espera o servidor (offline.md).
 import { toast } from 'sonner';
+import { classifyRpcError } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { db, type Draft as LocalDraft } from '@/offline/db';
 import { dismissRefusal, enqueueMaterials, enqueueStart, enqueueSubmit, retryBlocked } from '@/offline/queue';
-import { classifyRpcError } from '@/offline/queue/errors';
 import { removePhotoFromDraft, savePhotoToDraft } from '@/photos/draft-photos';
 import { processPhoto } from '@/photos/process';
 import type { DraftFields, TechnicianApi, TechOrder } from '../types';

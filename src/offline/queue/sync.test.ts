@@ -1,5 +1,5 @@
+import { ApiError } from '@/lib/errors';
 import { enqueueStart } from './enqueue';
-import { ApiError } from './errors';
 import { type QueueStatus, wakeNetworkWaits } from './processor';
 import { type PassResult, runPass, syncInWorker } from './sync';
 import { fakeApi, fakeClock, newDb, noLock } from './testing';

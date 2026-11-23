@@ -1,4 +1,4 @@
-import { ApiError } from '@/offline/queue/errors';
+import { ApiError } from '@/lib/errors';
 import {
   actionErrorCode,
   type ClientRow,

@@ -1,6 +1,6 @@
 // Qual interface abrir depois do login (docs/screens.md) e o que fazer sem sinal. Funções puras.
 import type { Database } from '@/lib/database.types';
-import type { ErrorClass } from '@/offline/queue/errors';
+import type { ErrorClass } from '@/lib/errors';
 
 export type MemberRole = Database['public']['Enums']['member_role'];
 
