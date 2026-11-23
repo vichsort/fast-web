@@ -35,6 +35,7 @@ O que mais custa se falhar, onde está no código, o que já é testado e como t
 | [`office/stale-review`](../tests/e2e/office/stale-review.spec.ts) | E2: com a revisão aberta, chega um complemento (pelo banco); aprovar mostra o aviso de recarregar, os botões travam e nada muda no banco; depois de recarregar, o complemento aparece e a aprovação sai |
 | [`office/create-order`](../tests/e2e/office/create-order.spec.ts) | E3: o escritório cadastra o cliente com endereço pela tela, abre a O.S. a partir dele (cliente e endereço principal já escolhidos), atribui o técnico e cria; o técnico vê a O.S. em Minhas O.S., com o cliente e o endereço |
 | [`office/time-zone`](../tests/e2e/office/time-zone.spec.ts) | E4: o navegador num fuso que está agora em outro dia que o da empresa (UTC+14 ou UTC−11, pela hora em São Paulo); no detalhe da O.S., o prazo de hoje e o de ontem aparecem com o dia da empresa, e só o de ontem fica atrasado |
+| [`office/edit-conflict`](../tests/e2e/office/edit-conflict.spec.ts) | E5: com a edição da O.S. aberta, o técnico grava os materiais (pelo banco); salvar mostra os dois textos e não grava nada, nem o título (`update_order` atômica); salvar sem escolher continua sem gravar; escolhido o texto do escritório, título e materiais saem juntos |
 | [`technician/relogin`](../tests/e2e/technician/relogin.spec.ts) | P3, a janela: técnico próprio com um envio na fila sem sinal sai da conta em outro aparelho (logout global). Com o sinal, a fila para pedindo login e o app fica na interface; "Entrar de novo" em Pendências leva ao login com a fila intacta, e entrar com a mesma conta manda o envio |
 | [`office/order-volume`](../tests/e2e/office/order-volume.spec.ts) | D4: empresa própria do teste com 1001 O.S. gravadas pela chave de serviço; a lista do escritório conta as 1001 e a busca acha a nº 1, a mais antiga. As O.S. são apagadas no fim |
 | [`technician/update-required`](../tests/e2e/technician/update-required.spec.ts) | versão mínima: com a leitura de `app_settings` trocada só na página, o app fechado sem sinal reabre em "Atualize o app", o início feito sem sinal fica no Dexie e nada sai; com a versão nova, atualizar recarrega e a fila manda o início |
@@ -87,6 +88,7 @@ O pior caso do produto: serviço feito que nunca chega ao escritório.
 | E2 | Complemento chegando durante a revisão | o backend recusa com `stale_review` (04, R10); a tela trata pela classe de erro | `office/review` | backend; E2E desde 2026-11-19 | coberto |
 | E3 | Criar cliente e O.S. pela tela e atribuir | hoje o teste cria direto no banco | `office/clients`, `office/orders` | E2E desde 2026-11-19 | coberto |
 | E4 | Fuso do navegador diferente do fuso da empresa | prazo é o fim do dia no fuso da empresa (03, R5); "atrasada" depende dele | `lib/format.ts` | unit; E2E desde 2026-11-19 | coberto |
+| E5 | Materiais mudados pelo técnico durante a edição da O.S. | a edição em três chamadas gravava pela metade e, no segundo clique, sobrescrevia o texto do técnico sem mostrá-lo; agora é uma `update_order` atômica com `conflict` (03, R11) | `office/orders/form.tsx` | unit (`edit.ts`); E2E desde 2026-11-23 | coberto |
 
 ## Dados no aparelho e acesso
 

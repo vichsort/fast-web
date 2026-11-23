@@ -83,6 +83,29 @@ export async function serverOrder(orderId: string) {
   return { status: order.data.status, dueAt: order.data.due_at, executions: executions.data, photos: photos.data };
 }
 
+/** Título e materiais que o servidor tem da O.S., vistos pelo escritório. */
+export async function serverOrderText(orderId: string) {
+  const { client } = await signIn(users.manager);
+  const { data, error } = await client
+    .from('service_orders')
+    .select('title, materials_notes')
+    .eq('id', orderId)
+    .single();
+  if (error) throw error;
+  return { title: data.title, materials: data.materials_notes };
+}
+
+/** O técnico muda os materiais com sinal, direto no banco (03, `update_materials_notes`, R11). */
+export async function updateMaterialsAs(email: string, orderId: string, text: string, expected: string | null) {
+  const { client } = await signIn(email);
+  const { error } = await client.rpc('update_materials_notes', {
+    p_order_id: orderId,
+    p_text: text,
+    p_expected: expected ?? undefined,
+  });
+  if (error) throw error;
+}
+
 /** O escritório cancela a O.S. (03, `cancel_order`). */
 export async function cancelOrder(orderId: string, reason: string) {
   const { client } = await signIn(users.manager);
