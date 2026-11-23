@@ -1,5 +1,12 @@
 import { FunctionsFetchError, FunctionsHttpError, FunctionsRelayError } from '@supabase/supabase-js';
-import { ApiError, classifyFetchFailure, classifyFunctionError, classifyHttpStatus, classifyRpcError } from './errors';
+import {
+  ApiError,
+  actionErrorCode,
+  classifyFetchFailure,
+  classifyFunctionError,
+  classifyHttpStatus,
+  classifyRpcError,
+} from './errors';
 
 // Formas reais do @supabase/supabase-js 2.119: o PostgREST devolve { error, status } (status 0 quando o fetch
 // falha); a Edge Function devolve FunctionsHttpError com o Response em `context`.
@@ -77,5 +84,19 @@ describe('error classes', () => {
     expect(classifyHttpStatus(429).errorClass).toBe('server');
     expect(classifyRpcError({ message: 'Too Many Requests' }, 429).errorClass).toBe('server');
     expect((await classifyFunctionError(functionResponse(429, { message: 'rate limited' }))).errorClass).toBe('server');
+  });
+});
+
+describe('actionErrorCode', () => {
+  it('keeps the catalog code of a rule refusal', () => {
+    expect(actionErrorCode(new ApiError('rule', 'stale_review', 'stale_review'))).toBe('stale_review');
+  });
+
+  it('maps the other classes to the texts the office shows', () => {
+    expect(actionErrorCode(new ApiError('network', null, 'x'))).toBe('offline');
+    expect(actionErrorCode(new ApiError('session', null, 'x'))).toBe('not_authenticated');
+    expect(actionErrorCode(new ApiError('server', null, 'x'))).toBe('unknown');
+    expect(actionErrorCode(new ApiError('bug', null, 'x'))).toBe('unknown');
+    expect(actionErrorCode(new Error('boom'))).toBe('unknown');
   });
 });

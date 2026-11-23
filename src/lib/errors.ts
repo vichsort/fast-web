@@ -87,3 +87,15 @@ export function classifyFetchFailure(error: unknown): ApiError {
 export function classifyHttpStatus(status: number): ApiError {
   return classifyBody({ message: `HTTP ${status}` }, status);
 }
+
+/**
+ * Código do texto de uma ação que falhou: a recusa por regra traz o do catálogo; sem conexão é `offline`; sessão
+ * vencida é `not_authenticated`; o resto (servidor, bug) é o genérico. Vale para as duas interfaces.
+ */
+export function actionErrorCode(error: unknown): string {
+  if (!(error instanceof ApiError)) return 'unknown';
+  if (error.errorClass === 'rule') return error.code ?? 'unknown';
+  if (error.errorClass === 'network') return 'offline';
+  if (error.errorClass === 'session') return 'not_authenticated';
+  return 'unknown';
+}

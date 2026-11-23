@@ -5,6 +5,7 @@
 import { ACTIVE_ORDER_STATUSES, type MemberRole } from '@/lib/enums';
 import { ApiError } from '@/lib/errors';
 import { calendarDay } from '@/lib/format';
+import { isOverdue } from '@/lib/order-detail';
 import type {
   AuditView,
   Client,
@@ -36,7 +37,7 @@ import {
 import { emails } from '@/mocks/data';
 import type { AddressInput, OrderInput } from './api/types';
 import type { ZipLookup } from './api/viacep';
-import { addressText, clientMatches, isOverdue, orderMatches, seenUntil } from './derive';
+import { addressText, clientMatches, orderMatches, seenUntil } from './derive';
 
 const LATENCY = 150;
 const wait = <T>(value: T): Promise<T> =>

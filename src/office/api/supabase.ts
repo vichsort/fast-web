@@ -4,6 +4,7 @@ import type { PostgrestError } from '@supabase/supabase-js';
 import type { Database } from '@/lib/database.types';
 import type { MemberRole } from '@/lib/enums';
 import { ApiError, classifyFunctionError, classifyRpcError } from '@/lib/errors';
+import { type OrderRow, toOrderDetail } from '@/lib/order-detail';
 import { HISTORY_SELECT, ORDER_SELECT, PERSON, photoUrls } from '@/lib/orders-query';
 import { supabase } from '@/lib/supabase';
 import type {
@@ -22,10 +23,8 @@ import {
   clientMatches,
   directWriteError,
   type OrderListRow,
-  type OrderRow,
   orderMatches,
   toClientListItem,
-  toOrderDetail,
   toOrderListItem,
 } from '../derive';
 import { readAll } from './read-all';

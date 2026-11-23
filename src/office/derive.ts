@@ -1,43 +1,21 @@
-// Funções puras do escritório: montam as views das telas a partir das linhas do banco (select com relações
-// embutidas) e traduzem a falha de uma ação no código do texto. Valem para os dados reais e para os de exemplo.
+// Funções puras do escritório: montam as views das listas a partir das linhas do banco (select com relações
+// embutidas) e filtram como as telas pedem. Valem para os dados reais e para os de exemplo. A O.S. completa é
+// montada em src/lib/order-detail.ts, comum ao técnico.
 import { ACTIVE_ORDER_STATUSES } from '@/lib/enums';
 import { ApiError, classifyRpcError, type RpcError } from '@/lib/errors';
 import { calendarDay } from '@/lib/format';
+import { isOverdue } from '@/lib/order-detail';
 import type {
   Assignment,
-  AttemptView,
   Client,
   ClientAddress,
   ClientListItem,
-  Execution,
   ExecutionView,
-  HistoryEvent,
   OfficeOrderListItem,
-  OrderDetail,
   OrderFilters,
   PersonRef,
-  Photo,
   ServiceOrder,
 } from '@/lib/views';
-import { executionAlerts, photoAlerts } from '@/photos/alerts';
-
-export interface ExecutionRow extends Execution {
-  submitter: PersonRef;
-  reviewer: PersonRef | null;
-  acknowledger: PersonRef | null;
-  photos: Photo[];
-}
-
-/** Linha de `service_orders` com o que as telas do escritório embutem (ORDER_SELECT em api/supabase.ts). */
-export interface OrderRow extends ServiceOrder {
-  client: Client;
-  client_address: ClientAddress | null;
-  created_by_ref: PersonRef;
-  assignments: (Assignment & { user: PersonRef })[];
-  executions: ExecutionRow[];
-  /** Só no detalhe. */
-  history?: (HistoryEvent & { actor: PersonRef | null })[];
-}
 
 /**
  * Linha de `service_orders` da lista do escritório (ORDER_LIST_SELECT em api/supabase.ts): só as colunas da tabela,
@@ -52,60 +30,6 @@ export interface OrderListRow extends Omit<OfficeOrderListItem, 'assignees' | 'o
 export interface ClientRow extends Client {
   addresses: ClientAddress[];
   orders: Pick<ServiceOrder, 'status'>[];
-}
-
-const OVERDUE_STATUSES: readonly string[] = ['open', 'in_progress', 'rejected'];
-
-/** 03, R6: prazo vencido em open, in_progress ou rejected. */
-export function isOverdue(o: Pick<ServiceOrder, 'due_at' | 'status'>, now: number): boolean {
-  return o.due_at !== null && Date.parse(o.due_at) < now && OVERDUE_STATUSES.includes(o.status);
-}
-
-const byReceived = (a: { received_at: string }, b: { received_at: string }) =>
-  Date.parse(a.received_at) - Date.parse(b.received_at);
-
-/** O.S. montada como as telas leem. `photoUrls`: URLs assinadas por foto (get_photo_urls); sem ela, `url` vazia. */
-export function toOrderDetail(row: OrderRow, now: number, photoUrls: Map<string, string> = new Map()): OrderDetail {
-  const { executions, history, ...order } = row;
-  const people = new Map(row.assignments.map((a) => [a.user.id, a.user]));
-  const person = (id: string): PersonRef => people.get(id) ?? { id, full_name: '—' };
-
-  const own = [...executions].sort(byReceived);
-  const attempts = own.filter((e) => e.supplements_execution_id === null);
-  const view = (e: ExecutionRow, isAttempt: boolean): ExecutionView => ({
-    ...e,
-    participant_refs: e.participants.map(person),
-    photos: [...e.photos]
-      .sort((a, b) => Date.parse(a.uploaded_at) - Date.parse(b.uploaded_at))
-      .map((p) => ({
-        ...p,
-        url: photoUrls.get(p.id) ?? '',
-        alerts: photoAlerts({ source: p.source, capturedAt: p.captured_at }, { clientStartedAt: e.client_started_at }),
-      })),
-    alerts: isAttempt
-      ? executionAlerts(
-          { clientSubmittedAt: e.client_submitted_at, receivedAt: e.received_at },
-          { dueAt: row.due_at },
-          attempts
-            .filter((a) => a.id !== e.id)
-            .map((a) => ({ reviewStatus: a.review_status, reviewedAt: a.reviewed_at })),
-        )
-      : [],
-  });
-  const attemptViews: AttemptView[] = attempts.map((a, index) => ({
-    ...view(a, true),
-    attempt_number: index + 1,
-    supplements: own.filter((s) => s.supplements_execution_id === a.id).map((s) => view(s, false)),
-  }));
-
-  return {
-    ...order,
-    assignees: row.assignments.filter((a) => a.unassigned_at === null).map((a) => a.user),
-    overdue: isOverdue(row, now),
-    late_supplements_unseen: own.filter((e) => e.is_late && e.acknowledged_at === null).length,
-    attempts: attemptViews,
-    history: [...(history ?? [])].sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at)),
-  };
 }
 
 /** Linha da lista de O.S. como a tabela lê. */
@@ -193,16 +117,4 @@ export function seenUntil(supplements: Pick<ExecutionView, 'received_at'>[]): st
     (max, x) => (max === null || x.received_at > max ? x.received_at : max),
     null,
   );
-}
-
-/**
- * Código do texto de uma ação que falhou: a recusa por regra traz o do catálogo; sem conexão é `offline`; sessão
- * vencida é `not_authenticated`; o resto (servidor, bug) é o genérico.
- */
-export function actionErrorCode(error: unknown): string {
-  if (!(error instanceof ApiError)) return 'unknown';
-  if (error.errorClass === 'rule') return error.code ?? 'unknown';
-  if (error.errorClass === 'network') return 'offline';
-  if (error.errorClass === 'session') return 'not_authenticated';
-  return 'unknown';
 }

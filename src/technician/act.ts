@@ -1,7 +1,7 @@
 // Como as telas do técnico rodam uma ação: aviso de feito, ou o texto do erro pela classe (errors.md).
 import { toast } from 'sonner';
+import { actionErrorCode } from '@/lib/errors';
 import { errorMessage } from '@/lib/i18n';
-import { actionErrorCode } from '@/office/derive';
 import { PhotoError } from '@/photos/errors';
 import { notify, useSimulatedOffline, useSyncStatus } from './api';
 
