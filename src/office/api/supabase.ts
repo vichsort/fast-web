@@ -17,18 +17,10 @@ import type {
   MemberView,
   OfficeOrderListItem,
   OrderDetail,
-  OrderFilters,
+  OrderQuery,
   PersonRef,
 } from '@/lib/views';
-import {
-  type ClientRow,
-  clientMatches,
-  directWriteError,
-  type OrderListRow,
-  orderMatches,
-  toClientListItem,
-  toOrderListItem,
-} from '../derive';
+import { type ClientRow, directWriteError, type OrderListRow, toClientListItem, toOrderListItem } from '../derive';
 import { readAll } from './read-all';
 import type { AddressInput, OfficeApi, OrderInput } from './types';
 import { createZipLookup } from './viacep';
@@ -98,9 +90,9 @@ const ORDER_LIST_SELECT = `id, order_number, title, status, priority, service_ty
 
 /**
  * O banco filtra o que é coluna da O.S. (status, prioridade, tipo, cliente, atrasada); busca, técnico, sem técnico
- * e prazo no fuso da empresa ficam no `orderMatches`, o mesmo dos dados de exemplo. Mais nova primeiro.
+ * e prazo no fuso da empresa filtram o cache na tela (`useOrders`, queries.ts). Mais nova primeiro.
  */
-async function officeListOrders(filters: OrderFilters = {}): Promise<OfficeOrderListItem[]> {
+async function officeListOrders(filters: OrderQuery = {}): Promise<OfficeOrderListItem[]> {
   const overdueBefore = new Date().toISOString();
   const query = () => {
     let q = supabase
@@ -120,9 +112,7 @@ async function officeListOrders(filters: OrderFilters = {}): Promise<OfficeOrder
   };
   const found = await readAll(async (from, to) => rows(query().range(from, to)));
   const now = Date.now();
-  return (found as unknown as OrderListRow[])
-    .map((row) => toOrderListItem(row, now))
-    .filter((o) => orderMatches(o, filters, current().timeZone));
+  return (found as unknown as OrderListRow[]).map((row) => toOrderListItem(row, now));
 }
 
 /** O.S. aguardando aprovação com as tentativas (fila de revisão e dashboard), sem as URLs das fotos. */
@@ -281,18 +271,15 @@ function clientQuery() {
   return supabase.from('clients').select(CLIENT_SELECT).eq('company_id', current().companyId);
 }
 
-/** Clientes por nome; os excluídos só quando pedidos (api.md: "ativos" filtram no front). Busca no front. */
-async function officeListClients(filters: { search?: string; includeDeleted?: boolean } = {}) {
+/** Clientes por nome; os excluídos só quando pedidos. A busca filtra o cache na tela (`useClients`, queries.ts). */
+async function officeListClients(filters: { includeDeleted?: boolean } = {}) {
   const found = await readAll((from, to) =>
     clientRows((q) =>
       // Nome e id: ordem fixa entre os blocos (a ordem da tela, pt-BR, é a de baixo).
       (filters.includeDeleted ? q : q.is('deleted_at', null)).order('name').order('id').range(from, to),
     ),
   );
-  return found
-    .filter((c) => clientMatches(c, filters.search ?? ''))
-    .map(toClientListItem)
-    .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+  return found.map(toClientListItem).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
 }
 
 async function officeGetClient(id: string) {

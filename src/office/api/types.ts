@@ -13,7 +13,7 @@ import type {
   MemberView,
   OfficeOrderListItem,
   OrderDetail,
-  OrderFilters,
+  OrderQuery,
   PersonRef,
   Profile,
 } from '@/lib/views';
@@ -48,12 +48,14 @@ export interface AddressInput {
 
 export interface OfficeApi {
   // ---------------------------------------------------------------- leituras
-  officeListOrders(filters?: OrderFilters): Promise<OfficeOrderListItem[]>;
+  /** Só os filtros que o banco aplica; busca, técnico, sem técnico e prazo filtram na tela (queries.ts). */
+  officeListOrders(query?: OrderQuery): Promise<OfficeOrderListItem[]>;
   officePendingOrders(): Promise<OrderDetail[]>;
   officeGetOrder(id: string): Promise<OrderDetail | null>;
   officeDashboard(): Promise<DashboardCounts>;
   officeLateSupplements(): Promise<LateSupplementItem[]>;
-  officeListClients(filters?: { search?: string; includeDeleted?: boolean }): Promise<ClientListItem[]>;
+  /** Ativos, ou também os excluídos; a busca filtra na tela (queries.ts). */
+  officeListClients(filters?: { includeDeleted?: boolean }): Promise<ClientListItem[]>;
   officeGetClient(id: string): Promise<(ClientDetail & { open_orders: number }) | null>;
   officeListMembers(filters?: { includeRemoved?: boolean }): Promise<MemberView[]>;
   /** Técnicos ativos (para atribuir e filtrar). */

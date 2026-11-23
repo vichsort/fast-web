@@ -20,7 +20,7 @@ import type {
   MemberView,
   OfficeOrderListItem,
   OrderDetail,
-  OrderFilters,
+  OrderQuery,
   PersonRef,
   Profile,
 } from '@/lib/views';
@@ -38,7 +38,7 @@ import {
 import { emails } from '@/mocks/data';
 import type { AddressInput, OrderInput } from './api/types';
 import type { ZipLookup } from './api/viacep';
-import { addressText, clientMatches, orderMatches, seenUntil } from './derive';
+import { addressText, orderMatches, seenUntil } from './derive';
 
 const LATENCY = 150;
 const wait = <T>(value: T): Promise<T> =>
@@ -158,12 +158,12 @@ function ensureEditable(o: OrderDetail) {
 // ---------------------------------------------------------------- leituras: O.S.
 
 /** Lista de O.S. com cliente e técnicos, filtrada (03, "Filtrar"). Mais nova primeiro. */
-export async function officeListOrders(filters: OrderFilters = {}): Promise<OfficeOrderListItem[]> {
+export async function officeListOrders(query: OrderQuery = {}): Promise<OfficeOrderListItem[]> {
   const s = await store();
   return wait(
     s.orders
       .map((o) => listItem(s, o))
-      .filter((o) => orderMatches(o, filters, s.company.timezone))
+      .filter((o) => orderMatches(o, query, s.company.timezone))
       .sort((a, b) => b.order_number - a.order_number),
   );
 }
@@ -231,14 +231,11 @@ function clientListItem(s: Store, c: Store['clients'][number]): ClientListItem {
   };
 }
 
-export async function officeListClients(
-  filters: { search?: string; includeDeleted?: boolean } = {},
-): Promise<ClientListItem[]> {
+export async function officeListClients(filters: { includeDeleted?: boolean } = {}): Promise<ClientListItem[]> {
   const s = await store();
   return wait(
     s.clients
       .filter((c) => filters.includeDeleted || c.deleted_at === null)
-      .filter((c) => clientMatches(c, filters.search ?? ''))
       .map((c) => clientListItem(s, c))
       .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')),
   );

@@ -14,6 +14,7 @@ import type {
   ExecutionView,
   OfficeOrderListItem,
   OrderFilters,
+  OrderQuery,
   PersonRef,
   ServiceOrder,
 } from '@/lib/views';
@@ -66,6 +67,23 @@ export function orderMatches(o: OfficeOrderListItem, f: OrderFilters, timeZone: 
   if (f.overdue && !o.overdue) return false;
   if (f.unassigned && (o.assignees.length > 0 || !ACTIVE_ORDER_STATUSES.includes(o.status))) return false;
   return true;
+}
+
+const QUERY_FILTERS = ['status', 'priority', 'service_type', 'client_id', 'overdue'] as const;
+
+/**
+ * Separa os filtros da lista de O.S.: `query` é o que o banco aplica (a chave do cache e o pedido à API); `local`, o
+ * que filtra a lista já trazida (`orderMatches`). Vazios saem, para filtro vazio e ausente darem a mesma chave.
+ */
+export function splitOrderFilters(filters: OrderFilters): { query: OrderQuery; local: OrderFilters } {
+  const query: Record<string, unknown> = {};
+  const local: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(filters)) {
+    if (value === undefined || value === null || value === '' || value === false) continue;
+    if (Array.isArray(value) && value.length === 0) continue;
+    ((QUERY_FILTERS as readonly string[]).includes(key) ? query : local)[key] = value;
+  }
+  return { query, local };
 }
 
 /** Cliente como a lista mostra: principal ativo, endereços ativos e O.S. em andamento (02, R7). */

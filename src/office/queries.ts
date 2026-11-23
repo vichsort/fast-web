@@ -1,7 +1,7 @@
 // Leituras do escritório (TanStack Query), com a chave 'office' para as ações recarregarem tudo de uma vez.
 import { useQuery } from '@tanstack/react-query';
 import * as React from 'react';
-import type { OrderFilters } from '@/lib/views';
+import type { ClientListItem, OfficeOrderListItem, OrderFilters } from '@/lib/views';
 import {
   officeAudit,
   officeDashboard,
@@ -15,9 +15,23 @@ import {
   officePeople,
   officeTechnicians,
 } from './api';
+import { clientMatches, orderMatches, splitOrderFilters } from './derive';
+import { useOffice } from './session';
 
-export const useOrders = (filters: OrderFilters = {}) =>
-  useQuery({ queryKey: ['office', 'orders', filters], queryFn: () => officeListOrders(filters) });
+/**
+ * Lista de O.S.: a chave e a leitura levam só o que o banco filtra; busca, técnico, sem técnico e prazo (no fuso da
+ * empresa) filtram o cache, sem reler a lista a cada tecla (screens-office.md, decisões).
+ */
+export function useOrders(filters: OrderFilters = {}) {
+  const { timeZone } = useOffice();
+  const { query, local } = splitOrderFilters(filters);
+  const localKey = JSON.stringify(local);
+  const select = React.useMemo(() => {
+    const only = JSON.parse(localKey) as OrderFilters;
+    return (rows: OfficeOrderListItem[]) => rows.filter((o) => orderMatches(o, only, timeZone));
+  }, [localKey, timeZone]);
+  return useQuery({ queryKey: ['office', 'orders', query], queryFn: () => officeListOrders(query), select });
+}
 
 /** Aguardando aprovação, com as tentativas: a lista acima é enxuta (docs/e2e.md, D4). */
 export const usePendingOrders = () =>
@@ -31,8 +45,20 @@ export const useDashboard = () => useQuery({ queryKey: ['office', 'dashboard'], 
 export const useLateSupplements = () =>
   useQuery({ queryKey: ['office', 'late-supplements'], queryFn: () => officeLateSupplements() });
 
-export const useClients = (filters: { search?: string; includeDeleted?: boolean } = {}) =>
-  useQuery({ queryKey: ['office', 'clients', filters], queryFn: () => officeListClients(filters) });
+/** Clientes: a chave e a leitura levam só "com excluídos"; a busca filtra o cache. */
+export function useClients(filters: { search?: string; includeDeleted?: boolean } = {}) {
+  const includeDeleted = filters.includeDeleted === true;
+  const search = filters.search ?? '';
+  const select = React.useCallback(
+    (rows: ClientListItem[]) => (search.trim() ? rows.filter((c) => clientMatches(c, search)) : rows),
+    [search],
+  );
+  return useQuery({
+    queryKey: ['office', 'clients', { includeDeleted }],
+    queryFn: () => officeListClients({ includeDeleted }),
+    select,
+  });
+}
 
 export const useClient = (id: string | null) =>
   useQuery({

@@ -3,6 +3,7 @@ import {
   clientMatches,
   directWriteError,
   type OrderListRow,
+  splitOrderFilters,
   toClientListItem,
   toOrderListItem,
 } from './derive';
@@ -152,6 +153,44 @@ describe('clientMatches', () => {
 
   it('finds by the phone digits even when the phone was saved with a mask', () => {
     expect(clientMatches(clientRow({ phone: '(41) 99999-8888' }), '4199999')).toBe(true);
+  });
+});
+
+describe('splitOrderFilters', () => {
+  it('sends to the database only the columns it filters; the rest filters the cached list', () => {
+    expect(
+      splitOrderFilters({
+        search: '#12',
+        status: ['open'],
+        priority: ['urgent'],
+        service_type: ['maintenance'],
+        technician_id: 'u-ana',
+        client_id: 'cl1',
+        due_from: '2026-11-01',
+        due_to: '2026-11-30',
+        overdue: true,
+        unassigned: true,
+      }),
+    ).toEqual({
+      query: { status: ['open'], priority: ['urgent'], service_type: ['maintenance'], client_id: 'cl1', overdue: true },
+      local: { search: '#12', technician_id: 'u-ana', due_from: '2026-11-01', due_to: '2026-11-30', unassigned: true },
+    });
+  });
+
+  it('gives the same database query for empty and absent filters, so the cache key does not change', () => {
+    const empty = splitOrderFilters({
+      search: '',
+      status: [],
+      priority: undefined,
+      technician_id: null,
+      client_id: null,
+      due_from: null,
+      due_to: null,
+      overdue: false,
+      unassigned: undefined,
+    });
+    expect(empty).toEqual({ query: {}, local: {} });
+    expect(splitOrderFilters({ search: 'ana', technician_id: 'u-ana' }).query).toEqual({});
   });
 });
 

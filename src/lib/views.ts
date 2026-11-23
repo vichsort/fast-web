@@ -171,3 +171,6 @@ export interface OrderFilters {
   overdue?: boolean;
   unassigned?: boolean;
 }
+
+/** O que o banco filtra na lista de O.S. (colunas da O.S.): a chave do cache e o pedido à API. */
+export type OrderQuery = Pick<OrderFilters, 'status' | 'priority' | 'service_type' | 'client_id' | 'overdue'>;
