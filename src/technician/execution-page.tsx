@@ -3,6 +3,7 @@ import { Clock, CloudUpload, HardDriveDownload, Send, Trash, TriangleAlert, Wifi
 import * as React from 'react';
 import { AlertBadge } from '@/components/badges';
 import { ConfirmDialog, SidePanel } from '@/components/dialogs';
+import { Notice } from '@/components/notice';
 import { PageHeader } from '@/components/page-header';
 import { PhotoGrid } from '@/components/photos';
 import { EmptyState, ErrorState, LoadingDetail } from '@/components/states';
@@ -26,7 +27,7 @@ import {
   withAlerts,
 } from './api';
 import { sendNotice } from './derive';
-import { ActionBar, Callout } from './parts';
+import { ActionBar } from './parts';
 import { defaultParticipants, SubmissionForm } from './submission-form';
 
 /** Execução: início, fotos, descrição, participantes, revisão e envio (04; docs/screens-technician.md). */
@@ -103,7 +104,8 @@ function Execution({ order }: { order: TechOrder }) {
           )}
         </div>
       ) : (
-        <Callout
+        <Notice
+          layout="stacked"
           tone="warning"
           icon={Clock}
           title={t('technician.execution.notStarted')}
@@ -118,7 +120,7 @@ function Execution({ order }: { order: TechOrder }) {
           }
         >
           {t('technician.execution.notStartedHint')}
-        </Callout>
+        </Notice>
       )}
 
       <SubmissionForm
@@ -235,7 +237,7 @@ function ReviewPanel({
           {t('technician.execution.reviewParticipants', { names: formatList(names) })}
         </p>
         {hasAlerts && (
-          <Callout tone="warning" icon={TriangleAlert} title={t('technician.execution.reviewAlerts')}>
+          <Notice layout="stacked" tone="warning" icon={TriangleAlert} title={t('technician.execution.reviewAlerts')}>
             <ul className="flex flex-col gap-1.5">
               {[...photoAlertCounts].map(([code, count]) => (
                 <li key={code} className="flex flex-wrap items-center gap-2">
@@ -252,12 +254,12 @@ function ReviewPanel({
                 </li>
               ))}
             </ul>
-          </Callout>
+          </Notice>
         )}
         {offline ? (
-          <Callout tone="progress" icon={WifiOff} title={t('technician.execution.reviewOfflineTitle')}>
+          <Notice layout="stacked" tone="progress" icon={WifiOff} title={t('technician.execution.reviewOfflineTitle')}>
             {t('technician.execution.reviewOfflineBody')}
-          </Callout>
+          </Notice>
         ) : (
           <p className="flex items-start gap-2 text-muted-foreground">
             <CloudUpload aria-hidden className="mt-0.5 size-4 shrink-0" />

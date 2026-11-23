@@ -15,6 +15,7 @@ import * as React from 'react';
 import { AlertBadge, OrderStatusBadge, PriorityBadge, ServiceTypeBadge } from '@/components/badges';
 import { ConfirmDialog, ReasonDialog } from '@/components/dialogs';
 import { ExecutionCard } from '@/components/execution-card';
+import { Notice } from '@/components/notice';
 import { DueLabel } from '@/components/order-card';
 import { PageHeader } from '@/components/page-header';
 import { DetailItem, DetailList, Section } from '@/components/section';
@@ -32,7 +33,7 @@ import type { PhotoAlert } from '@/photos/alerts';
 import { reviewExecution, seenUntil } from '../api';
 import { useOrder, usePendingOrders } from '../queries';
 import { useOffice, useOfficeAction } from '../session';
-import { NotFound, Notice, ScratchScenario } from '../shared';
+import { NotFound, ScratchScenario } from '../shared';
 import { pendingSummary } from './queue';
 
 const route = getRouteApi('/office/review/$orderId');
@@ -128,14 +129,15 @@ function ReviewView({
           tone="warning"
           icon={FilePlus}
           title={t('office.review.staleTitle')}
-          description={errorMessage('stale_review')}
           action={
             <Button size="sm" onClick={reload}>
               <RotateCw />
               {t('office.common.reload')}
             </Button>
           }
-        />
+        >
+          {errorMessage('stale_review')}
+        </Notice>
       )}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_21rem]">

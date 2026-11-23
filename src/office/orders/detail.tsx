@@ -25,6 +25,7 @@ import {
 } from '@/components/badges';
 import { ConfirmDialog, FormDialog, ReasonDialog } from '@/components/dialogs';
 import { ExecutionCard } from '@/components/execution-card';
+import { Notice } from '@/components/notice';
 import { DueLabel } from '@/components/order-card';
 import { PageHeader } from '@/components/page-header';
 import { SearchCombobox } from '@/components/search-combobox';
@@ -49,7 +50,7 @@ import type { OrderDetail } from '@/lib/views';
 import { acknowledgeSupplements, cancelOrder, seenUntil, setAssignees, updateMaterials } from '../api';
 import { useOrder, usePersonName, useTechnicians } from '../queries';
 import { useOffice, useOfficeAction } from '../session';
-import { NotFound, Notice, textLink } from '../shared';
+import { NotFound, textLink } from '../shared';
 
 const route = getRouteApi('/office/orders/$orderId');
 
@@ -161,54 +162,37 @@ function OrderDetailView({ order: o }: { order: OrderDetail }) {
       />
 
       {o.status === 'cancelled' && (
-        <Notice
-          toneClass={statusVar.cancelled}
-          icon={Ban}
-          title={t('office.orderDetail.cancelledTitle')}
-          description={
-            <>
-              {o.cancel_reason && <p className="whitespace-pre-line">{o.cancel_reason}</p>}
-              {o.cancelled_at && (
-                <p className="text-xs opacity-80">
-                  {t('office.orderDetail.cancelledBy', {
-                    name: personName(o.cancelled_by),
-                    time: formatDateTime(o.cancelled_at, timeZone),
-                  })}
-                </p>
-              )}
-            </>
-          }
-        />
+        <Notice toneClass={statusVar.cancelled} icon={Ban} title={t('office.orderDetail.cancelledTitle')}>
+          {o.cancel_reason && <p className="whitespace-pre-line">{o.cancel_reason}</p>}
+          {o.cancelled_at && (
+            <p className="text-xs opacity-80">
+              {t('office.orderDetail.cancelledBy', {
+                name: personName(o.cancelled_by),
+                time: formatDateTime(o.cancelled_at, timeZone),
+              })}
+            </p>
+          )}
+        </Notice>
       )}
       {o.status === 'approved' && (
-        <Notice
-          toneClass={statusVar.approved}
-          icon={CircleCheck}
-          title={t('office.orderDetail.approvedTitle')}
-          description={
-            <>
-              {approvedAttempt?.reviewer && approvedAttempt.reviewed_at && (
-                <span>
-                  {t('ui.execution.reviewedBy', {
-                    name: approvedAttempt.reviewer.full_name,
-                    time: formatDateTime(approvedAttempt.reviewed_at, timeZone),
-                  })}
-                  {'. '}
-                </span>
-              )}
-              {t('office.orderDetail.approvedDescription')}
-            </>
-          }
-        />
+        <Notice toneClass={statusVar.approved} icon={CircleCheck} title={t('office.orderDetail.approvedTitle')}>
+          {approvedAttempt?.reviewer && approvedAttempt.reviewed_at && (
+            <span>
+              {t('ui.execution.reviewedBy', {
+                name: approvedAttempt.reviewer.full_name,
+                time: formatDateTime(approvedAttempt.reviewed_at, timeZone),
+              })}
+              {'. '}
+            </span>
+          )}
+          {t('office.orderDetail.approvedDescription')}
+        </Notice>
       )}
       {pending && o.status === 'pending_approval' && (
         <Notice
           toneClass={statusVar.pending_approval}
           icon={Hourglass}
           title={t('office.orderDetail.pendingTitle')}
-          description={t('office.orderDetail.pendingDescription', {
-            time: formatRelative(pending.received_at, timeZone),
-          })}
           action={
             <Button
               size="sm"
@@ -218,14 +202,17 @@ function OrderDetailView({ order: o }: { order: OrderDetail }) {
               {t('office.orderDetail.review')}
             </Button>
           }
-        />
+        >
+          {t('office.orderDetail.pendingDescription', {
+            time: formatRelative(pending.received_at, timeZone),
+          })}
+        </Notice>
       )}
       {lateUnseen.length > 0 && (
         <Notice
           toneClass={flagVar.lateSupplement}
           icon={FilePlus}
           title={t('office.orderDetail.lateTitle', { count: lateUnseen.length })}
-          description={t('office.orderDetail.lateDescription')}
           action={
             <ConfirmDialog
               trigger={
@@ -243,7 +230,9 @@ function OrderDetailView({ order: o }: { order: OrderDetail }) {
               }
             />
           }
-        />
+        >
+          {t('office.orderDetail.lateDescription')}
+        </Notice>
       )}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">

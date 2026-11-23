@@ -1,6 +1,6 @@
 // Vitrine: tema, selos, estrutura da página, estados, usuários e formatação.
 import { useQuery } from '@tanstack/react-query';
-import { ClipboardList, Download, FileText, Plus } from 'lucide-react';
+import { ClipboardList, Download, FileText, Plus, RotateCw, TriangleAlert } from 'lucide-react';
 import * as React from 'react';
 import {
   AlertBadge,
@@ -17,6 +17,7 @@ import {
   type ToneBadgeVariant,
   UnassignedBadge,
 } from '@/components/badges';
+import { Notice } from '@/components/notice';
 import { PageHeader } from '@/components/page-header';
 import { DetailItem, DetailList, Section } from '@/components/section';
 import {
@@ -342,6 +343,39 @@ export function StatesSection() {
       <Demo label='LoadingList variant="table"'>
         <LoadingList variant="table" count={3} columns={5} />
       </Demo>
+      <div className="grid gap-4 md:grid-cols-2">
+        <Demo label='Notice layout="inline" (computador)'>
+          <Notice
+            tone="warning"
+            icon={TriangleAlert}
+            title={t('ui.showcase.demo.noticeTitle')}
+            action={
+              <Button size="sm" variant="outline">
+                <RotateCw />
+                {t('ui.actions.retry')}
+              </Button>
+            }
+          >
+            {t('ui.showcase.demo.noticeBody')}
+          </Notice>
+        </Demo>
+        <Demo label='Notice layout="stacked" (celular)'>
+          <Notice
+            layout="stacked"
+            tone="warning"
+            icon={TriangleAlert}
+            title={t('ui.showcase.demo.noticeTitle')}
+            action={
+              <Button size="sm" variant="outline">
+                <RotateCw />
+                {t('ui.actions.retry')}
+              </Button>
+            }
+          >
+            {t('ui.showcase.demo.noticeBody')}
+          </Notice>
+        </Demo>
+      </div>
     </ShowcaseSection>
   );
 }

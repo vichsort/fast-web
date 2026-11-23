@@ -1,9 +1,9 @@
-// Peças pequenas compostas para as telas do escritório (Notice, ChoiceCards e useStayOpen são candidatas ao kit).
-import { ArrowLeft, FlaskConical, type LucideIcon } from 'lucide-react';
+// Peças pequenas compostas para as telas do escritório (ChoiceCards e useStayOpen são candidatas ao kit).
+import { ArrowLeft, FlaskConical } from 'lucide-react';
 import * as React from 'react';
 import type { FilterOption } from '@/components/filter-bar';
 import { ErrorState } from '@/components/states';
-import { priorityVar, serviceTypeVar, statusVar, type Tone, toneVar } from '@/components/tone';
+import { priorityVar, serviceTypeVar, statusVar } from '@/components/tone';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
@@ -54,46 +54,6 @@ export function NotFound({ back }: { back: React.ReactElement }) {
         <ArrowLeft />
         {t('office.common.backToList')}
       </Button>
-    </div>
-  );
-}
-
-export interface NoticeProps extends Omit<React.ComponentProps<'div'>, 'title'> {
-  tone?: Tone;
-  toneClass?: string;
-  icon?: LucideIcon;
-  title: React.ReactNode;
-  description?: React.ReactNode;
-  action?: React.ReactNode;
-}
-
-/** Faixa de aviso no tom (O.S. cancelada, complemento tardio, stale_review). */
-export function Notice({
-  tone = 'info',
-  toneClass,
-  icon: Icon,
-  title,
-  description,
-  action,
-  className,
-  ...props
-}: NoticeProps) {
-  return (
-    <div
-      role="status"
-      className={cn(
-        'tone-soft flex flex-wrap items-start gap-3 rounded-xl border px-4 py-3 text-sm',
-        toneClass ?? toneVar[tone],
-        className,
-      )}
-      {...props}
-    >
-      {Icon && <Icon aria-hidden className="mt-0.5 size-4 shrink-0" />}
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="font-semibold">{title}</span>
-        {description && <div className="text-foreground/80">{description}</div>}
-      </div>
-      {action && <div className="flex shrink-0 flex-wrap items-center gap-2">{action}</div>}
     </div>
   );
 }

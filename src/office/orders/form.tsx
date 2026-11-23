@@ -3,6 +3,7 @@ import { getRouteApi, Link, useNavigate } from '@tanstack/react-router';
 import { Lock, MapPinPlus, TriangleExclamationPoint } from 'lucide-react';
 import * as React from 'react';
 import { ToneBadge } from '@/components/badges';
+import { Notice } from '@/components/notice';
 import { PageHeader } from '@/components/page-header';
 import { DatePicker } from '@/components/period-picker';
 import { SearchCombobox } from '@/components/search-combobox';
@@ -25,7 +26,7 @@ import { AddressDialog } from '../clients/address-form';
 import { QuickClientDialog } from '../clients/client-form';
 import { useClient, useClients, useOrder, useTechnicians } from '../queries';
 import { useOffice, useOfficeAction } from '../session';
-import { ChoiceCards, NotFound, Notice } from '../shared';
+import { ChoiceCards, NotFound } from '../shared';
 
 const newRoute = getRouteApi('/office/orders/new');
 const editRoute = getRouteApi('/office/orders/$orderId/edit');

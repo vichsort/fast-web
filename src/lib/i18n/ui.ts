@@ -405,6 +405,8 @@ export const uiTexts = {
       emptyAction: 'Nova O.S.',
       draftPhotos: 'Rascunho no aparelho (com remover)',
       cardStates: 'Densidade e variações',
+      noticeTitle: 'Esta O.S. foi alterada',
+      noticeBody: 'Outra pessoa mexeu nela enquanto você revisava. Recarregue para ver a versão atual.',
     },
   },
 } as const;

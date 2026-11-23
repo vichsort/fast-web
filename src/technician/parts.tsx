@@ -1,51 +1,8 @@
-// Peças visuais só do técnico (o kit não tem): aviso em destaque, barra de ação fixa acima da barra inferior,
-// prévia de mapa e título de grupo de lista. Candidatas a ir para src/components/ se o escritório precisar.
-import type { LucideIcon } from 'lucide-react';
 import { MapPin, Navigation } from 'lucide-react';
 import type * as React from 'react';
-import { type Tone, toneVar } from '@/components/tone';
 import { mapsUrl } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
-
-/** Aviso com ícone, título, texto e ação, no tom do significado (rejeição, cancelada, fila…). */
-export function Callout({
-  tone = 'info',
-  toneClass,
-  icon: Icon,
-  title,
-  action,
-  className,
-  children,
-}: {
-  tone?: Tone;
-  /** Classe que define --tone (ex.: statusVar.rejected); tem prioridade sobre `tone`. */
-  toneClass?: string;
-  icon: LucideIcon;
-  title: React.ReactNode;
-  action?: React.ReactNode;
-  className?: string;
-  children?: React.ReactNode;
-}) {
-  return (
-    <div
-      className={cn(
-        'tone-soft flex flex-col gap-3 rounded-xl border p-3.5 text-sm',
-        toneClass ?? toneVar[tone],
-        className,
-      )}
-    >
-      <div className="flex gap-3">
-        <Icon aria-hidden className="mt-0.5 size-5 shrink-0" />
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <div className="font-semibold leading-snug">{title}</div>
-          {children && <div className="text-foreground/90">{children}</div>}
-        </div>
-      </div>
-      {action && <div className="flex flex-wrap gap-2 pl-8">{action}</div>}
-    </div>
-  );
-}
 
 /** Barra de ações presa acima da barra inferior (o polegar alcança; o conteúdo rola por trás). */
 export function ActionBar({ className, children }: { className?: string; children: React.ReactNode }) {

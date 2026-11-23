@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { ChevronDown, CircleX, HardDriveDownload, MessageSquareWarning, RotateCw } from 'lucide-react';
+import { Notice } from '@/components/notice';
 import { OrderCard } from '@/components/order-card';
 import { EmptyState, ErrorState, LoadingList } from '@/components/states';
 import { SyncIndicator } from '@/components/sync';
@@ -20,7 +21,7 @@ import {
   useTechSession,
   useTimeZone,
 } from './api';
-import { Callout, GroupHeading } from './parts';
+import { GroupHeading } from './parts';
 
 /** Minhas O.S.: as atribuídas, agrupadas pelo que o técnico tem de fazer (docs/screens-technician.md). */
 export function OrdersPage() {
@@ -72,13 +73,14 @@ export function OrdersPage() {
       </header>
 
       {storage === 'denied' && (
-        <Callout tone="warning" icon={HardDriveDownload} title={t('technician.orders.storageDenied')}>
+        <Notice layout="stacked" tone="warning" icon={HardDriveDownload} title={t('technician.orders.storageDenied')}>
           {t('technician.orders.storageDeniedHint')}
-        </Callout>
+        </Notice>
       )}
 
       {problems > 0 ? (
-        <Callout
+        <Notice
+          layout="stacked"
           tone="danger"
           icon={CircleX}
           title={t('technician.orders.problemNotice', { count: problems })}
@@ -94,7 +96,7 @@ export function OrdersPage() {
           }
         >
           {t('technician.orders.problemNoticeHint')}
-        </Callout>
+        </Notice>
       ) : (
         sync &&
         sync.pending > 0 && (

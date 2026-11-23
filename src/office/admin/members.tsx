@@ -6,6 +6,7 @@ import { RoleBadge, ToneBadge } from '@/components/badges';
 import { DataTable, type DataTableColumn } from '@/components/data-table';
 import { FormDialog, ReasonDialog } from '@/components/dialogs';
 import { FilterBar } from '@/components/filter-bar';
+import { Notice } from '@/components/notice';
 import { PageHeader } from '@/components/page-header';
 import { ErrorState } from '@/components/states';
 import { Button } from '@/components/ui/button';
@@ -27,7 +28,7 @@ import type { MemberView } from '@/lib/views';
 import { inviteMember, removeMember, updateMemberRole } from '../api';
 import { useMembers } from '../queries';
 import { useOffice, useOfficeAction } from '../session';
-import { ChoiceCards, Notice, OwnerOnly, useStayOpen } from '../shared';
+import { ChoiceCards, OwnerOnly, useStayOpen } from '../shared';
 
 export function MembersPage() {
   return (
@@ -156,13 +157,14 @@ function MembersView() {
           tone="danger"
           icon={ShieldAlert}
           title={errorMessage('last_owner')}
-          description={t('office.members.lastOwnerHint')}
           action={
             <Button size="sm" variant="ghost" onClick={() => setLastOwner(false)}>
               {t('ui.actions.dismiss')}
             </Button>
           }
-        />
+        >
+          {t('office.members.lastOwnerHint')}
+        </Notice>
       )}
       <FilterBar
         actions={

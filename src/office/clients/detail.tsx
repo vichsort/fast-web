@@ -6,6 +6,7 @@ import * as React from 'react';
 import { AddressBlock, ContactActions } from '@/components/address-block';
 import { ToneBadge } from '@/components/badges';
 import { ReasonDialog } from '@/components/dialogs';
+import { Notice } from '@/components/notice';
 import { OrderTable } from '@/components/order-table';
 import { PageHeader } from '@/components/page-header';
 import { DetailItem, DetailList, Section } from '@/components/section';
@@ -26,7 +27,7 @@ import type { ClientAddress, ClientDetail, OfficeOrderListItem } from '@/lib/vie
 import { deleteAddress, deleteClient, setPrimaryAddress } from '../api';
 import { useClient, usePersonName } from '../queries';
 import { useOffice, useOfficeAction } from '../session';
-import { NotFound, Notice } from '../shared';
+import { NotFound } from '../shared';
 import { AddressDialog } from './address-form';
 import { EditClientDialog } from './client-form';
 
@@ -105,32 +106,24 @@ function ClientView({ client: c }: { client: ClientDetail & { open_orders: numbe
       />
 
       {deleted && (
-        <Notice
-          tone="muted"
-          icon={Ban}
-          title={t('office.clientDetail.deletedTitle')}
-          description={
-            <>
-              <p>{t('office.clientDetail.deletedDescription')}</p>
-              {c.delete_reason && <p>{t('office.common.reason', { reason: c.delete_reason })}</p>}
-              {c.deleted_at && (
-                <p className="text-xs opacity-80">
-                  {t('office.common.deletedBy', {
-                    name: personName(c.deleted_by),
-                    time: formatDateTime(c.deleted_at, timeZone),
-                  })}
-                </p>
-              )}
-            </>
-          }
-        />
+        <Notice tone="muted" icon={Ban} title={t('office.clientDetail.deletedTitle')}>
+          <p>{t('office.clientDetail.deletedDescription')}</p>
+          {c.delete_reason && <p>{t('office.common.reason', { reason: c.delete_reason })}</p>}
+          {c.deleted_at && (
+            <p className="text-xs opacity-80">
+              {t('office.common.deletedBy', {
+                name: personName(c.deleted_by),
+                time: formatDateTime(c.deleted_at, timeZone),
+              })}
+            </p>
+          )}
+        </Notice>
       )}
       {blocked && !deleted && (
         <Notice
           tone="danger"
           icon={TriangleExclamationPoint}
           title={errorMessage('client_has_open_orders')}
-          description={t('office.clientDetail.hasOpenOrders')}
           action={
             <Button
               size="sm"
@@ -141,7 +134,9 @@ function ClientView({ client: c }: { client: ClientDetail & { open_orders: numbe
               {t('office.clientDetail.seeOpenOrders')}
             </Button>
           }
-        />
+        >
+          {t('office.clientDetail.hasOpenOrders')}
+        </Notice>
       )}
 
       <div className="grid gap-6 lg:grid-cols-[22rem_minmax(0,1fr)]">

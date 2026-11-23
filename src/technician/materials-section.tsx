@@ -2,6 +2,7 @@
 // dele e o do escritório, ele escolhe (e ajusta) e reenvia.
 import { Check, CloudUpload, GitCompareArrows, Package, Pencil } from 'lucide-react';
 import * as React from 'react';
+import { Notice } from '@/components/notice';
 import { Section } from '@/components/section';
 import { Button } from '@/components/ui/button';
 import { Field, FieldLabel } from '@/components/ui/field';
@@ -10,7 +11,6 @@ import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { act } from './act';
 import { resolveConflict, saveMaterials, type TechOrder, usePendingItems } from './api';
-import { Callout } from './parts';
 
 export function MaterialsSection({ order }: { order: TechOrder }) {
   const [editing, setEditing] = React.useState(false);
@@ -106,9 +106,9 @@ function MaterialsConflict({ order, conflict }: { order: TechOrder; conflict: { 
   ];
   return (
     <Section title={t('technician.materials.title')} icon={Package} density="touch">
-      <Callout tone="warning" icon={GitCompareArrows} title={t('technician.materials.conflictTitle')}>
+      <Notice layout="stacked" tone="warning" icon={GitCompareArrows} title={t('technician.materials.conflictTitle')}>
         {t('technician.materials.conflictBody')}
-      </Callout>
+      </Notice>
       <div role="radiogroup" aria-label={t('technician.materials.conflictTitle')} className="flex flex-col gap-2">
         {versions.map((v) => {
           const selected = choice === v.id;

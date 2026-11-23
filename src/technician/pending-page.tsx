@@ -3,6 +3,7 @@ import { ChevronDown, CircleCheck, Info, LogIn } from 'lucide-react';
 import * as React from 'react';
 import { signOutKeepingData } from '@/app/session';
 import { ConfirmDialog } from '@/components/dialogs';
+import { Notice } from '@/components/notice';
 import { PageHeader } from '@/components/page-header';
 import { PhotoGrid } from '@/components/photos';
 import { EmptyState, ErrorState, LoadingList } from '@/components/states';
@@ -13,7 +14,7 @@ import { t } from '@/lib/i18n';
 import type { PendingItem } from '@/lib/views';
 import { act } from './act';
 import { removePending, retryPending, usePendingItems, useQueueDraft, useSyncStatus, useTimeZone } from './api';
-import { Callout, GroupHeading } from './parts';
+import { GroupHeading } from './parts';
 
 /** Pendências: a fila do aparelho e as recusas (docs/queue.md; docs/screens-technician.md). */
 export function PendingPage() {
@@ -31,7 +32,8 @@ export function PendingPage() {
       <PageHeader title={t('technician.pending.title')} description={t('technician.pending.description')} />
       {sync && <SyncIndicator status={sync} timeZone={TZ} variant="banner" />}
       {sync?.needs_login && (
-        <Callout
+        <Notice
+          layout="stacked"
           tone="danger"
           icon={LogIn}
           title={t('technician.pending.loginTitle')}
@@ -43,7 +45,7 @@ export function PendingPage() {
           }
         >
           {t('technician.pending.loginBody')}
-        </Callout>
+        </Notice>
       )}
 
       {query.isPending ? (

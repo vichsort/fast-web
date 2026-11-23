@@ -2,6 +2,7 @@ import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router'
 import { FilePlus, Send, TriangleAlert } from 'lucide-react';
 import { ReviewStatusBadge } from '@/components/badges';
 import type { AttemptData } from '@/components/execution-card';
+import { Notice } from '@/components/notice';
 import { PageHeader } from '@/components/page-header';
 import { EmptyState, ErrorState, LoadingDetail } from '@/components/states';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,7 @@ import { t } from '@/lib/i18n';
 import { act, useOffline } from './act';
 import { type Draft, draftKey, notify, submit, type TechOrder, useDraft, useTechOrder, useTimeZone } from './api';
 import { sendNotice } from './derive';
-import { ActionBar, Callout } from './parts';
+import { ActionBar } from './parts';
 import { defaultParticipants, SubmissionForm } from './submission-form';
 
 /** Complemento: texto e/ou fotos que somam a uma tentativa (04, R3 e R5; docs/screens-technician.md). */
@@ -86,9 +87,9 @@ function Supplement({ order, target }: { order: TechOrder; target: AttemptData }
       </div>
 
       {reviewed && (
-        <Callout tone="warning" icon={TriangleAlert} title={t('ui.badge.lateSupplement')}>
+        <Notice layout="stacked" tone="warning" icon={TriangleAlert} title={t('ui.badge.lateSupplement')}>
           {t('technician.supplement.late')}
-        </Callout>
+        </Notice>
       )}
 
       <SubmissionForm
