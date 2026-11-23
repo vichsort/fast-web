@@ -57,7 +57,7 @@ O texto é sempre o do catálogo ([errors.md](../../fast/docs/errors.md), `error
 | Editar O.S. | `update_order`, depois `update_materials_notes` e `set_assignees` só se mudaram | as mesmas três chamadas; falha no meio deixa parte salva: recarregar e mostrar o estado real |
 | CEP | tabela de 5 CEPs de exemplo (`lookupZip` em `mocks.ts`) | ViaCEP chamado direto do navegador ([`viacep.ts`](../src/office/api/viacep.ts)): preenche rua, bairro, cidade e UF; não encontrado ou serviço fora (rede, 5xx, 8 s sem resposta) avisa e o endereço é digitado à mão |
 | `stale_review` | interruptor "Cenário de exemplo" na revisão | chega de verdade quando um complemento entra depois do carregamento |
-| Fotos | SVGs locais | `get_photo_urls` (URL expira em 5 min) |
+| Fotos | SVGs locais | `get_photo_urls` (URL expira em 5 min), reaproveitada e renovada como no [photos.md](photos.md), F11 |
 
 ## Decisões
 

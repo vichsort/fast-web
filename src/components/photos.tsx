@@ -35,6 +35,13 @@ export interface PhotoData {
   alerts: PhotoAlert[];
 }
 
+/**
+ * Quem trata a foto que não carregou (URL assinada vencida, docs/photos.md, F11): cada área liga no layout
+ * (`usePhotoUrlRenewal`); fora dele, nada acontece.
+ */
+const PhotoErrorContext = React.createContext<((photo: PhotoData) => void) | null>(null);
+export const PhotoErrorProvider = PhotoErrorContext.Provider;
+
 export interface PhotoThumbProps extends Omit<React.ComponentProps<'button'>, 'children'> {
   photo: PhotoData;
   timeZone: string;
@@ -62,6 +69,7 @@ export function PhotoThumb({
 }: PhotoThumbProps) {
   const hasAlert = photo.alerts.length > 0;
   const alt = t('ui.photos.alt', { n: index + 1, total });
+  const onPhotoError = React.useContext(PhotoErrorContext);
   return (
     <div
       data-slot="photo-thumb"
@@ -85,6 +93,7 @@ export function PhotoThumb({
           alt={alt}
           loading="lazy"
           decoding="async"
+          onError={() => onPhotoError?.(photo)}
           className="size-full object-cover transition-transform group-hover/photo:scale-[1.03]"
         />
       </button>
@@ -218,6 +227,7 @@ export interface PhotoLightboxProps {
 export function PhotoLightbox({ photos, timeZone, index, open, onOpenChange, onIndexChange }: PhotoLightboxProps) {
   const photo = photos[index];
   const touchX = React.useRef<number | null>(null);
+  const onPhotoError = React.useContext(PhotoErrorContext);
   const go = React.useCallback(
     (delta: number) => {
       if (photos.length === 0) return;
@@ -281,6 +291,7 @@ export function PhotoLightbox({ photos, timeZone, index, open, onOpenChange, onI
             src={photo.url}
             alt={t('ui.photos.alt', { n: index + 1, total: photos.length })}
             className="max-h-full max-w-full object-contain animate-in fade-in-0"
+            onError={() => onPhotoError?.(photo)}
           />
           {many && (
             <>
@@ -324,7 +335,7 @@ export function PhotoLightbox({ photos, timeZone, index, open, onOpenChange, onI
                   i === index && 'opacity-100 ring-2',
                 )}
               >
-                <img src={p.url} alt="" className="size-full object-cover" />
+                <img src={p.url} alt="" className="size-full object-cover" onError={() => onPhotoError?.(p)} />
               </button>
             ))}
           </div>

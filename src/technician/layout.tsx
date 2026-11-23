@@ -4,10 +4,12 @@ import type { Access } from '@/app/access';
 import { RequireAccess } from '@/app/pages/gate';
 import { TechnicianShell } from '@/components/app-shell';
 import type { NavItem } from '@/components/nav';
+import { PhotoErrorProvider } from '@/components/photos';
 import { ScratchBanner } from '@/components/states';
 import { SyncIndicator } from '@/components/sync';
 import { usingMocks } from '@/lib/data-source';
 import { t } from '@/lib/i18n';
+import { usePhotoUrlRenewal } from '@/lib/orders-query';
 import { TechnicianRuntime, useMyOrders, usePendingItems, useSyncStatus, useTimeZone } from './api';
 
 /** Interface do técnico: celular, uma coluna, offline-first (docs/screens.md, docs/screens-technician.md). */
@@ -29,6 +31,7 @@ function TechnicianFrame() {
   const TZ = useTimeZone();
   const orders = useMyOrders().data;
   const pending = usePendingItems().data;
+  const onPhotoError = usePhotoUrlRenewal(['technician', 'order']);
   const section = pathname.startsWith('/technician/pending')
     ? 'pending'
     : pathname.startsWith('/technician/profile')
@@ -67,7 +70,9 @@ function TechnicianFrame() {
       sync={sync && <SyncIndicator status={sync} timeZone={TZ} render={<Link to="/technician/pending" />} />}
       banner={usingMocks ? <ScratchBanner /> : undefined}
     >
-      <Outlet />
+      <PhotoErrorProvider value={onPhotoError}>
+        <Outlet />
+      </PhotoErrorProvider>
     </TechnicianShell>
   );
 }

@@ -59,6 +59,7 @@ Biblioteca visual das duas interfaces: componentes do domínio em [`src/componen
 | `PhotoThumb` | `photos.tsx` | miniatura 4:3 com origem, horário e alerta | `photo` (`PhotoData`), `timeZone`, `size`, `hideMeta`, `onRemove` | grades |
 | `PhotoGrid` | `photos.tsx` | grade com visualizador embutido | `photos`, `timeZone`, `density`, `onOpen` (controle externo), `onRemove`, `append` | execução, revisão |
 | `PhotoLightbox` | `photos.tsx` | tela cheia: setas, ← →, deslizar, miniaturas, dados | `photos`, `index`, `open`, `onOpenChange`, `onIndexChange` | grades |
+| `PhotoErrorProvider` | `photos.tsx` | contexto: avisa quando a imagem de uma foto não carrega (URL vencida, [photos.md](photos.md) F11) | `value` (`usePhotoUrlRenewal` da área) | layouts do escritório e do técnico |
 | `PhotoMeta` | `photos.tsx` | origem, captura, chegada, local e alertas por extenso | `photo`, `timeZone` | lightbox, revisão |
 | `AddPhoto` | `photos.tsx` | câmera (preferida) e galeria, só visual | `onCamera`, `onGallery`, `variant` (`bar`/`tile`), `showHint` | execução, complemento |
 | `ExecutionCard` | `execution-card.tsx` | tentativa: status da revisão, alertas, quem e participantes, horários (aparelho × chegada), motivo/comentário, descrição, fotos e complementos | `attempt` (`AttemptData`), `timeZone`, `actions`, `hideSupplements`, `compactPhotos` | revisão, detalhe do técnico |

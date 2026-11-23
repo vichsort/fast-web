@@ -19,6 +19,7 @@ import { RequireAccess } from '@/app/pages/gate';
 import { signOutAndWipe } from '@/app/session';
 import { OfficeShell } from '@/components/app-shell';
 import type { NavItem } from '@/components/nav';
+import { PhotoErrorProvider } from '@/components/photos';
 import { ErrorState, LoadingDetail, ScratchBanner } from '@/components/states';
 import { Button } from '@/components/ui/button';
 import {
@@ -31,6 +32,7 @@ import {
 import { UserAvatar } from '@/components/user';
 import { usingMocks } from '@/lib/data-source';
 import { t } from '@/lib/i18n';
+import { usePhotoUrlRenewal } from '@/lib/orders-query';
 import { bindSession, officeCompany, officeSessionUser } from './api';
 import { useDashboard } from './queries';
 import { type OfficeSession, OfficeSessionProvider } from './session';
@@ -84,6 +86,7 @@ function Shell({ session }: { session: OfficeSession }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname }).replace(/\/$/, '');
   const dashboard = useDashboard();
   const active = (path: string) => (path === '/office' ? pathname === '/office' : pathname.startsWith(path));
+  const onPhotoError = usePhotoUrlRenewal(['office', 'order']);
   const reviewBadge = dashboard.data ? dashboard.data.pending_approval + dashboard.data.late_supplements_unseen : 0;
 
   const work: NavItem[] = [
@@ -168,7 +171,9 @@ function Shell({ session }: { session: OfficeSession }) {
       }
       banner={usingMocks ? <ScratchBanner /> : undefined}
     >
-      <Outlet />
+      <PhotoErrorProvider value={onPhotoError}>
+        <Outlet />
+      </PhotoErrorProvider>
     </OfficeShell>
   );
 }
