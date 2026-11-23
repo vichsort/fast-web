@@ -1,7 +1,10 @@
 // Empresa (owner): dados cadastrais e fuso (01: update direto de companies; o trigger grava a auditoria).
+// React Hook Form + Zod: só o nome é obrigatório.
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
 import { ScrollText } from 'lucide-react';
-import * as React from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 import { PageHeader } from '@/components/page-header';
 import { DetailItem, DetailList, Section } from '@/components/section';
 import { Button } from '@/components/ui/button';
@@ -10,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
 import { Spinner } from '@/components/ui/spinner';
 import { formatDate, formatOrderNumber, formatPhone } from '@/lib/format';
+import { requiredText } from '@/lib/forms';
 import { t } from '@/lib/i18n';
 import { ptBR } from '@/lib/i18n/pt-BR';
 import { phoneDigitsOrNull } from '@/lib/input';
@@ -27,32 +31,36 @@ export function CompanyPage() {
   );
 }
 
+const companySchema = z.object({
+  name: requiredText(t('office.common.fieldRequired')),
+  document: z.string(),
+  phone: z.string(),
+  email: z.string(),
+  timezone: z.string(),
+});
+
 /** A empresa vem da sessão do escritório (o layout recarrega depois de salvar). */
 function CompanyForm() {
   const { actor, timeZone, company } = useOffice();
   const run = useOfficeAction();
-  const [draft, setDraft] = React.useState({
-    name: company.name,
-    document: company.document ?? '',
-    phone: company.phone ? formatPhone(company.phone) : '',
-    email: company.email ?? '',
-    timezone: company.timezone,
+  const form = useForm<z.infer<typeof companySchema>>({
+    resolver: zodResolver(companySchema),
+    defaultValues: {
+      name: company.name,
+      document: company.document ?? '',
+      phone: company.phone ? formatPhone(company.phone) : '',
+      email: company.email ?? '',
+      timezone: company.timezone,
+    },
   });
-  const [saving, setSaving] = React.useState(false);
-  const [showErrors, setShowErrors] = React.useState(false);
-  const set = (key: keyof typeof draft) => (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-    setDraft({ ...draft, [key]: event.target.value });
-  const nameMissing = showErrors && !draft.name.trim();
+  const { register } = form;
+  const { errors, isSubmitting } = form.formState;
 
-  async function submit(event: React.FormEvent) {
-    event.preventDefault();
-    if (!draft.name.trim()) return setShowErrors(true);
-    setSaving(true);
+  const submit = form.handleSubmit(async (values) => {
     await run(t('office.company.saved'), () =>
-      updateCompany({ ...draft, phone: phoneDigitsOrNull(draft.phone) }, actor),
+      updateCompany({ ...values, phone: phoneDigitsOrNull(values.phone) }, actor),
     );
-    setSaving(false);
-  }
+  });
 
   return (
     <div className="flex flex-col gap-6">
@@ -73,46 +81,36 @@ function CompanyForm() {
             title={t('office.company.sectionData')}
             footer={
               <div className="flex justify-end">
-                <Button type="submit" disabled={saving}>
-                  {saving && <Spinner aria-hidden />}
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting && <Spinner aria-hidden />}
                   {t('office.common.saveChanges')}
                 </Button>
               </div>
             }
           >
             <FieldGroup className="gap-4">
-              <Field data-invalid={nameMissing || undefined}>
+              <Field data-invalid={Boolean(errors.name) || undefined}>
                 <FieldLabel htmlFor="company-name">{t('office.company.name')}</FieldLabel>
-                <Input
-                  id="company-name"
-                  value={draft.name}
-                  onChange={set('name')}
-                  aria-invalid={nameMissing || undefined}
-                />
-                {nameMissing && <FieldError>{t('office.common.fieldRequired')}</FieldError>}
+                <Input id="company-name" aria-invalid={Boolean(errors.name) || undefined} {...register('name')} />
+                {errors.name && <FieldError>{errors.name.message}</FieldError>}
               </Field>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field>
                   <FieldLabel htmlFor="company-document">{t('office.company.document')}</FieldLabel>
-                  <Input id="company-document" value={draft.document} onChange={set('document')} />
+                  <Input id="company-document" {...register('document')} />
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="company-phone">{t('office.company.phone')}</FieldLabel>
-                  <Input id="company-phone" type="tel" value={draft.phone} onChange={set('phone')} />
+                  <Input id="company-phone" type="tel" {...register('phone')} />
                 </Field>
               </div>
               <Field>
                 <FieldLabel htmlFor="company-email">{t('office.company.email')}</FieldLabel>
-                <Input id="company-email" type="email" value={draft.email} onChange={set('email')} />
+                <Input id="company-email" type="email" {...register('email')} />
               </Field>
               <Field>
                 <FieldLabel htmlFor="company-timezone">{t('office.company.timezone')}</FieldLabel>
-                <NativeSelect
-                  id="company-timezone"
-                  value={draft.timezone}
-                  onChange={set('timezone')}
-                  className="w-full"
-                >
+                <NativeSelect id="company-timezone" className="w-full" {...register('timezone')}>
                   {TIMEZONES.map((tz) => (
                     <NativeSelectOption key={tz} value={tz}>
                       {t(`office.company.timezones.${tz}`)}
