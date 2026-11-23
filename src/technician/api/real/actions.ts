@@ -1,6 +1,7 @@
 // Ações do técnico: gravam no aparelho primeiro (Dexie) e acordam a fila; nada espera o servidor (offline.md).
 import { toast } from 'sonner';
 import { classifyRpcError } from '@/lib/errors';
+import { blankToNull } from '@/lib/input';
 import { supabase } from '@/lib/supabase';
 import { db, type Draft as LocalDraft } from '@/offline/db';
 import { dismissRefusal, enqueueMaterials, enqueueStart, enqueueSubmit, retryBlocked } from '@/offline/queue';
@@ -12,7 +13,6 @@ import { localSnapshot, parseDraftKey } from './local';
 import { queued } from './runner';
 
 const nowIso = () => new Date().toISOString();
-const blankToNull = (v: string | null) => (v && v.trim() !== '' ? v.trim() : null);
 
 function editingDraft(orderId: string, attemptId: string | null): Promise<LocalDraft | undefined> {
   const { userId } = current();

@@ -1,7 +1,8 @@
 // Leituras do técnico: o servidor (com o cache persistido para abrir sem sinal) mais o que está no aparelho.
 import { useQuery } from '@tanstack/react-query';
 import * as React from 'react';
-import { ApiError, classifyFunctionError, classifyRpcError } from '@/lib/errors';
+import { invokeFunction } from '@/lib/edge-functions';
+import { ApiError, classifyRpcError } from '@/lib/errors';
 import { type OrderRow, toOrderDetail } from '@/lib/order-detail';
 import { HISTORY_SELECT, ORDER_SELECT, photoUrls } from '@/lib/orders-query';
 import { supabase } from '@/lib/supabase';
@@ -21,12 +22,6 @@ import type { Draft, MyOrder, Read, TechOrder, TechSession } from '../types';
 import { current } from './context';
 import { parseDraftKey, photoData, seenPhotoUrl, useLocal } from './local';
 import { markOnline, useRunner } from './runner';
-
-async function invoke<T>(name: string, body: Record<string, unknown>): Promise<T> {
-  const { data, error } = await supabase.functions.invoke<T>(name, { body });
-  if (error) throw await classifyFunctionError(error);
-  return data as T;
-}
 
 /** Leitura que marca o sinal: deu certo, há sinal; falhou por rede, não há (Q7). */
 async function track<T>(read: () => Promise<T>): Promise<T> {
@@ -79,7 +74,7 @@ async function fetchOrder(id: string): Promise<OrderDetail | null> {
   try {
     urls = await photoUrls(
       row.executions.flatMap((e) => e.photos.map((p) => p.id)),
-      invoke,
+      invokeFunction,
     );
   } catch (error) {
     if (!(error instanceof ApiError) || !['network', 'server'].includes(error.errorClass)) throw error;

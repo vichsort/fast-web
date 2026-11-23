@@ -128,9 +128,6 @@ export function ScratchScenario({
 /** Classe de link de texto (O.S., cliente) dentro de tabelas e listas. */
 export const textLink = 'font-medium underline-offset-4 hover:underline';
 
-/** Remove a máscara do telefone (o banco guarda livre; os mocks guardam só os dígitos). */
-export const phoneDigits = (value: string) => value.replace(/\D/g, '');
-
 /**
  * `p_id` de uma criação (api.md, idempotência): um por abertura do diálogo, o mesmo em cada nova tentativa, para a
  * resposta perdida não virar um registro duplicado.

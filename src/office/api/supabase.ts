@@ -2,8 +2,10 @@
 // Functions (api.md do backend). Toda falha vira `ApiError` classificada; a tela trata pelo código (session.tsx).
 import type { PostgrestError } from '@supabase/supabase-js';
 import type { Database } from '@/lib/database.types';
-import type { MemberRole } from '@/lib/enums';
-import { ApiError, classifyFunctionError, classifyRpcError } from '@/lib/errors';
+import { invokeFunction } from '@/lib/edge-functions';
+import { type MemberRole, OVERDUE_STATUSES } from '@/lib/enums';
+import { ApiError, classifyRpcError } from '@/lib/errors';
+import { blankToNull, phoneDigitsOrNull } from '@/lib/input';
 import { type OrderRow, toOrderDetail } from '@/lib/order-detail';
 import { HISTORY_SELECT, ORDER_SELECT, PERSON, photoUrls } from '@/lib/orders-query';
 import { supabase } from '@/lib/supabase';
@@ -75,12 +77,6 @@ async function rpc<F extends keyof Functions>(fn: F, args: Functions[F]['Args'])
   return data as Functions[F]['Returns'];
 }
 
-export async function invoke<T>(name: string, body: Record<string, unknown>): Promise<T> {
-  const { data, error } = await supabase.functions.invoke<T>(name, { body });
-  if (error) throw await classifyFunctionError(error);
-  return data as T;
-}
-
 /**
  * Update direto (api.md): o RLS barra sem erro, com zero linhas, então pede a linha de volta e sem ela é `not_found`.
  * CHECK, UNIQUE e NOT NULL viram `invalid_input`.
@@ -92,13 +88,7 @@ async function update<R extends Response>(query: PromiseLike<R>): Promise<Data<R
   return data as Data<R>;
 }
 
-const blankToNull = (v: string | null | undefined) => (v && v.trim() !== '' ? v.trim() : null);
-/** Telefone só com dígitos, como os dados de exemplo (o link do WhatsApp e a busca usam os dígitos). */
-const phoneDigits = (v: string | null) => blankToNull(v?.replace(/\D/g, '') ?? null);
-
 // ---------------------------------------------------------------- O.S.
-
-const OVERDUE_STATUSES = ['open', 'in_progress', 'rejected'] as const;
 
 /** A lista de O.S. pede só o que a linha mostra (docs/e2e.md, D4); detalhe, revisão e dashboard usam ORDER_SELECT. */
 const ORDER_LIST_SELECT = `id, order_number, title, status, priority, service_type, due_at, client_id,
@@ -161,7 +151,7 @@ async function officeGetOrder(id: string): Promise<OrderDetail | null> {
   const photoIds = row.executions.flatMap((e) => e.photos.map((p) => p.id));
   let urls = new Map<string, string>();
   try {
-    urls = await photoUrls(photoIds, invoke);
+    urls = await photoUrls(photoIds, invokeFunction);
   } catch (error) {
     // Sem as URLs (rede ou servidor), a O.S. abre mesmo assim; as fotos voltam ao recarregar.
     if (!(error instanceof ApiError) || !['network', 'server'].includes(error.errorClass)) throw error;
@@ -337,7 +327,7 @@ async function createClient(input: {
     p_id: input.id,
     p_company_id: current().companyId,
     p_name: input.name.trim(),
-    p_phone: phoneDigits(input.phone) ?? undefined,
+    p_phone: phoneDigitsOrNull(input.phone) ?? undefined,
     p_notes: blankToNull(input.notes) ?? undefined,
     p_address: input.address ? addressPayload(input.address) : undefined,
   });
@@ -348,7 +338,7 @@ async function updateClient(id: string, input: { name: string; phone: string | n
   return update(
     supabase
       .from('clients')
-      .update({ name: input.name.trim(), phone: phoneDigits(input.phone), notes: blankToNull(input.notes) })
+      .update({ name: input.name.trim(), phone: phoneDigitsOrNull(input.phone), notes: blankToNull(input.notes) })
       .eq('id', id)
       .select('*')
       .maybeSingle(),
@@ -447,7 +437,7 @@ async function updateCompany(
 /** invite_member (06). Convite de quem já é membro ativo devolve o vínculo existente: `already`. */
 async function inviteMember(input: { email: string; full_name: string; role: MemberRole }, _actor: PersonRef) {
   const before = await officeListMembers();
-  const result = await invoke<{ member_id: string; user_id: string; reactivated: boolean }>('invite_member', {
+  const result = await invokeFunction<{ member_id: string; user_id: string; reactivated: boolean }>('invite_member', {
     company_id: current().companyId,
     email: input.email.trim(),
     full_name: input.full_name.trim(),
@@ -464,12 +454,15 @@ async function inviteMember(input: { email: string; full_name: string; role: Mem
 }
 
 async function updateMemberRole(memberId: string, role: MemberRole, _actor: PersonRef) {
-  const result = await invoke<{ closed_assignments: number }>('update_member_role', { member_id: memberId, role });
+  const result = await invokeFunction<{ closed_assignments: number }>('update_member_role', {
+    member_id: memberId,
+    role,
+  });
   return { closed_assignments: result.closed_assignments };
 }
 
 async function removeMember(memberId: string, reason: string, _actor: PersonRef) {
-  const result = await invoke<{ closed_assignments: number }>('remove_member', { member_id: memberId, reason });
+  const result = await invokeFunction<{ closed_assignments: number }>('remove_member', { member_id: memberId, reason });
   return { closed_assignments: result.closed_assignments };
 }
 

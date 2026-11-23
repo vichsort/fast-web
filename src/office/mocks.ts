@@ -5,6 +5,7 @@
 import { ACTIVE_ORDER_STATUSES, type MemberRole } from '@/lib/enums';
 import { ApiError } from '@/lib/errors';
 import { calendarDay } from '@/lib/format';
+import { blankToNull, phoneDigitsOrNull } from '@/lib/input';
 import { isOverdue } from '@/lib/order-detail';
 import type {
   AuditView,
@@ -296,7 +297,6 @@ export async function officeSessionUser(role: 'owner' | 'manager'): Promise<Prof
 
 // ---------------------------------------------------------------- ações: O.S. (03)
 
-const blankToNull = (v: string | null | undefined) => (v && v.trim() !== '' ? v.trim() : null);
 /** Fim do dia no fuso da empresa (03, R5). O fuso de exemplo (São Paulo) não tem horário de verão. */
 const dueAt = (date: string | null) => (date ? new Date(`${date}T23:59:59.999-03:00`).toISOString() : null);
 
@@ -570,7 +570,7 @@ export async function createClient(input: {
     id: input.id,
     company_id: s.company.id,
     name: input.name.trim(),
-    phone: blankToNull(input.phone?.replace(/\D/g, '') ?? null),
+    phone: phoneDigitsOrNull(input.phone),
     notes: blankToNull(input.notes),
     created_at: now(),
     deleted_at: null,
@@ -590,7 +590,7 @@ export async function updateClient(
   const c = activeClient(s, id);
   if (!input.name.trim()) fail('invalid_input');
   c.name = input.name.trim();
-  c.phone = blankToNull(input.phone?.replace(/\D/g, '') ?? null);
+  c.phone = phoneDigitsOrNull(input.phone);
   c.notes = blankToNull(input.notes);
   return wait(c);
 }
@@ -836,7 +836,7 @@ export async function updateProfile(id: string, input: { full_name: string; phon
   const next = {
     ...current,
     full_name: input.full_name.trim(),
-    phone: blankToNull(input.phone?.replace(/\D/g, '') ?? null),
+    phone: phoneDigitsOrNull(input.phone),
     updated_at: now(),
   };
   profiles.set(id, next);

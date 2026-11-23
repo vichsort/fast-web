@@ -1,5 +1,6 @@
 // Montagem da O.S. como as telas leem (escritório e técnico), a partir da linha de `service_orders` com as relações
 // embutidas (ORDER_SELECT em src/lib/orders-query.ts). Vale para os dados reais e para os de exemplo.
+import { OVERDUE_STATUSES } from '@/lib/enums';
 import type {
   Assignment,
   AttemptView,
@@ -32,8 +33,6 @@ export interface OrderRow extends ServiceOrder {
   /** Só no detalhe. */
   history?: (HistoryEvent & { actor: PersonRef | null })[];
 }
-
-const OVERDUE_STATUSES: readonly string[] = ['open', 'in_progress', 'rejected'];
 
 /** 03, R6: prazo vencido em open, in_progress ou rejected. */
 export function isOverdue(o: Pick<ServiceOrder, 'due_at' | 'status'>, now: number): boolean {

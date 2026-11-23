@@ -12,6 +12,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { formatDate, formatOrderNumber, formatPhone } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import { ptBR } from '@/lib/i18n/pt-BR';
+import { phoneDigitsOrNull } from '@/lib/input';
 import { updateCompany } from '../api';
 import { useOffice, useOfficeAction } from '../session';
 import { OwnerOnly } from '../shared';
@@ -48,7 +49,7 @@ function CompanyForm() {
     if (!draft.name.trim()) return setShowErrors(true);
     setSaving(true);
     await run(t('office.company.saved'), () =>
-      updateCompany({ ...draft, phone: draft.phone.replace(/\D/g, '') || null }, actor),
+      updateCompany({ ...draft, phone: phoneDigitsOrNull(draft.phone) }, actor),
     );
     setSaving(false);
   }

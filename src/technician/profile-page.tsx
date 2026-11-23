@@ -16,6 +16,7 @@ import { Switch } from '@/components/ui/switch';
 import { UserAvatar } from '@/components/user';
 import { formatPhone } from '@/lib/format';
 import { t } from '@/lib/i18n';
+import { phoneDigitsOrNull } from '@/lib/input';
 import { act, useOffline } from './act';
 import { saveProfile, usePendingItems, useSimulatedOffline, useTechSession } from './api';
 
@@ -67,7 +68,7 @@ function Profile({ data }: { data: NonNullable<ReturnType<typeof useTechSession>
             setTouched(true);
             if (nameInvalid) return;
             void act(
-              saveProfile({ full_name: name.trim(), phone: phone.replace(/\D/g, '') || null }),
+              saveProfile({ full_name: name.trim(), phone: phoneDigitsOrNull(phone) }),
               t('technician.profile.save'),
             );
           }}

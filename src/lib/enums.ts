@@ -17,3 +17,6 @@ export const PHOTO_SOURCES = Constants.public.Enums.photo_source;
 
 /** Status em que a O.S. ainda anda (não `approved` nem `cancelled`). */
 export const ACTIVE_ORDER_STATUSES: readonly OrderStatus[] = ['open', 'in_progress', 'pending_approval', 'rejected'];
+
+/** Status em que o prazo vencido deixa a O.S. atrasada (03, R6). */
+export const OVERDUE_STATUSES: readonly OrderStatus[] = ['open', 'in_progress', 'rejected'];

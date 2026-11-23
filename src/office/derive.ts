@@ -4,6 +4,7 @@
 import { ACTIVE_ORDER_STATUSES } from '@/lib/enums';
 import { ApiError, classifyRpcError, type RpcError } from '@/lib/errors';
 import { calendarDay } from '@/lib/format';
+import { phoneDigits } from '@/lib/input';
 import { isOverdue } from '@/lib/order-detail';
 import type {
   Assignment,
@@ -84,7 +85,7 @@ export function clientMatches(c: Pick<Client, 'name' | 'phone'>, search: string)
   const q = search.trim().toLowerCase();
   if (!q) return true;
   const digits = q.replace(/\D/g, '');
-  return c.name.toLowerCase().includes(q) || (digits.length > 0 && (c.phone ?? '').replace(/\D/g, '').includes(digits));
+  return c.name.toLowerCase().includes(q) || (digits.length > 0 && phoneDigits(c.phone ?? '').includes(digits));
 }
 
 /** Falha de um update direto: CHECK, UNIQUE e NOT NULL são dado fora da regra (errors.md, `invalid_input`). */
