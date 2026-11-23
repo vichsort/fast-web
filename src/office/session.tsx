@@ -28,7 +28,8 @@ export function useOffice(): OfficeSession {
   return value;
 }
 
-export type ActionResult<T> = { ok: true; value: T } | { ok: false; code: string };
+/** Na falha, `details` é o do erro de regra (errors.md: `conflict` traz o texto atual), senão `null`. */
+export type ActionResult<T> = { ok: true; value: T } | { ok: false; code: string; details: unknown };
 
 /**
  * Roda uma ação: em caso de sucesso, recarrega as leituras do escritório e avisa (com os dados de exemplo, o aviso de
@@ -56,7 +57,7 @@ export function useOfficeAction() {
           void queryClient.invalidateQueries({ queryKey: ['office'] });
         }
         if (!options.inline?.includes(code)) toast.error(errorMessage(code));
-        return { ok: false, code };
+        return { ok: false, code, details: error instanceof ApiError ? error.details : null };
       }
     },
     [queryClient],

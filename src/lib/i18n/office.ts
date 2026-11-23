@@ -118,6 +118,13 @@ export const officeTexts = {
     quickClientAction: 'Cadastrar cliente',
     lockedTitle: 'Esta O.S. não pode mais ser editada',
     errorTitle: 'Preencha o cliente, o título e o tipo de serviço.',
+    conflictTitle: 'Os materiais mudaram enquanto você editava',
+    conflictBody:
+      'Nada foi salvo: o texto da O.S. foi alterado por outra pessoa (o técnico, por exemplo). Escolha qual fica; dá para ajustar no campo abaixo antes de salvar.',
+    conflictCurrent: 'Texto atual da O.S.',
+    conflictMine: 'O seu texto',
+    conflictEmpty: 'Sem texto',
+    conflictChoose: 'Escolha qual texto fica antes de salvar.',
   },
 
   orderDetail: {

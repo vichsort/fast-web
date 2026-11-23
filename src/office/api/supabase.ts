@@ -23,7 +23,8 @@ import type {
 } from '@/lib/views';
 import { type ClientRow, directWriteError, type OrderListRow, toClientListItem, toOrderListItem } from '../derive';
 import { readAll } from './read-all';
-import type { AddressInput, OfficeApi, OrderInput } from './types';
+import type { AddressInput, OfficeApi, OrderEdit, OrderInput } from './types';
+import { updateOrderArgs } from './update-order';
 import { createZipLookup } from './viacep';
 
 type Functions = Database['public']['Functions'];
@@ -171,20 +172,9 @@ async function createOrder(input: OrderInput & { id: string }, _actor: PersonRef
   return { id: order.id, order_number: order.order_number };
 }
 
-async function updateOrder(
-  id: string,
-  input: Omit<OrderInput, 'client_id' | 'materials_notes' | 'assignee_ids'>,
-  _actor: PersonRef,
-) {
-  await rpc('update_order', {
-    p_order_id: id,
-    p_title: input.title,
-    p_instructions: blankToNull(input.instructions) ?? undefined,
-    p_priority: input.priority,
-    p_due_date: input.due_date ?? undefined,
-    p_service_type: input.service_type,
-    p_client_address_id: input.client_address_id ?? undefined,
-  });
+/** update_order (03): campos, materiais e técnicos numa transação só; `conflict` traz `details.current`. */
+async function updateOrder(id: string, edit: OrderEdit, _actor: PersonRef) {
+  await rpc('update_order', updateOrderArgs(id, edit));
 }
 
 async function setAssignees(id: string, ids: string[], _actor: PersonRef) {

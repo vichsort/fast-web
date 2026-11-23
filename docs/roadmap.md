@@ -62,6 +62,7 @@ Esboço visual do sistema inteiro antes da integração real, pedido em 2026-11-
 - [x] O.S.: criar, editar, atribuir, cancelar, histórico.
 - [x] Revisão: aprovar, rejeitar, ciência dos tardios, alertas.
 - [x] Empresa, membros e auditoria (owner).
+- [x] Editar O.S. numa transação só (`update_order` com materiais e técnicos) e `conflict` dos materiais resolvido no formulário.
 - [x] Pendências do escritório: CEP pelo ViaCEP. Sem tela de importação de clientes e sem email na lista de membros ([screens-office.md](screens-office.md#decisões)).
 
 ## 5. Produção

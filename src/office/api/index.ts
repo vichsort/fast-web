@@ -49,4 +49,4 @@ export const {
 export const bindSession = usingMocks ? () => {} : bindOfficeSession;
 
 export { addressText, seenUntil } from '../derive';
-export type { AddressInput, OrderInput } from './types';
+export type { AddressInput, OrderEdit, OrderInput } from './types';

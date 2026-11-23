@@ -37,7 +37,7 @@ import {
   MOCK_USER_IDS,
 } from '@/mocks';
 import { emails } from '@/mocks/data';
-import type { AddressInput, OrderInput } from './api/types';
+import type { AddressInput, OrderEdit, OrderInput } from './api/types';
 import type { ZipLookup } from './api/viacep';
 import { addressText, orderMatches, seenUntil } from './derive';
 
@@ -46,8 +46,8 @@ const wait = <T>(value: T): Promise<T> =>
   new Promise((resolve) => setTimeout(() => resolve(structuredClone(value)), LATENCY));
 
 /** Recusa por regra, com o código do catálogo (errors.md), como o banco devolveria. */
-const fail = (code: string): never => {
-  throw new ApiError('rule', code, code);
+const fail = (code: string, details: unknown = null): never => {
+  throw new ApiError('rule', code, code, details);
 };
 
 // ---------------------------------------------------------------- a cópia em memória
@@ -360,22 +360,29 @@ export async function createOrder(input: OrderInput & { id: string }, actor: Per
   return wait({ id: order.id, order_number: order.order_number });
 }
 
-/** update_order: substitui os campos editáveis; evento só do que mudou. */
-export async function updateOrder(
-  id: string,
-  input: Omit<OrderInput, 'client_id' | 'materials_notes' | 'assignee_ids'>,
-  actor: PersonRef,
-): Promise<void> {
+/**
+ * update_order: substitui os campos editáveis (evento só do que mudou) e, opcionalmente, materiais (R11) e técnicos,
+ * numa transação só: confere tudo antes de mudar a cópia, e qualquer recusa não grava nada.
+ */
+export async function updateOrder(id: string, edit: OrderEdit, actor: PersonRef): Promise<void> {
   const s = await store();
   const o = findOrder(s, id);
   ensureEditable(o);
-  if (!blankToNull(input.title)) fail('invalid_input');
+  if (!blankToNull(edit.title)) fail('invalid_input');
+  const address =
+    edit.client_address_id !== o.client_address_id ? addressOf(s, o.client_id, edit.client_address_id) : null;
+  const materials = edit.materials && blankToNull(edit.materials.text);
+  if (edit.materials && o.materials_notes !== materials && o.materials_notes !== blankToNull(edit.materials.expected)) {
+    fail('conflict', { current: o.materials_notes });
+  }
+  if (edit.assignee_ids?.some((userId) => !isTechnician(s, userId))) fail('invalid_input');
+
   const next = {
-    title: input.title.trim(),
-    instructions: blankToNull(input.instructions),
-    priority: input.priority,
-    due_at: dueAt(input.due_date),
-    service_type: input.service_type,
+    title: edit.title.trim(),
+    instructions: blankToNull(edit.instructions),
+    priority: edit.priority,
+    due_at: dueAt(edit.due_date),
+    service_type: edit.service_type,
   };
   const changes: Record<string, { from: unknown; to: unknown }> = {};
   for (const field of Object.keys(next) as (keyof typeof next)[]) {
@@ -389,8 +396,7 @@ export async function updateOrder(
         : from === to;
     if (!same) changes[field] = { from, to };
   }
-  if (input.client_address_id !== o.client_address_id) {
-    const address = addressOf(s, o.client_id, input.client_address_id);
+  if (edit.client_address_id !== o.client_address_id) {
     const to = { client_address_id: address?.id ?? null, address: address ? addressText(address) : null };
     pushHistory(s, o, actor, 'address_changed', {
       from: { client_address_id: o.client_address_id, address: o.address },
@@ -404,8 +410,16 @@ export async function updateOrder(
     Object.assign(o, Object.fromEntries(Object.entries(changes).map(([k, v]) => [k, v.to])));
     pushHistory(s, o, actor, 'updated', { changes });
   }
+  if (materials !== undefined && o.materials_notes !== materials) {
+    pushHistory(s, o, actor, 'materials_updated', { from: o.materials_notes, to: materials });
+    o.materials_notes = materials;
+  }
+  if (edit.assignee_ids) applyAssignees(s, o, edit.assignee_ids, actor, 'unassigned');
   return void (await wait(null));
 }
+
+const isTechnician = (s: Store, userId: string) =>
+  s.members.some((m) => m.user_id === userId && m.role === 'technician' && m.deleted_at === null);
 
 function applyAssignees(s: Store, o: OrderDetail, ids: string[], actor: PersonRef, cause: string) {
   const at = now();
@@ -459,7 +473,7 @@ export async function updateMaterials(
   ensureEditable(o);
   const next = blankToNull(text);
   if (o.materials_notes === next) return void (await wait(null));
-  if (o.materials_notes !== blankToNull(expected)) fail('conflict');
+  if (o.materials_notes !== blankToNull(expected)) fail('conflict', { current: o.materials_notes });
   pushHistory(s, o, actor, 'materials_updated', { from: o.materials_notes, to: next });
   o.materials_notes = next;
   return void (await wait(null));

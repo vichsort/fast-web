@@ -34,6 +34,17 @@ export interface OrderInput {
   assignee_ids: string[];
 }
 
+/**
+ * Edição da O.S. num `update_order` só (03): os campos sempre (estado final); os materiais só se o usuário mexeu no
+ * campo, e os técnicos só se o conjunto mudou. Qualquer recusa desfaz tudo.
+ */
+export interface OrderEdit extends Omit<OrderInput, 'client_id' | 'materials_notes' | 'assignee_ids'> {
+  /** Texto novo (vazio apaga) e o texto que a tela carregou (R11): diferente do atual no banco dá `conflict`. */
+  materials?: { text: string; expected: string | null };
+  /** Conjunto final; `[]` tira todos. */
+  assignee_ids?: string[];
+}
+
 /** Campos de um endereço do cliente (02). */
 export interface AddressInput {
   label: string | null;
@@ -71,11 +82,8 @@ export interface OfficeApi {
 
   // ---------------------------------------------------------------- O.S. (03)
   createOrder(input: OrderInput & { id: string }, actor: PersonRef): Promise<{ id: string; order_number: number }>;
-  updateOrder(
-    id: string,
-    input: Omit<OrderInput, 'client_id' | 'materials_notes' | 'assignee_ids'>,
-    actor: PersonRef,
-  ): Promise<void>;
+  /** `conflict` nos materiais traz o texto atual em `details.current` (errors.md). */
+  updateOrder(id: string, edit: OrderEdit, actor: PersonRef): Promise<void>;
   setAssignees(id: string, ids: string[], actor: PersonRef): Promise<void>;
   updateMaterials(id: string, text: string | null, expected: string | null, actor: PersonRef): Promise<void>;
   cancelOrder(id: string, reason: string, actor: PersonRef): Promise<void>;

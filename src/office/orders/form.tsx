@@ -1,6 +1,7 @@
-// Criar e editar O.S. (03: create_order; update_order + update_materials_notes + set_assignees na edição).
+// Criar e editar O.S. (03: create_order; na edição, um update_order só, com materiais e técnicos quando mudaram).
+// `conflict` nos materiais (R11) aparece no lugar: o texto atual ao lado do digitado, e só salva depois da escolha.
 import { getRouteApi, Link, useNavigate } from '@tanstack/react-router';
-import { Lock, MapPinPlus, TriangleExclamationPoint } from 'lucide-react';
+import { GitCompareArrows, Lock, MapPinPlus, TriangleExclamationPoint } from 'lucide-react';
 import * as React from 'react';
 import { ToneBadge } from '@/components/badges';
 import { Notice } from '@/components/notice';
@@ -21,12 +22,13 @@ import { calendarDay, formatOrderNumber, formatPhone } from '@/lib/format';
 import { errorMessage, t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { OrderDetail } from '@/lib/views';
-import { addressText, createOrder, setAssignees, updateMaterials, updateOrder } from '../api';
+import { addressText, createOrder, updateOrder } from '../api';
 import { AddressDialog } from '../clients/address-form';
 import { QuickClientDialog } from '../clients/client-form';
 import { useClient, useClients, useOrder, useTechnicians } from '../queries';
 import { useOffice, useOfficeAction } from '../session';
 import { ChoiceCards, NotFound } from '../shared';
+import { conflictCurrent, NO_ADDRESS, orderEdit } from './edit';
 
 const newRoute = getRouteApi('/office/orders/new');
 const editRoute = getRouteApi('/office/orders/$orderId/edit');
@@ -63,7 +65,12 @@ export function OrderEditPage() {
   return <OrderForm order={o} />;
 }
 
-const NO_ADDRESS = 'none';
+/** Materiais recusados por `conflict`: o texto digitado, o atual do banco e qual dos dois o usuário escolheu. */
+interface MaterialsConflictState {
+  mine: string;
+  current: string;
+  choice: 'mine' | 'current' | null;
+}
 
 function OrderForm({ order, initialClientId = null }: { order?: OrderDetail; initialClientId?: string | null }) {
   const { timeZone, actor } = useOffice();
@@ -87,6 +94,16 @@ function OrderForm({ order, initialClientId = null }: { order?: OrderDetail; ini
   const [submitting, setSubmitting] = React.useState(false);
   const [quickClient, setQuickClient] = React.useState<string | null>(null);
   const [addingAddress, setAddingAddress] = React.useState(false);
+  // O que a tela carregou: a base do "mudou?" dos materiais e dos técnicos, e o `expected` dos materiais até um
+  // `conflict` mostrar o texto atual (as leituras recarregam depois da recusa; o carregado não muda com elas).
+  const [loaded] = React.useState(() => ({
+    materials_notes: order?.materials_notes ?? null,
+    assignee_ids: order?.assignees.map((a) => a.id) ?? [],
+  }));
+  const [expected, setExpected] = React.useState(loaded.materials_notes);
+  const [conflict, setConflict] = React.useState<MaterialsConflictState | null>(null);
+  const [conflictUnchosen, setConflictUnchosen] = React.useState(false);
+  const conflictRef = React.useRef<HTMLDivElement>(null);
 
   const clients = useClients();
   const client = useClient(clientId);
@@ -132,16 +149,43 @@ function OrderForm({ order, initialClientId = null }: { order?: OrderDetail; ini
       if (result.ok) void navigate({ to: '/office/orders/$orderId', params: { orderId: result.value.id } });
       return;
     }
-    const before = order.assignees.map((a) => a.id).sort();
-    const result = await run(t('office.orderForm.saved'), async () => {
-      await updateOrder(order.id, fields, actor);
-      if ((materials.trim() || null) !== order.materials_notes) {
-        await updateMaterials(order.id, materials, order.materials_notes, actor);
-      }
-      if ([...assignees].sort().join() !== before.join()) await setAssignees(order.id, assignees, actor);
+    // Depois de um `conflict`, só salva com a escolha feita: nunca grava por cima do texto atual sem mostrá-lo.
+    if (conflict && conflict.choice === null) {
+      setSubmitting(false);
+      setConflictUnchosen(true);
+      requestAnimationFrame(() => conflictRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus());
+      return;
+    }
+    const edit = orderEdit(
+      loaded,
+      { ...fields, address_id: addressId, instructions, materials, assignee_ids: assignees },
+      expected,
+    );
+    const result = await run(t('office.orderForm.saved'), () => updateOrder(order.id, edit, actor), {
+      inline: ['conflict'],
     });
     setSubmitting(false);
-    if (result.ok) void navigate({ to: '/office/orders/$orderId', params: { orderId: order.id } });
+    if (result.ok) {
+      void navigate({ to: '/office/orders/$orderId', params: { orderId: order.id } });
+      return;
+    }
+    if (result.code === 'conflict') {
+      setConflict({ mine: materials, current: conflictCurrent(result.details), choice: null });
+      setConflictUnchosen(false);
+      requestAnimationFrame(() => {
+        conflictRef.current?.scrollIntoView({ block: 'center' });
+        conflictRef.current?.focus();
+      });
+    }
+  }
+
+  function chooseMaterials(choice: 'mine' | 'current') {
+    if (!conflict) return;
+    setConflict({ ...conflict, choice });
+    setConflictUnchosen(false);
+    setMaterials(conflict[choice]);
+    // O texto atual já foi mostrado: é ele que o banco tem que ter para gravar a escolha.
+    setExpected(conflict.current || null);
   }
 
   const activeAddresses = client.data?.addresses.filter((a) => a.deleted_at === null) ?? [];
@@ -376,6 +420,14 @@ function OrderForm({ order, initialClientId = null }: { order?: OrderDetail; ini
               </Field>
             </Section>
             <Section title={t('office.orderForm.sectionMaterials')}>
+              {conflict && (
+                <MaterialsConflict
+                  ref={conflictRef}
+                  conflict={conflict}
+                  onChoose={chooseMaterials}
+                  unchosen={conflictUnchosen}
+                />
+              )}
               <Field>
                 <FieldLabel htmlFor="order-materials">{t('office.orderForm.materials')}</FieldLabel>
                 <Textarea
@@ -422,5 +474,43 @@ function OrderForm({ order, initialClientId = null }: { order?: OrderDetail; ini
         />
       )}
     </>
+  );
+}
+
+/** `conflict` nos materiais (R11): o texto atual da O.S. ao lado do digitado; escolher um põe o texto no campo. */
+function MaterialsConflict({
+  ref,
+  conflict,
+  onChoose,
+  unchosen,
+}: {
+  ref: React.Ref<HTMLDivElement>;
+  conflict: MaterialsConflictState;
+  onChoose: (choice: 'mine' | 'current') => void;
+  /** Tentou salvar sem escolher. */
+  unchosen: boolean;
+}) {
+  const text = (value: string) => (
+    <span className="whitespace-pre-line">{value.trim() ? value : t('office.orderForm.conflictEmpty')}</span>
+  );
+  return (
+    <div ref={ref} tabIndex={-1} className="flex flex-col gap-3 outline-none">
+      <Notice tone="warning" icon={GitCompareArrows} layout="stacked" title={t('office.orderForm.conflictTitle')}>
+        {t('office.orderForm.conflictBody')}
+      </Notice>
+      <Field data-invalid={unchosen || undefined}>
+        <ChoiceCards
+          aria-label={t('office.orderForm.conflictTitle')}
+          value={conflict.choice}
+          onValueChange={onChoose}
+          invalid={unchosen}
+          options={[
+            { value: 'current', label: t('office.orderForm.conflictCurrent'), description: text(conflict.current) },
+            { value: 'mine', label: t('office.orderForm.conflictMine'), description: text(conflict.mine) },
+          ]}
+        />
+        {unchosen && <FieldError>{t('office.orderForm.conflictChoose')}</FieldError>}
+      </Field>
+    </div>
   );
 }
