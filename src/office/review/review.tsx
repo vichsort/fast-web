@@ -12,7 +12,8 @@ import {
   TriangleExclamationPoint,
 } from 'lucide-react';
 import * as React from 'react';
-import { AlertBadge, OrderStatusBadge, PriorityBadge, ServiceTypeBadge } from '@/components/badges';
+import { AlertList } from '@/components/alert-list';
+import { OrderStatusBadge, PriorityBadge, ServiceTypeBadge } from '@/components/badges';
 import { ConfirmDialog, ReasonDialog } from '@/components/dialogs';
 import { ExecutionCard } from '@/components/execution-card';
 import { Notice } from '@/components/notice';
@@ -20,7 +21,7 @@ import { DueLabel } from '@/components/order-card';
 import { PageHeader } from '@/components/page-header';
 import { DetailItem, DetailList, Section } from '@/components/section';
 import { LoadingDetail } from '@/components/states';
-import { alertVar, statusVar } from '@/components/tone';
+import { statusVar } from '@/components/tone';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Field, FieldLabel } from '@/components/ui/field';
@@ -181,22 +182,15 @@ function ReviewView({
               {attempt.alerts.length === 0 && photoAlertCounts.length === 0 ? (
                 <p className="text-sm text-muted-foreground">{t('office.review.noAlerts')}</p>
               ) : (
-                <ul className="flex flex-col gap-1.5">
-                  {attempt.alerts.map((code) => (
-                    <li key={code} className={cn('tone-soft rounded-lg border px-3 py-2 text-xs', alertVar[code])}>
-                      <AlertBadge code={code} size="sm" variant="text" className="mb-0.5" />
-                      <p className="text-foreground/85">{t(`alerts.${code}`)}</p>
-                    </li>
-                  ))}
-                  {photoAlertCounts.map(({ code, count }) => (
-                    <li key={code} className={cn('tone-soft rounded-lg border px-3 py-2 text-xs', alertVar[code])}>
-                      <AlertBadge code={code} size="sm" variant="text" className="mb-0.5" />
-                      <p className="text-foreground/85">
-                        {t('office.review.photoAlertCount', { count, text: t(`alerts.${code}`) })}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
+                <AlertList
+                  alerts={[
+                    ...attempt.alerts.map((code) => ({ code })),
+                    ...photoAlertCounts.map(({ code, count }) => ({
+                      code,
+                      text: t('office.review.photoAlertCount', { count, text: t(`alerts.${code}`) }),
+                    })),
+                  ]}
+                />
               )}
             </div>
 

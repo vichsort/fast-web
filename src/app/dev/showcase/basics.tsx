@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { ClipboardList, Download, FileText, Plus, RotateCw, TriangleAlert } from 'lucide-react';
 import * as React from 'react';
+import { AlertList } from '@/components/alert-list';
 import {
   AlertBadge,
   CountBadge,
@@ -196,6 +197,11 @@ export function BadgesSection() {
           <OrderStatusBadge status="pending_approval" iconOnly />
           <PriorityBadge priority="urgent" iconOnly size="lg" />
         </Row>
+      </Demo>
+      <Demo label="AlertList" className="max-w-sm">
+        <AlertList
+          alerts={[{ code: 'late_delivery' }, { code: 'submitted_before_rejection' }, { code: 'gallery_without_exif' }]}
+        />
       </Demo>
     </ShowcaseSection>
   );

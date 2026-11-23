@@ -25,6 +25,7 @@ Biblioteca visual das duas interfaces: componentes do domínio em [`src/componen
 | `ReviewStatusBadge` | `badges.tsx` | revisão da tentativa | `status` | revisão |
 | `PhotoSourceBadge` | `badges.tsx` | câmera ou galeria | `source` | fotos |
 | `AlertBadge` | `badges.tsx` | alerta da prova fotográfica (texto longo na dica) | `code` (`PhotoAlert` ou `ExecutionAlert`) | revisão, fotos |
+| `AlertList` | `alert-list.tsx` | alertas por extenso: selo curto e texto num cartão no tom de cada alerta | `alerts` (`code` e, opcional, `text`; sem ele, `alerts.<código>`) | resumo da revisão |
 | `OverdueBadge`, `UnassignedBadge`, `LateSupplementBadge`, `NewBadge` | `badges.tsx` | atrasada, sem técnico, complemento tardio (`count`), não aberta no aparelho | — | listas |
 | `CountBadge` | `badges.tsx` | contador redondo (some com 0) | `count`, `tone`, `max` | menus, abas |
 | `PageHeader` | `page-header.tsx` | topo da tela | `title`, `description`, `eyebrow`, `meta`, `actions`, `back` (elemento ou callback), `size`, `sticky` | toda tela |
@@ -148,3 +149,4 @@ Linhas tipadas por `database.types.ts` em `data.ts` (datas relativas ao carregam
 - **2026-11-13** — Tabela de dados própria, sem TanStack Table. *Por quê:* ordenação e paginação simples bastam ao volume da Fast, e a v9 da biblioteca mudou a API.
 - **2026-11-13** — Vitrine no celular por iframe de 390 px. *Por quê:* só assim as media queries valem como no aparelho.
 - **2026-11-23** — Um `Notice` só para as duas interfaces (antes `Notice` no escritório e `Callout` no técnico), com `layout` `inline` e `stacked` que reproduzem os dois visuais sem mudança; o texto vai em `children`. *Por quê:* revisão do código: eram a mesma peça (tom, ícone, título, texto, ação) copiada em cada área; a diferença é só de densidade e de onde fica a ação. O `inline` mantém o `role="status"` que o do escritório tinha e o `stacked` continua sem, para não mudar o que o leitor de tela anuncia.
+- **2026-11-23** — Os alertas por extenso da revisão viram `AlertList`, não um `layout` do `Notice`. *Por quê:* revisão do código: os itens eram montados à mão com `tone-soft` na tela; o visual (selo no lugar do título, sem ícone, texto menor) é outro, e forçá-lo no `Notice` mudaria o desenho de um dos dois.
