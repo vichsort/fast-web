@@ -182,7 +182,7 @@ export function withLocalPhotos<A extends { photos: PhotoData[]; supplements: { 
   }));
 }
 
-/** Dias que a O.S. aprovada ou cancelada fica na lista do técnico (docs/screens-technician.md, Decisões). */
+/** Dias que a O.S. aprovada ou cancelada fica na lista do técnico (docs/decisions.md, Telas do técnico). */
 export const CLOSED_VISIBLE_DAYS = 7;
 const CLOSED_STATUSES: readonly string[] = ['approved', 'cancelled'];
 

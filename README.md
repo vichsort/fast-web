@@ -10,7 +10,8 @@ PWA do sistema de ordens de serviço da Fast Monitoramento: uma interface para o
 | [docs/queue.md](docs/queue.md)     | fila offline do técnico                |
 | [docs/photos.md](docs/photos.md)   | fotos: compressão, EXIF, alertas       |
 | [docs/components.md](docs/components.md) | componentes, tema e dados de exemplo |
-| [docs/roadmap.md](docs/roadmap.md) | ordem de execução e o que já foi feito |
+| [docs/pending.md](docs/pending.md) | o que falta, no front e no backend |
+| [docs/decisions.md](docs/decisions.md) | decisões do front e do backend, com o porquê |
 | [CLAUDE.md](CLAUDE.md)             | como desenvolver aqui                  |
 
 ## Pré-requisitos

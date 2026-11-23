@@ -6,10 +6,9 @@ Regras de trabalho neste repositório. O backend (Supabase) fica no repositório
 
 - **Contrato no backend, tela aqui.** Regra de negócio, payload, código de erro e comportamento offline estão nos docs do backend; aqui só se documenta o que é do aparelho: telas, navegação, a fila, as fotos. Nada é copiado de lá: aponte com link.
 - **A doc manda.** Antes de implementar, leia o doc daqui e os do backend que ele cita. Se a implementação mostrar que a doc está errada ou incompleta, pare e pergunte. A correção vai no mesmo commit do código. Erro no contrato do backend é corrigido lá.
-- **Docs daqui:** [docs/screens.md](docs/screens.md) (telas por papel), [docs/queue.md](docs/queue.md) (fila offline), [docs/photos.md](docs/photos.md) (fotos), [docs/components.md](docs/components.md) (componentes, tema e dados de exemplo), [docs/e2e.md](docs/e2e.md) (pontos críticos e plano de E2E), [docs/roadmap.md](docs/roadmap.md) (ordem e o que já foi feito).
+- **Docs daqui:** [docs/screens.md](docs/screens.md) (telas por papel), [docs/queue.md](docs/queue.md) (fila offline), [docs/photos.md](docs/photos.md) (fotos), [docs/components.md](docs/components.md) (componentes, tema e dados de exemplo), [docs/e2e.md](docs/e2e.md) (pontos críticos e plano de E2E), [docs/pending.md](docs/pending.md) (o que falta, front e backend), [docs/decisions.md](docs/decisions.md) (decisões, front e backend).
 - **Sem bloat.** Tabela em vez de texto corrido, sem introdução.
-- **Decisão nova** entra em "Decisões" do doc, com data e o porquê. Decisão de arquitetura do sistema vai na spec do backend.
-- **Roadmap:** marque o item no mesmo commit do comportamento.
+- **Decisões e pendências dos dois repositórios ficam só aqui.** Decisão nova (do front ou do backend, inclusive de arquitetura) entra em [docs/decisions.md](docs/decisions.md), na seção do assunto, com data e o porquê. O que falta fazer fica em [docs/pending.md](docs/pending.md); item feito sai de lá no mesmo commit do comportamento. Os outros docs, aqui e no backend, não têm seção de decisões, pendências nem roadmap.
 - **Memória do Claude é por máquina** (o usuário alterna entre dois PCs). Nada que importe ao projeto fica só na memória.
 
 ## Regras de ouro
@@ -50,7 +49,7 @@ Regras de trabalho neste repositório. O backend (Supabase) fica no repositório
 3. Rodar e confirmar que falha pelo motivo esperado.
 4. O mínimo para passar.
 5. `npm run check` verde (lint, tipos e Vitest).
-6. Refatorar com tudo verde, marcar o roadmap e commitar.
+6. Refatorar com tudo verde, tirar o item de [pending.md](docs/pending.md) (se era um) e commitar.
 
 ## Git
 

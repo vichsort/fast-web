@@ -1,4 +1,4 @@
-// Fluxo central do técnico (roadmap, etapa 3): a execução feita sem sinal, com fotos da câmera e da galeria, entra
+// Fluxo central do técnico: a execução feita sem sinal, com fotos da câmera e da galeria, entra
 // na fila e chega ao servidor uma vez só quando o sinal volta (queue.md; ../fast/docs/offline.md).
 import { expect, type Page, test } from '@playwright/test';
 import { t } from '@/lib/i18n';

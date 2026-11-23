@@ -378,7 +378,7 @@ async function deleteClient(id: string, reason: string, _actor: PersonRef) {
 
 // ---------------------------------------------------------------- empresa, membros, auditoria e perfil (01, 05, 06)
 
-/** Vínculos da empresa com o perfil (sem email: decisão em docs/screens-office.md). */
+/** Vínculos da empresa com o perfil (sem email: docs/decisions.md, Telas do escritório). */
 async function officeListMembers(filters: { includeRemoved?: boolean } = {}): Promise<MemberView[]> {
   let query = supabase
     .from('company_members')

@@ -58,20 +58,3 @@ Cada bloco visual das telas grandes é um componente com nome, na ordem da tela,
 | "Nova" | tabela `seen` do Dexie, por usuário | em memória |
 | Fotos do servidor | guardadas como arquivo ao abrir a O.S. e mostradas pelo arquivo, inclusive sem sinal ([photos.md](photos.md), F8 a F10) | URLs de exemplo |
 | Mapa | desenho local, sem tiles | o mesmo |
-
-## Decisões
-
-- **2026-11-17** — Lista em grupos pelo que fazer (Refazer, A fazer, Aguardando, Encerradas recolhido), sem filtro. *Por quê:* poucas O.S. por técnico; o grupo já diz a próxima ação, e a rejeitada sobe com o motivo à vista.
-- **2026-11-17** — Aprovadas e canceladas ficam em "Encerradas", não somem. *Por quê:* a aprovada ainda aceita complemento (04, R5) e a cancelada explica a recusa `order_closed` em Pendências.
-- **2026-11-19** — "Encerradas" só com as dos últimos 7 dias depois do fechamento (`updated_at`, que nada muda depois de aprovar ou cancelar); a consulta já filtra e a lista em cache também. Com elas saem do aparelho as fotos guardadas ([photos.md](photos.md), F10). *Por quê:* a atribuição continua ativa depois de fechar (03, R14), então a lista e o cache cresceriam sem fim; a janela ainda cobre o complemento esquecido logo depois da aprovação e a explicação do `order_closed`.
-- **2026-11-19** — Sem complemento em tentativa rejeitada, embora o 04 (R5) aceite: depois da rejeição, a tela só oferece tentativa nova. *Por quê:* o complemento não muda o status; a O.S. ficaria `rejected` e o escritório só daria ciência de um tardio, sem revisar de novo, enquanto o técnico acha que resolveu.
-- **2026-11-17** — "Iniciar serviço" inicia e já abre a execução. *Por quê:* um toque a menos em campo; o início grava `client_started_at`, usado no alerta de foto da galeria.
-- **2026-11-17** — Envio novo passa por um painel de revisão; complemento vai direto. *Por quê:* a tentativa é imutável e o escritório revisa por ela; o complemento só soma.
-- **2026-11-17** — Participantes: a tentativa já vem com a dupla marcada; o complemento, só com quem envia. Quem saiu da O.S. aparece com o selo e pode ser marcado (R6). *Por quê:* a tentativa é feita em dupla; o complemento costuma ser de um só.
-- **2026-11-17** — Com um envio da O.S. na fila, a tela não oferece envio novo nem complemento. *Por quê:* o complemento precisa da tentativa no servidor; um segundo envio viraria complemento (R4) sem o técnico querer.
-- **2026-11-19** — Contrato explícito (`TechnicianApi`) com duas implementações, a real e a de exemplo, escolhidas pela mesma chave do escritório (`VITE_DATA_SOURCE`). *Por quê:* as telas não sabem de onde vêm os dados, e os dados de exemplo continuam úteis para testar as telas depois.
-- **2026-11-19** — Enviar põe sempre na fila e volta ao detalhe; a fila manda em seguida. *Por quê:* um caminho só (queue.md), com ou sem sinal; a tela não espera as fotos subirem.
-- **2026-11-19** — Texto e participantes do envio ficam na tela e vão para o rascunho a cada alteração, em ordem (uma gravação por vez). *Por quê:* o rascunho salvo volta pelo `liveQuery` com atraso, o que faria o cursor pular; em ordem, duas fotos seguidas não criam dois rascunhos.
-- **2026-11-19** — O cache das leituras guarda só consultas com sucesso e só do usuário da sessão. *Por quê:* o técnico abre o app sem sinal com a lista da última vez, sem misturar usuários no mesmo aparelho (offline.md).
-- **2026-11-19** — Depois de uma passada da fila com recusa, o app confere o vínculo ativo (a leitura de acesso); sem vínculo, a porta de entrada apaga o aparelho e sai. *Por quê:* a remoção do membro é detectada pelo app (queue.md, 2026-11-13); a recusa por regra é o sinal de que algo mudou.
-- **2026-11-19** — O aviso de armazenamento não protegido fica em Minhas O.S., não no perfil. *Por quê:* é onde o técnico passa o dia; o perfil quase não é aberto, e o risco (a prova sumir com o celular cheio) só some quando ele instala o app.

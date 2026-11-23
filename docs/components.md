@@ -142,15 +142,3 @@ Linhas tipadas por `database.types.ts` em `data.ts` (datas relativas ao carregam
 | `listPendingItems()`, `getSyncState()` | fila e indicador do aparelho |
 | `getSessionUser(papel)`, `getCompany()`, `getPerson(id)` | sessão simulada, empresa, nomes |
 | `MOCK_USER_IDS`, `MOCK_TIME_ZONE`, `setMockLatency(ms)`, `samplePhotoUrl(cena, semente)` | ids por papel, fuso, latência simulada (250 ms), foto de exemplo |
-
-## Decisões
-
-- **2026-11-23** — Formulários com React Hook Form + Zod, sem estado e validação à mão em cada tela. *Por quê:* cada tela repetia `useState` por campo, `showErrors` e a conferência dos obrigatórios; o schema junta numa peça só o que bloqueia o envio e a mensagem de cada campo, e o endereço é conferido igual no diálogo e no cadastro do cliente. As bibliotecas já eram do projeto (login).
-- **2026-11-13** — Cores por tom com `color-mix` em oklab, uma cor por significado. *Por quê:* um lugar só para trocar; oklch interpolaria o matiz pelo caminho curto e o âmbar misturado ao azul-marinho viraria rosa.
-- **2026-11-13** — Componentes sem router, navegação por `render`. *Por quê:* as duas interfaces e a vitrine usam as mesmas peças; o tipo da rota fica na tela.
-- **2026-11-13** — Tipos de props estruturais, não as views dos mocks. *Por quê:* a integração troca `src/mocks` sem mexer nos componentes.
-- **2026-11-13** — Responsividade interna por container query (tabela, grade de fotos, filtros, contadores) e da moldura por media query. *Por quê:* a mesma peça cabe numa coluna estreita, num painel lateral ou na tela cheia.
-- **2026-11-13** — Tabela de dados própria, sem TanStack Table. *Por quê:* ordenação e paginação simples bastam ao volume da Fast, e a v9 da biblioteca mudou a API.
-- **2026-11-13** — Vitrine no celular por iframe de 390 px. *Por quê:* só assim as media queries valem como no aparelho.
-- **2026-11-23** — Um `Notice` só para as duas interfaces (antes `Notice` no escritório e `Callout` no técnico), com `layout` `inline` e `stacked` que reproduzem os dois visuais sem mudança; o texto vai em `children`. *Por quê:* revisão do código: eram a mesma peça (tom, ícone, título, texto, ação) copiada em cada área; a diferença é só de densidade e de onde fica a ação. O `inline` mantém o `role="status"` que o do escritório tinha e o `stacked` continua sem, para não mudar o que o leitor de tela anuncia.
-- **2026-11-23** — Os alertas por extenso da revisão viram `AlertList`, não um `layout` do `Notice`. *Por quê:* revisão do código: os itens eram montados à mão com `tone-soft` na tela; o visual (selo no lugar do título, sem ícone, texto menor) é outro, e forçá-lo no `Notice` mudaria o desenho de um dos dois.

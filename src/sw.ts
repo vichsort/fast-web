@@ -37,7 +37,7 @@ self.addEventListener('message', (event) => {
 });
 
 // A mesma sessão da página (IndexedDB). O worker não lê links do Auth nem renova por timer: renova quando uma
-// chamada precisa, e a corrida com a página é resolvida pelo supabase-js e pelo servidor (docs/queue.md, Decisões).
+// chamada precisa, e a corrida com a página é resolvida pelo supabase-js e pelo servidor (docs/decisions.md, Fila offline).
 const supabase = createClient<Database>(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY, {
   auth: { storage: createAuthStorage(), persistSession: true, autoRefreshToken: false, detectSessionInUrl: false },
   global: { headers: VERSION_HEADERS, fetch: authTimeoutFetch((...args) => fetch(...args)) },
