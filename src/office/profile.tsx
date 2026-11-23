@@ -1,5 +1,9 @@
 // Meu perfil (01: update direto de profiles, nome e telefone) e sair (logout real, apaga os dados do navegador).
-import * as React from 'react';
+// React Hook Form + Zod: só o nome é obrigatório.
+import { zodResolver } from '@hookform/resolvers/zod';
+import type * as React from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 import { useAuth } from '@/app/auth-context';
 import { LogoutButton } from '@/app/logout-button';
 import { AppVersion } from '@/components/app-version';
@@ -12,28 +16,28 @@ import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from '@/components/user';
 import { formatPhone } from '@/lib/format';
+import { requiredText } from '@/lib/forms';
 import { t } from '@/lib/i18n';
 import { updateProfile } from './api';
 import { useOffice, useOfficeAction } from './session';
+
+const profileSchema = z.object({ name: requiredText(t('office.common.fieldRequired')), phone: z.string() });
 
 export function ProfilePage() {
   const { user, role, company } = useOffice();
   const { session } = useAuth();
   const run = useOfficeAction();
   const email = session?.user.email ?? '';
-  const [name, setName] = React.useState(user.full_name);
-  const [phone, setPhone] = React.useState(user.phone ? formatPhone(user.phone) : '');
-  const [saving, setSaving] = React.useState(false);
-  const [showErrors, setShowErrors] = React.useState(false);
-  const nameMissing = showErrors && !name.trim();
+  const form = useForm<z.infer<typeof profileSchema>>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: { name: user.full_name, phone: user.phone ? formatPhone(user.phone) : '' },
+  });
+  const { register, setValue } = form;
+  const { errors, isSubmitting } = form.formState;
 
-  async function submit(event: React.FormEvent) {
-    event.preventDefault();
-    if (!name.trim()) return setShowErrors(true);
-    setSaving(true);
+  const submit = form.handleSubmit(async ({ name, phone }) => {
     await run(t('office.profile.saved'), () => updateProfile(user.id, { full_name: name, phone }));
-    setSaving(false);
-  }
+  });
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
@@ -43,8 +47,8 @@ export function ProfilePage() {
           title={t('office.profile.sectionData')}
           footer={
             <div className="flex justify-end">
-              <Button type="submit" disabled={saving}>
-                {saving && <Spinner aria-hidden />}
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting && <Spinner aria-hidden />}
                 {t('office.common.saveChanges')}
               </Button>
             </div>
@@ -62,24 +66,20 @@ export function ProfilePage() {
           </div>
           <FieldGroup className="gap-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field data-invalid={nameMissing || undefined}>
+              <Field data-invalid={Boolean(errors.name) || undefined}>
                 <FieldLabel htmlFor="profile-name">{t('office.profile.name')}</FieldLabel>
-                <Input
-                  id="profile-name"
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  aria-invalid={nameMissing || undefined}
-                />
-                {nameMissing && <FieldError>{t('office.common.fieldRequired')}</FieldError>}
+                <Input id="profile-name" aria-invalid={Boolean(errors.name) || undefined} {...register('name')} />
+                {errors.name && <FieldError>{errors.name.message}</FieldError>}
               </Field>
               <Field>
                 <FieldLabel htmlFor="profile-phone">{t('office.profile.phone')}</FieldLabel>
                 <Input
                   id="profile-phone"
                   type="tel"
-                  value={phone}
-                  onChange={(event) => setPhone(event.target.value)}
-                  onBlur={() => phone && setPhone(formatPhone(phone))}
+                  {...register('phone', {
+                    onBlur: (event: React.FocusEvent<HTMLInputElement>) =>
+                      event.target.value && setValue('phone', formatPhone(event.target.value)),
+                  })}
                 />
               </Field>
             </div>
