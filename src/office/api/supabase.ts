@@ -29,11 +29,14 @@ type Functions = Database['public']['Functions'];
 
 // ---------------------------------------------------------------- sessão
 
-/** Quem está logado e em qual empresa: o layout liga antes de as telas lerem (layout.tsx). */
-let bound: { userId: string; companyId: string; timeZone: string } | null = null;
+/**
+ * Quem está logado e em qual empresa: o layout liga antes de as telas lerem (layout.tsx). Só identifica a sessão;
+ * nada derivado (fuso, empresa) fica aqui: o que a tela precisa vem da sessão do escritório (`useOffice`).
+ */
+let bound: { userId: string; companyId: string } | null = null;
 
 export function bindOfficeSession(session: { userId: string; companyId: string }) {
-  bound = { ...session, timeZone: bound?.companyId === session.companyId ? bound.timeZone : 'UTC' };
+  bound = { userId: session.userId, companyId: session.companyId };
 }
 
 function current() {
@@ -467,9 +470,7 @@ async function updateProfile(id: string, input: { full_name: string; phone: stri
 // ---------------------------------------------------------------- empresa e usuário
 
 async function officeCompany() {
-  const company = await one(supabase.from('companies').select('*').eq('id', current().companyId).maybeSingle());
-  if (bound) bound.timeZone = company.timezone;
-  return company;
+  return one(supabase.from('companies').select('*').eq('id', current().companyId).maybeSingle());
 }
 
 /** Técnicos com vínculo ativo, para atribuir e filtrar (03, R7). */
