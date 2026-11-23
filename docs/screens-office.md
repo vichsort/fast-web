@@ -40,6 +40,7 @@ Cada bloco visual das telas grandes é um componente com nome, na ordem da tela,
 | --- | --- | --- |
 | `/office/orders/$orderId` | [`orders/detail/`](../src/office/orders/detail/) | `OrderHeader` (topo e ações); `OrderNotices` (faixas `CancelledNotice`, `ApprovedNotice`, `PendingReviewNotice`, `LateSupplementsNotice`); principal: `OrderDataSection` (dados), `MaterialsSection`, `ExecutionsSection` (tentativas); lateral: `ClientSection` (cliente e local), `TechniciansSection`, `HistorySection`; diálogos `CancelOrderDialog`, `ReassignDialog` |
 | `/office/review/$orderId` | [`review/review/`](../src/office/review/review/) | `ReviewHeader`; `StaleNotice` (faixa do `stale_review`); principal: tentativa pendente (`ExecutionCard`), `PreviousAttempts` (recolhidas); lateral: `DecisionSection` (`ReviewSummary`, `ReviewAlerts`, `DecisionActions` com aprovar e rejeitar, cenário de exemplo), `OrderInfoSection` (prazo, endereço, instruções, materiais); fora da decisão: `DoneState` (resultado e próxima O.S.), `NotPending` |
+| `/office/clients/$clientId` | [`clients/detail/`](../src/office/clients/detail/) | `ClientHeader` (topo e ações); faixas `DeletedClientNotice`, `OpenOrdersNotice` (`client_has_open_orders`); lateral: `ClientDataSection` (dados), `AddressesSection` (com `AddressMenu` por endereço); principal: `ClientOrdersSection` (histórico de O.S.); diálogos `DeleteClientDialog`, `DeleteAddressDialog` (editar cliente e endereço: `client-form.tsx`, `address-form.tsx`) |
 
 ## Erros de regra na tela
 
