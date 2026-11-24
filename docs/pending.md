@@ -23,7 +23,6 @@ Relatórios completos: [segurança](reviews/2026-11-24-security.md) e [UI/UX](re
 
 | Item | Repo | O que fazer |
 | --- | --- | --- |
-| Texto no histórico (seg. A1) | backend | decidir se `materials_updated` e `updated.instructions` seguem com `from` e `to` (cada um até 4000 caracteres, [limite](../../fast/docs/api.md#tamanho-do-texto)) ou deixam de copiar o texto anterior |
 | Limite de texto nas telas (seg. A1) | front | `maxLength` de 200 e 4000 nos campos ([limite](../../fast/docs/api.md#tamanho-do-texto)): hoje o escritório só vê o erro depois de salvar, e o envio do técnico acima do limite é recusado depois de sair do aparelho |
 | O.S. enviada sem sinal segue "A fazer" (UX 2) | front | marcar "Enviada · na fila" e tirar da conta; faixa com "N envio(s) no aparelho"; selo de Pendências neutro para fila normal; texto neutro no painel e no aviso até a resposta |
 | "A fazer" fora da ordem do prazo (UX 3) | front | atrasadas, prazo, prioridade, sem prazo, número |
