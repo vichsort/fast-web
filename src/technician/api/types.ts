@@ -62,7 +62,8 @@ export interface Read<T> {
   isPending: boolean;
   isError: boolean;
   isFetching: boolean;
-  refetch: () => unknown;
+  /** Resolve com o resultado da nova leitura (`isError` quando ela falhou). */
+  refetch: () => Promise<{ isError: boolean; dataUpdatedAt: number }>;
 }
 
 export const draftKey = {

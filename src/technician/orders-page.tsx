@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { ChevronDown, CircleX, CloudUpload, HardDriveDownload, MessageSquareWarning, RotateCw } from 'lucide-react';
+import { toast } from 'sonner';
 import { Notice } from '@/components/notice';
 import { OrderCard } from '@/components/order-card';
 import { EmptyState, ErrorState, LoadingList } from '@/components/states';
@@ -10,6 +11,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { firstName, formatTime } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
+import { useOffline } from './act';
 import {
   type MyOrder,
   notify,
@@ -20,7 +22,7 @@ import {
   useTechSession,
   useTimeZone,
 } from './api';
-import { pendingOrderCounts, sortToDo } from './derive';
+import { pendingOrderCounts, refreshNotice, sortToDo } from './derive';
 import { GroupHeading } from './parts';
 
 /** Minhas O.S.: as atribuídas, agrupadas pelo que o técnico tem de fazer (docs/screens-technician.md). */
@@ -29,6 +31,7 @@ export function OrdersPage() {
   const orders = useMyOrders();
   const session = useTechSession().data;
   const sync = useSyncStatus();
+  const offline = useOffline();
   const storage = useStorageProtection();
   const pending = usePendingItems().data ?? [];
   const { attention: problems, onDevice } = pendingOrderCounts(pending);
@@ -63,9 +66,16 @@ export function OrdersPage() {
           className="size-11 shrink-0 rounded-full"
           aria-label={t('technician.orders.refresh')}
           disabled={orders.isFetching}
-          onClick={() => {
-            void orders.refetch();
-            notify(t('technician.orders.refreshed'));
+          onClick={async () => {
+            // Sem sinal, a leitura fica pausada até a rede voltar: o aviso sai já, com a hora da lista na tela.
+            const result = offline ? null : await orders.refetch();
+            if (offline) void orders.refetch();
+            const failed = result?.isError ?? false;
+            const at = result && !failed ? new Date(result.dataUpdatedAt).toISOString() : (sync?.last_sync_at ?? null);
+            const notice = refreshNotice({ offline, failed, lastSyncAt: at });
+            const text = t(`technician.orders.${notice.key}`, { time: notice.time ? formatTime(notice.time, TZ) : '' });
+            if (notice.key === 'refreshedAt') notify(text);
+            else toast.warning(text);
           }}
         >
           {orders.isFetching ? <Spinner /> : <RotateCw className="size-5" />}

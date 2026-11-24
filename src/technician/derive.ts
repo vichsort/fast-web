@@ -285,3 +285,20 @@ export function sendNotice(result: 'sent' | 'queued', offline: boolean): 'sentTo
   if (result === 'sent') return 'sentToast';
   return offline ? 'queuedToast' : 'storedToast';
 }
+
+/**
+ * Aviso do "Atualizar" pelo resultado, nunca pelo pedido: lista nova com a hora dela; sem sinal (ou a leitura falhou), a
+ * hora da lista que continua na tela. `lastSyncAt`: a hora da lista na tela depois da tentativa.
+ */
+export function refreshNotice({
+  offline,
+  failed,
+  lastSyncAt,
+}: {
+  offline: boolean;
+  failed: boolean;
+  lastSyncAt: string | null;
+}): { key: 'refreshedAt' | 'refreshOffline' | 'refreshOfflineNever'; time: string | null } {
+  if (!offline && !failed) return { key: 'refreshedAt', time: lastSyncAt };
+  return lastSyncAt ? { key: 'refreshOffline', time: lastSyncAt } : { key: 'refreshOfflineNever', time: null };
+}

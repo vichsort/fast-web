@@ -5,6 +5,7 @@ import {
   type LocalState,
   pendingItems,
   pendingOrderCounts,
+  refreshNotice,
   sendNotice,
   sortToDo,
   toMyOrder,
@@ -486,5 +487,26 @@ describe('pendingOrderCounts', () => {
         entry('o2', 'queued'),
       ]),
     ).toEqual({ attention: 1, onDevice: 1, total: 2 });
+  });
+});
+
+describe('refreshNotice', () => {
+  it('says the list was updated when the read came back', () => {
+    expect(refreshNotice({ offline: false, failed: false, lastSyncAt: at })).toEqual({ key: 'refreshedAt', time: at });
+  });
+
+  it('without signal, or when the read failed, says which list is on screen', () => {
+    expect(refreshNotice({ offline: true, failed: false, lastSyncAt: at })).toEqual({
+      key: 'refreshOffline',
+      time: at,
+    });
+    expect(refreshNotice({ offline: false, failed: true, lastSyncAt: at })).toEqual({
+      key: 'refreshOffline',
+      time: at,
+    });
+    expect(refreshNotice({ offline: true, failed: false, lastSyncAt: null })).toEqual({
+      key: 'refreshOfflineNever',
+      time: null,
+    });
   });
 });

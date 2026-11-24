@@ -161,7 +161,13 @@ export function usePendingItems(): Read<PendingItem[]> {
     );
     return pendingItems(local, refs, { now: Date.now(), sending: runner.running });
   }, [local, orders, runner.running]);
-  return { data, isPending: !local, isError: false, isFetching: runner.running, refetch: () => undefined };
+  return {
+    data,
+    isPending: !local,
+    isError: false,
+    isFetching: runner.running,
+    refetch: async () => ({ isError: false, dataUpdatedAt: Date.now() }),
+  };
 }
 
 export function useQueueDraft(itemId: string): Pick<Draft, 'description' | 'photos'> | null {
