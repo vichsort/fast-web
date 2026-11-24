@@ -1,9 +1,8 @@
 import { Link } from '@tanstack/react-router';
-import { ChevronDown, CircleX, HardDriveDownload, MessageSquareWarning, RotateCw } from 'lucide-react';
+import { ChevronDown, CircleX, CloudUpload, HardDriveDownload, MessageSquareWarning, RotateCw } from 'lucide-react';
 import { Notice } from '@/components/notice';
 import { OrderCard } from '@/components/order-card';
 import { EmptyState, ErrorState, LoadingList } from '@/components/states';
-import { SyncIndicator } from '@/components/sync';
 import { statusVar } from '@/components/tone';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -32,6 +31,7 @@ export function OrdersPage() {
   const storage = useStorageProtection();
   const pending = usePendingItems().data ?? [];
   const problems = pending.filter((i) => i.state === 'refused' || i.state === 'blocked').length;
+  const onDevice = pending.length - problems;
 
   const list = orders.data ?? [];
   const rejected = list.filter((o) => o.status === 'rejected');
@@ -78,12 +78,16 @@ export function OrdersPage() {
         </Notice>
       )}
 
-      {problems > 0 ? (
+      {(problems > 0 || onDevice > 0) && (
         <Notice
           layout="stacked"
-          tone="danger"
-          icon={CircleX}
-          title={t('technician.orders.problemNotice', { count: problems })}
+          tone={problems > 0 ? 'danger' : 'progress'}
+          icon={problems > 0 ? CircleX : CloudUpload}
+          title={
+            problems > 0
+              ? t('technician.orders.problemNotice', { count: problems })
+              : t('technician.orders.queueNotice', { count: onDevice })
+          }
           action={
             <Button
               variant="outline"
@@ -95,13 +99,9 @@ export function OrdersPage() {
             </Button>
           }
         >
-          {t('technician.orders.problemNoticeHint')}
+          {problems > 0 ? t('technician.orders.problemNoticeHint') : t('technician.orders.queueNoticeHint')}
+          {problems > 0 && onDevice > 0 && <> {t('technician.orders.queueAlso', { count: onDevice })}</>}
         </Notice>
-      ) : (
-        sync &&
-        sync.pending > 0 && (
-          <SyncIndicator status={sync} timeZone={TZ} variant="banner" render={<Link to="/technician/pending" />} />
-        )
       )}
 
       {orders.isPending ? (

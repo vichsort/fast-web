@@ -11,7 +11,8 @@ export const technicianTexts = {
     queueNotice: '{count} envio(s) ainda no aparelho',
     queueNoticeHint: 'Saem sozinhos quando houver sinal.',
     problemNotice: '{count} envio(s) precisam de você',
-    problemNoticeHint: 'Recusados ou com erro. Toque para ver.',
+    problemNoticeHint: 'Recusados ou com erro.',
+    queueAlso: 'Mais {count} envio(s) no aparelho, que saem sozinhos quando houver sinal.',
     storageDenied: 'O navegador pode apagar o que está no aparelho',
     storageDeniedHint:
       'Com o celular cheio, fotos e envios ainda não mandados podem sumir. Instale o app na tela inicial (menu do Chrome, "Instalar app") para protegê-los.',
