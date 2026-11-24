@@ -198,6 +198,12 @@ export function listMyOrders(userId: string): Promise<(OrderListItem & { is_new:
 }
 
 /** Detalhe da O.S. com cliente, endereço, atribuições, tentativas (com complementos e fotos) e histórico. */
+/** Nome do cliente da O.S. (para os itens da fila de exemplo). */
+export function clientNameOfOrder(orderId: string): string | null {
+  const o = orders.find((x) => x.id === orderId);
+  return allClients.find((c) => c.id === o?.client_id)?.name ?? null;
+}
+
 export function getOrder(id: string): Promise<OrderDetail | null> {
   const o = orders.find((x) => x.id === id || String(x.order_number) === id);
   if (!o) return delay(null);

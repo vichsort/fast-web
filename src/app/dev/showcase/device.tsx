@@ -90,7 +90,7 @@ export function SyncSection() {
                     ? () => scratchToast(t('ui.actions.dismiss'))
                     : undefined
                 }
-                onOpen={() => scratchToast(t('ui.actions.open'))}
+                onOpen={item.on_device ? () => scratchToast(t('ui.actions.open')) : undefined}
               />
             ))}
           </div>

@@ -9,6 +9,7 @@ import type { PhotoData } from '@/components/photos';
 import type { OrderStatus, PhotoSource } from '@/lib/enums';
 import type { OrderDetail, PendingItem, PersonRef, SyncState } from '@/lib/views';
 import {
+  clientNameOfOrder,
   getOrder,
   getPerson,
   getSessionUser,
@@ -143,6 +144,9 @@ function queueItem(order: OrderRef, kind: PendingItem['kind'], photos: number | 
     order_id: order.id,
     order_number: order.order_number,
     order_title: order.title,
+    client_name: clientNameOfOrder(order.id),
+    on_device: true,
+    cancel_reason: null,
     created_at: iso(Date.now()),
     next_attempt_at: iso(Date.now() + 30_000),
     refusal: null,

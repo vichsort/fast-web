@@ -146,6 +146,11 @@ export interface PendingItem {
   order_id: string;
   order_number: number;
   order_title: string;
+  client_name: string | null;
+  /** A O.S. ainda está no aparelho (o técnico não foi tirado dela): dá para abrir. */
+  on_device: boolean;
+  /** Motivo do cancelamento na recusa `order_closed`. */
+  cancel_reason: string | null;
   created_at: string;
   next_attempt_at: string | null;
   /** Código do catálogo (errors.md) quando recusado. */

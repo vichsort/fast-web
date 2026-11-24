@@ -284,6 +284,8 @@ export const uiTexts = {
     nextAttempt: 'Nova tentativa {time}',
     blockedHint: 'Erro inesperado. O envio continua guardado no aparelho; avise o escritório.',
     createdAt: 'Feito {time}',
+    cancelReason: 'Motivo do cancelamento: {reason}',
+    leftDevice: 'A O.S. saiu deste aparelho. O que foi feito continua guardado aqui.',
   },
 
   dialogs: {

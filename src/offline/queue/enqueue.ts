@@ -1,5 +1,5 @@
 // Entrada na fila (docs/queue.md, Q1): o que a tela chama quando o técnico age.
-import { type FastDb, QUEUE_ITEM_FORMAT, type QueueItem } from '../db';
+import { type FastDb, type OrderSnapshot, QUEUE_ITEM_FORMAT, type QueueItem } from '../db';
 
 type Fresh = Pick<
   QueueItem,
@@ -21,13 +21,14 @@ function fresh(): Fresh {
 /** Iniciar (04, R1): `clientStartedAt` é o relógio do aparelho no toque. */
 export async function enqueueStart(
   db: FastDb,
-  item: { userId: string; orderId: string; clientStartedAt: string },
+  item: { userId: string; orderId: string; clientStartedAt: string; order?: OrderSnapshot },
 ): Promise<void> {
   await db.queue.add({
     userId: item.userId,
     orderId: item.orderId,
     type: 'start',
     payload: { clientStartedAt: item.clientStartedAt },
+    order: item.order,
     ...fresh(),
   });
 }
@@ -38,19 +39,20 @@ export async function enqueueStart(
  */
 export async function enqueueSubmit(
   db: FastDb,
-  item: { userId: string; draftId: string; clientSubmittedAt: string },
+  item: { userId: string; draftId: string; clientSubmittedAt: string; order?: OrderSnapshot },
 ): Promise<void> {
   await db.transaction('rw', db.drafts, db.queue, async () => {
     const draft = await db.drafts.get(item.draftId);
     if (!draft || draft.userId !== item.userId) throw new Error(`draft ${item.draftId} not found for this user`);
     if (draft.state === 'queued') return;
     if (draft.state !== 'editing') throw new Error(`draft ${item.draftId} is ${draft.state}`);
-    await db.drafts.update(draft.id, { state: 'queued', updatedAt: new Date().toISOString() });
+    await db.drafts.update(draft.id, { state: 'queued', order: item.order, updatedAt: new Date().toISOString() });
     await db.queue.add({
       userId: draft.userId,
       orderId: draft.orderId,
       type: 'submit',
       payload: { draftId: draft.id, clientSubmittedAt: item.clientSubmittedAt, stagedPhotoIds: [] },
+      order: item.order,
       ...fresh(),
     });
   });
@@ -62,7 +64,7 @@ export async function enqueueSubmit(
  */
 export async function enqueueMaterials(
   db: FastDb,
-  item: { userId: string; orderId: string; text: string | null; expected: string | null },
+  item: { userId: string; orderId: string; text: string | null; expected: string | null; order?: OrderSnapshot },
 ): Promise<void> {
   await db.transaction('rw', db.queue, async () => {
     const queued = await db.queue
@@ -71,7 +73,10 @@ export async function enqueueMaterials(
       .filter((i) => i.type === 'materials')
       .first();
     if (queued?.type === 'materials') {
-      await db.queue.update(queued.id as number, { payload: { ...queued.payload, text: item.text } });
+      await db.queue.update(queued.id as number, {
+        payload: { ...queued.payload, text: item.text },
+        order: item.order ?? queued.order,
+      });
       return;
     }
     await db.queue.add({
@@ -79,6 +84,7 @@ export async function enqueueMaterials(
       orderId: item.orderId,
       type: 'materials',
       payload: { text: item.text, expected: item.expected },
+      order: item.order,
       ...fresh(),
     });
   });

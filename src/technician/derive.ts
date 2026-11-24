@@ -3,7 +3,7 @@
 import type { PhotoData } from '@/components/photos';
 import { isOverdue } from '@/lib/order-detail';
 import type { OrderDetail, PendingItem } from '@/lib/views';
-import type { Draft, DraftPhoto, QueueItem, QueueRefusal } from '@/offline/db';
+import type { Draft, DraftPhoto, OrderSnapshot, QueueItem, QueueRefusal } from '@/offline/db';
 import { photoAlerts } from '@/photos/alerts';
 import type { MyOrder, ParticipantOption, TechOrder } from './api/types';
 
@@ -78,18 +78,35 @@ export function toMyOrder(order: OrderDetail, local: LocalState, now: number): M
   };
 }
 
-type OrderRef = { order_number: number; title: string };
+/** O que Pendências mostra de uma O.S. que o servidor ainda manda (está no aparelho). */
+export type OrderRef = {
+  order_number: number;
+  title: string;
+  client_name: string | null;
+  cancel_reason: string | null;
+};
 
 /**
  * Pendências (queue.md): itens da fila em ordem, depois os envios recusados e as recusas de início e materiais.
- * `sending`: o processador está rodando; o primeiro item pronto é o que está no ar.
+ * `sending`: o processador está rodando; o primeiro item pronto é o que está no ar. A O.S. que saiu do aparelho (o
+ * técnico foi tirado dela) é nomeada pelo retrato guardado ao agir (`OrderSnapshot`), sem "Abrir".
  */
 export function pendingItems(
   local: LocalState,
   orders: Map<string, OrderRef>,
   { now, sending }: { now: number; sending: boolean },
 ): PendingItem[] {
-  const ref = (orderId: string) => orders.get(orderId) ?? { order_number: 0, title: '' };
+  const naming = (orderId: string, snapshot: OrderSnapshot | undefined, refusal: string | null = null) => {
+    const server = orders.get(orderId);
+    return {
+      order_id: orderId,
+      order_number: server?.order_number ?? snapshot?.number ?? 0,
+      order_title: server?.title ?? snapshot?.title ?? '',
+      client_name: server ? server.client_name : (snapshot?.clientName ?? null),
+      on_device: server !== undefined,
+      cancel_reason: refusal === 'order_closed' ? (server?.cancel_reason ?? null) : null,
+    };
+  };
   const queue = [...local.queue].sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
   const heads = new Map<string, QueueItem>();
   for (const i of queue) if (!heads.has(i.orderId)) heads.set(i.orderId, i);
@@ -113,9 +130,7 @@ export function pendingItems(
       id: `queue:${i.id}`,
       kind: i.type === 'submit' ? (draft?.supplementsExecutionId ? 'supplement' : 'submit') : i.type,
       state,
-      order_id: i.orderId,
-      order_number: ref(i.orderId).order_number,
-      order_title: ref(i.orderId).title,
+      ...naming(i.orderId, i.order ?? draft?.order),
       created_at: i.createdAt,
       next_attempt_at: i.nextAttemptAt > now ? new Date(i.nextAttemptAt).toISOString() : null,
       refusal: null,
@@ -131,9 +146,7 @@ export function pendingItems(
         id: `draft:${d.id}`,
         kind: d.supplementsExecutionId ? 'supplement' : 'submit',
         state: 'refused',
-        order_id: d.orderId,
-        order_number: ref(d.orderId).order_number,
-        order_title: ref(d.orderId).title,
+        ...naming(d.orderId, d.order, d.refusal),
         created_at: d.updatedAt,
         next_attempt_at: null,
         refusal: d.refusal,
@@ -147,9 +160,7 @@ export function pendingItems(
       id: `refusal:${r.id}`,
       kind: r.type,
       state: 'refused',
-      order_id: r.orderId,
-      order_number: ref(r.orderId).order_number,
-      order_title: ref(r.orderId).title,
+      ...naming(r.orderId, r.order, r.code),
       created_at: r.createdAt,
       next_attempt_at: null,
       refusal: r.code,

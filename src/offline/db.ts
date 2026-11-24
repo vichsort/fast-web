@@ -8,6 +8,16 @@ import type { Database } from '@/lib/database.types';
 
 export type PhotoSource = Database['public']['Enums']['photo_source'];
 
+/**
+ * O que nomeia a O.S. na tela, guardado ao agir: quem é tirado da O.S. deixa de lê-la (RLS), e a recusa do envio
+ * dele ainda precisa dizer de qual O.S. é. Campo sem índice: registros de antes dele não têm, e a tela cai no número 0.
+ */
+export interface OrderSnapshot {
+  number: number;
+  title: string;
+  clientName: string | null;
+}
+
 /** Rascunho de um envio (tentativa nova ou complemento). `id` é o `execution_id`, gerado no aparelho. */
 export interface Draft {
   id: string;
@@ -24,6 +34,8 @@ export interface Draft {
   state: 'editing' | 'queued' | 'refused';
   /** Código do catálogo (errors.md do backend) quando `state` é `refused`. */
   refusal: string | null;
+  /** Gravado ao pôr na fila. */
+  order?: OrderSnapshot;
   createdAt: string;
   updatedAt: string;
 }
@@ -92,6 +104,8 @@ interface QueueItemBase {
   /** Por que espera (Q7): só a espera por rede vence com um indício de conexão; a por servidor, não. */
   waitingFor: 'network' | 'server' | null;
   lastError: string | null;
+  /** Para a recusa nomear a O.S. (sem efeito no envio: um build sem o campo o ignora, Q13). */
+  order?: OrderSnapshot;
   createdAt: string;
 }
 
@@ -115,6 +129,8 @@ export type QueueRefusal = {
   code: string;
   /** Texto atual do servidor no `conflict` de materiais (`details.current`); senão `null`. */
   current: string | null;
+  /** O do item recusado. */
+  order?: OrderSnapshot;
   createdAt: string;
 } & ({ type: 'start'; payload: StartPayload } | { type: 'materials'; payload: MaterialsPayload });
 

@@ -138,6 +138,11 @@ export interface PendingItemData {
   state: 'sending' | 'waiting' | 'queued' | 'refused' | 'blocked';
   order_number: number;
   order_title: string;
+  client_name: string | null;
+  /** A O.S. ainda está no aparelho; sem ela, a recusa avisa que saiu. */
+  on_device: boolean;
+  /** Motivo do cancelamento na recusa `order_closed`. */
+  cancel_reason: string | null;
   created_at: string;
   next_attempt_at: string | null;
   refusal: string | null;
@@ -170,7 +175,7 @@ export interface PendingItemCardProps extends React.ComponentProps<'article'> {
   onDiscard?: () => void;
   /** "Dispensar" a recusa de início ou materiais. */
   onDismiss?: () => void;
-  /** Abre a O.S. ou o rascunho. */
+  /** Abre a O.S. ou o rascunho (só com a O.S. ainda no aparelho). */
   onOpen?: () => void;
 }
 
@@ -220,6 +225,7 @@ export function PendingItemCard({
             <span className="font-medium text-foreground/85 tabular-nums">{formatOrderNumber(item.order_number)}</span>{' '}
             {item.order_title}
           </span>
+          {item.client_name && <span className="truncate text-sm text-muted-foreground">{item.client_name}</span>}
           <span className="text-xs text-muted-foreground">
             {t('ui.queue.createdAt', { time: formatRelative(item.created_at, timeZone, now) })}
             {item.state === 'waiting' && item.next_attempt_at && (
@@ -240,7 +246,11 @@ export function PendingItemCard({
       )}
 
       {item.state === 'refused' && item.refusal && (
-        <p className="tone-text text-sm font-medium">{errorMessage(item.refusal)}</p>
+        <div className="flex flex-col gap-0.5 text-sm">
+          <p className="tone-text font-medium">{errorMessage(item.refusal)}</p>
+          {item.cancel_reason && <p>{t('ui.queue.cancelReason', { reason: item.cancel_reason })}</p>}
+          {!item.on_device && <p className="text-muted-foreground">{t('ui.queue.leftDevice')}</p>}
+        </div>
       )}
       {item.state === 'blocked' && (
         <p className="text-sm">

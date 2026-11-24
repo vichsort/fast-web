@@ -15,6 +15,19 @@ describe('enqueue', () => {
     expect((await db.queue.toArray()).map((i) => i.format)).toEqual([1, 1, 1]);
   });
 
+  it('Q1: the order snapshot goes with the item and the draft, to name the order after it leaves the device', async () => {
+    const db = newDb();
+    const order = { number: 42, title: 'Instalar câmeras', clientName: 'Padaria' };
+    const draft = await addDraft(db, { userId: 'u1', orderId: 'o2' });
+
+    await enqueueStart(db, { userId: 'u1', orderId: 'o1', clientStartedAt: '2026-11-13T10:00:00.000Z', order });
+    await enqueueSubmit(db, { userId: 'u1', draftId: draft.id, clientSubmittedAt: '2026-11-13T11:00:00.000Z', order });
+    await enqueueMaterials(db, { userId: 'u1', orderId: 'o3', text: 'cabo', expected: null, order });
+
+    expect((await db.queue.toArray()).map((i) => i.order)).toEqual([order, order, order]);
+    expect((await db.drafts.get(draft.id))?.order).toEqual(order);
+  });
+
   it('Q1: start is queued with the device clock of the tap', async () => {
     const db = newDb();
 

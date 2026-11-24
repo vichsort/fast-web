@@ -128,7 +128,7 @@ function PendingEntry({ item, onDiscard }: { item: PendingItem; onDiscard: () =>
       <PendingItemCard
         item={item}
         timeZone={TZ}
-        onOpen={() => void open()}
+        onOpen={item.on_device ? () => void open() : undefined}
         onRetry={
           item.state === 'waiting' || item.state === 'blocked'
             ? () => void act(retryPending(item.id), t('technician.pending.retried'))

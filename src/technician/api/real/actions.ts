@@ -3,13 +3,15 @@ import { toast } from 'sonner';
 import { classifyRpcError } from '@/lib/errors';
 import { blankToNull } from '@/lib/input';
 import { supabase } from '@/lib/supabase';
-import { db, type Draft as LocalDraft } from '@/offline/db';
+import type { OrderDetail } from '@/lib/views';
+import { db, type Draft as LocalDraft, type OrderSnapshot } from '@/offline/db';
 import { dismissRefusal, enqueueMaterials, enqueueStart, enqueueSubmit, retryBlocked } from '@/offline/queue';
 import { removePhotoFromDraft, savePhotoToDraft } from '@/photos/draft-photos';
 import { processPhoto } from '@/photos/process';
 import type { DraftFields, TechnicianApi, TechOrder } from '../types';
 import { current } from './context';
 import { localSnapshot, parseDraftKey } from './local';
+import { orderKey, ordersKey } from './reads';
 import { queued } from './runner';
 
 const nowIso = () => new Date().toISOString();
@@ -63,6 +65,22 @@ async function deleteDraft(id: string) {
   });
 }
 
+/** Retrato da O.S. para a recusa nomeá-la depois de ela sair do aparelho (db.ts, `OrderSnapshot`). */
+const snapshot = (order: Pick<OrderDetail, 'order_number' | 'title' | 'client'>): OrderSnapshot => ({
+  number: order.order_number,
+  title: order.title,
+  clientName: order.client?.name ?? null,
+});
+
+/** O retrato pelo que as leituras já trouxeram (a O.S. aberta ou a lista). */
+function cachedSnapshot(orderId: string): OrderSnapshot | undefined {
+  const { queryClient } = current();
+  const order =
+    queryClient.getQueryData<OrderDetail | null>(orderKey(orderId)) ??
+    queryClient.getQueryData<OrderDetail[]>(ordersKey)?.find((o) => o.id === orderId);
+  return order ? snapshot(order) : undefined;
+}
+
 /** Quem a tentativa já traz marcado: quem envia e a dupla atual (docs/screens-technician.md). */
 const defaultParticipants = (order: TechOrder) =>
   order.participantOptions.filter((p) => p.isSelf || p.active).map((p) => p.id);
@@ -111,7 +129,7 @@ export const actions: Omit<
         updatedAt: at,
       });
     }
-    await enqueueStart(db, { userId, orderId: order.id, clientStartedAt: at });
+    await enqueueStart(db, { userId, orderId: order.id, clientStartedAt: at, order: snapshot(order) });
     queued();
   },
 
@@ -141,7 +159,14 @@ export const actions: Omit<
     const { userId } = current();
     const { orderId, attemptId } = parseDraftKey(key);
     const draft = await editingDraft(orderId, attemptId);
-    if (draft) await enqueueSubmit(db, { userId, draftId: draft.id, clientSubmittedAt: nowIso() });
+    if (draft) {
+      await enqueueSubmit(db, {
+        userId,
+        draftId: draft.id,
+        clientSubmittedAt: nowIso(),
+        order: cachedSnapshot(orderId),
+      });
+    }
     queued();
     return 'queued';
   },
@@ -159,6 +184,7 @@ export const actions: Omit<
       orderId: order.id,
       text: blankToNull(text),
       expected: blankToNull(server.materials_notes),
+      order: snapshot(order),
     });
     queued();
   },
@@ -173,7 +199,13 @@ export const actions: Omit<
       .toArray();
     const current_ = conflicts.at(-1)?.current ?? null;
     for (const r of conflicts) await dismissRefusal(db, r.id as number);
-    await enqueueMaterials(db, { userId, orderId: order.id, text: blankToNull(text), expected: current_ });
+    await enqueueMaterials(db, {
+      userId,
+      orderId: order.id,
+      text: blankToNull(text),
+      expected: current_,
+      order: snapshot(order),
+    });
     queued();
   },
 

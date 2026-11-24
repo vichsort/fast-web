@@ -1088,9 +1088,17 @@ export const auditLogs: AuditLog[] = [
 
 // ---------------------------------------------------------------- aparelho do técnico (Marcos)
 
-const orderRef = (n: number) => {
+/** `gone`: o técnico foi tirado da O.S., que saiu do aparelho (a recusa fica com o retrato guardado ao agir). */
+const orderRef = (n: number, { gone = false } = {}) => {
   const o = orders.find((x) => x.order_number === n);
-  return { order_id: o?.id ?? '', order_number: n, order_title: o?.title ?? '' };
+  return {
+    order_id: o?.id ?? '',
+    order_number: n,
+    order_title: o?.title ?? '',
+    client_name: Object.values(clients).find((c) => c.id === o?.client_id)?.name ?? null,
+    on_device: !gone,
+    cancel_reason: null,
+  };
 };
 
 export const pendingItems: PendingItem[] = [
@@ -1131,7 +1139,7 @@ export const pendingItems: PendingItem[] = [
     id: 'q4',
     kind: 'submit',
     state: 'refused',
-    ...orderRef(37),
+    ...orderRef(40, { gone: true }),
     created_at: hoursAgo(26),
     next_attempt_at: null,
     refusal: 'not_assigned',
@@ -1146,6 +1154,18 @@ export const pendingItems: PendingItem[] = [
     created_at: hoursAgo(5),
     next_attempt_at: null,
     refusal: 'conflict',
+    error: null,
+    photos: null,
+  },
+  {
+    id: 'q7',
+    kind: 'materials',
+    state: 'refused',
+    ...orderRef(37),
+    cancel_reason: orders.find((o) => o.order_number === 37)?.cancel_reason ?? null,
+    created_at: hoursAgo(30),
+    next_attempt_at: null,
+    refusal: 'order_closed',
     error: null,
     photos: null,
   },

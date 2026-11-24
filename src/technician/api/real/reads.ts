@@ -153,7 +153,12 @@ export function usePendingItems(): Read<PendingItem[]> {
   const runner = useRunner();
   const data = React.useMemo(() => {
     if (!local) return undefined;
-    const refs = new Map((orders ?? []).map((o) => [o.id, { order_number: o.order_number, title: o.title }]));
+    const refs = new Map(
+      (orders ?? []).map((o) => [
+        o.id,
+        { order_number: o.order_number, title: o.title, client_name: o.client.name, cancel_reason: o.cancel_reason },
+      ]),
+    );
     return pendingItems(local, refs, { now: Date.now(), sending: runner.running });
   }, [local, orders, runner.running]);
   return { data, isPending: !local, isError: false, isFetching: runner.running, refetch: () => undefined };

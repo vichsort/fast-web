@@ -188,7 +188,7 @@ describe('toMyOrder', () => {
 });
 
 describe('pendingItems', () => {
-  const orders = new Map([['o1', { order_number: 7, title: 'Instalar' }]]);
+  const orders = new Map([['o1', { order_number: 7, title: 'Instalar', client_name: 'Cliente', cancel_reason: null }]]);
   const photo = (id: string, uploaded: boolean) => ({ id, draftId: 'd1', uploaded }) as DraftPhoto;
 
   it('maps each queue item to its kind, state and photo progress', () => {
@@ -269,6 +269,62 @@ describe('pendingItems', () => {
       ['draft:d9', 'submit', 'refused', 'order_closed'],
       ['refusal:4', 'start', 'refused', 'not_assigned'],
     ]);
+  });
+
+  it('names an order that left the device by the snapshot kept when acting, and says it is no longer here', () => {
+    const snapshot = { number: 42, title: 'Trocar DVR', clientName: 'Padaria' };
+    const list = pendingItems(
+      local({
+        drafts: [draft({ id: 'd9', orderId: 'gone', state: 'refused', refusal: 'not_assigned', order: snapshot })],
+        refusals: [
+          {
+            id: 4,
+            userId: ME,
+            orderId: 'gone',
+            type: 'materials',
+            payload: { text: 'x', expected: null },
+            code: 'not_assigned',
+            current: null,
+            createdAt: at,
+            order: snapshot,
+          },
+        ],
+        queue: [item({ id: 1, type: 'start', payload: { clientStartedAt: at } })],
+      }),
+      orders,
+      { now: NOW, sending: false },
+    );
+    expect(list.map((i) => [i.order_number, i.order_title, i.client_name, i.on_device])).toEqual([
+      [7, 'Instalar', 'Cliente', true],
+      [42, 'Trocar DVR', 'Padaria', false],
+      [42, 'Trocar DVR', 'Padaria', false],
+    ]);
+  });
+
+  it('brings the cancel reason of the order to an order_closed refusal', () => {
+    const cancelled = new Map([
+      ['o1', { order_number: 7, title: 'Instalar', client_name: 'Cliente', cancel_reason: 'Cliente desistiu' }],
+    ]);
+    const refusal = {
+      id: 4,
+      userId: ME,
+      orderId: 'o1',
+      type: 'materials' as const,
+      payload: { text: 'x', expected: null },
+      current: null,
+      createdAt: at,
+    };
+    const list = pendingItems(
+      local({
+        refusals: [
+          { ...refusal, code: 'order_closed' },
+          { ...refusal, id: 5, code: 'conflict' },
+        ],
+      }),
+      cancelled,
+      { now: NOW, sending: false },
+    );
+    expect(list.map((i) => i.cancel_reason)).toEqual(['Cliente desistiu', null]);
   });
 });
 

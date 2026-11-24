@@ -144,14 +144,15 @@ async function refuse({ db, clock }: QueueDeps, item: QueueItem, failure: ApiErr
     const current = await db.queue.get(id);
     if (!current) return;
     await db.queue.delete(id);
+    const order = current.order;
     switch (current.type) {
       case 'start':
-        await db.refusals.add({ ...refusal, type: 'start', payload: current.payload, current: null });
+        await db.refusals.add({ ...refusal, type: 'start', payload: current.payload, current: null, order });
         return;
       case 'materials': {
         const details = failure.details as { current?: unknown } | null;
         const serverText = typeof details?.current === 'string' ? details.current : null;
-        await db.refusals.add({ ...refusal, type: 'materials', payload: current.payload, current: serverText });
+        await db.refusals.add({ ...refusal, type: 'materials', payload: current.payload, current: serverText, order });
         return;
       }
       case 'submit':

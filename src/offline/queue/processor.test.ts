@@ -304,6 +304,21 @@ describe('processQueue', () => {
     expect(status).toEqual({ kind: 'idle' });
   });
 
+  it('Q6: the refusal keeps the order snapshot of the item', async () => {
+    const db = newDb();
+    const order = { number: 42, title: 'Instalar câmeras', clientName: 'Padaria' };
+    const { api } = fakeApi({
+      updateMaterialsNotes: async () => {
+        throw new ApiError('rule', 'not_assigned', 'not_assigned');
+      },
+    });
+    await enqueueMaterials(db, { userId: 'u1', orderId: 'o1', text: 'cabo', expected: null, order });
+
+    await processQueue({ db, api, lock: noLock, clock: fakeClock(), userId: 'u1' });
+
+    expect(await db.refusals.toArray()).toMatchObject([{ type: 'materials', code: 'not_assigned', order }]);
+  });
+
   describe('materials', () => {
     it('Q1: a materials item calls update_materials_notes and leaves the queue', async () => {
       const db = newDb();

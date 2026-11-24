@@ -35,6 +35,14 @@ test('envio de quem saiu da O.S. fica com o motivo até o técnico apagar', asyn
   await expect(draft.last()).toBeVisible({ timeout: 10_000 });
   await expect(page.getByText(t('technician.pending.inQueue'))).toHaveCount(0);
 
+  // A O.S. saiu do aparelho (o RLS não a mostra mais), e o cartão ainda diz qual é, sem "Abrir" (UX 1).
+  // O início, também recusado, tem o próprio cartão.
+  const card = page.locator('[data-slot="pending-item"]').filter({ hasText: t('ui.queue.kind.submit') });
+  await expect(card.getByText(t('ui.queue.leftDevice'))).toBeVisible({ timeout: 10_000 });
+  await expect(card.getByText(order.title)).toBeVisible();
+  await expect(card.getByText(order.clientName)).toBeVisible();
+  await expect(attention.getByRole('button', { name: t('ui.actions.open') })).toHaveCount(0);
+
   // Continua no aparelho depois de reabrir o app.
   await page.reload();
   await expect(attention.getByRole('button', { name: t('ui.actions.discard') })).toBeVisible();
