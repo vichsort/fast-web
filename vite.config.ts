@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
-import { buildVersion } from './src/lib/version';
+import { buildVersion } from './src/lib/version.ts';
 
 /** O commit do build: o do Cloudflare Pages, senão o do git local; sem nenhum, a versão vai sem ele. */
 function commit(): string | null {
@@ -24,6 +24,22 @@ export default defineConfig({
   server: { host: '127.0.0.1', port: 3000, strictPort: true },
   preview: { host: '127.0.0.1', port: 3000, strictPort: true },
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
+  // Bibliotecas do pedaço inicial em grupos próprios: o hash delas só muda quando a versão muda, e o técnico não
+  // baixa tudo de novo pelo service worker a cada deploy (antes, um pedaço só de ~570 kB com o código do app).
+  build: {
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            { name: 'supabase', test: /node_modules[\\/]@supabase[\\/]/ },
+            { name: 'react', test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/ },
+            { name: 'tanstack', test: /node_modules[\\/]@tanstack[\\/]/ },
+            { name: 'forms', test: /node_modules[\\/](zod|react-hook-form|@hookform)[\\/]/ },
+          ],
+        },
+      },
+    },
+  },
   plugins: [
     react(),
     tailwindcss(),
