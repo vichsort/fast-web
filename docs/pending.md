@@ -56,6 +56,7 @@ Decisões de 2026-11-24 em [Versão e atualização](decisions.md#versão-e-atua
 | Versão | os dois | `package.json` em semver; `version.ts` lê a do `package.json`; comparação por número; `min_client_version` com o formato semver no CHECK (01, R8) |
 | Técnico | front | o aviso "Versão nova" sai: o worker novo entra ao abrir o app e na troca de tela, fora da câmera e do seletor da galeria; procura versão nova de tempos em tempos e ao voltar à aba (hoje só ao abrir). "Atualize o app" (abaixo da mínima) atualiza sozinho; o botão fica só se falhar |
 | Escritório | front | procura versão nova (arquivo de versão do build, de tempos em tempos e ao voltar à aba) e recarrega na troca de tela; tela que falha ao carregar recarrega uma vez |
+| Lançamento | os dois | `npm version` nos dois; branch `release`; [operations.md](../../fast/docs/operations.md) e o README daqui com o passo a passo de lançar |
 | Testes | front | unit da comparação e da escolha do momento; E2E da atualização sozinha com envio na fila |
 
 ## 2. Primeiro deploy
@@ -64,11 +65,11 @@ Roteiro: [operations.md](../../fast/docs/operations.md#primeiro-deploy). Abaixo,
 
 | Passo | Repo | O que fazer |
 | --- | --- | --- |
-| Supabase e R2 | backend | na conta do usuário ([decisão](decisions.md#arquitetura)); projeto no Supabase Free, região São Paulo; buckets `execution-photos` e de backup no R2; no `execution-photos`, `incoming/` expira em 1 dia e, se o R2 permitir, limite de tamanho de objeto (a URL de PUT assina só o `host`: aceita 20 MB e `text/html`, seg. M3); chaves e secrets das Edge Functions |
+| Supabase e R2 | backend | na conta do usuário ([decisão](decisions.md#arquitetura)); dois projetos no Supabase Free, produção e teste, região São Paulo; buckets `execution-photos` e de backup no R2; no `execution-photos`, `incoming/` expira em 1 dia e, se o R2 permitir, limite de tamanho de objeto (a URL de PUT assina só o `host`: aceita 20 MB e `text/html`, seg. M3); chaves e secrets das Edge Functions |
 | Auth | backend | cadastro público e anônimo fechados; email do Auth desligado (sem SMTP, [decisão](decisions.md#01-fundação)); `site_url` do Cloudflare Pages (`*.pages.dev`); `secure_password_change = true` e senha mínima de 6 (seg. M2, [decisão](decisions.md#01-fundação)), no painel e no `config.toml` |
 | `npm run deploy` | backend | depois dele, migrations só por acréscimo (hoje se editam no lugar): atualizar a linha "Status" do CLAUDE.md do backend |
 | Empresa e admin | backend | cadastrar a Fast e o platform admin direto no banco; o owner convida o time |
-| Cloudflare Pages | front | ligado ao Supabase de produção; a versão do build vem de `CF_PAGES_COMMIT_SHA` (`vite.config.ts`) |
+| Cloudflare Pages | front | produção da branch `release`, ligada ao Supabase de produção; prévia da `main`, ligada ao de teste ([decisão](decisions.md#versão-e-atualização)) |
 | Conferências | os dois | CORS: REST, RPC, Auth e Edge Functions do hospedado aceitam o `x-client-version` (o local aceita; se o hospedado recusar, nada funciona); ip da auditoria (passo 6 do roteiro); `GET /auth/v1/settings` e `signup` respondendo `signup_disabled`; `_headers` com `curl -I` (gerado no build; com domínio próprio no bucket de fotos, `PHOTOS_ORIGIN` no build do Pages); Realtime sem nenhuma tabela na publicação; bundle só com a URL e a chave anon, sem source map e sem `/dev` |
 
 ## 3. Antes de entregar à Fast
