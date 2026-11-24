@@ -17,6 +17,27 @@ O que falta no front e no backend. Item feito sai daqui no mesmo commit do códi
 | Celulares de teste | — | apagar os dados do site (Dexie juntado numa versão só, [decisão](decisions.md#e2e) de 2026-11-19) |
 | Roteiro no celular real | — | ~15 min: economia de bateria do fabricante, câmera e rádio de verdade, instalação do PWA |
 
+## Revisões de 2026-11-23 e 2026-11-24
+
+Relatórios completos: [segurança](reviews/2026-11-24-security.md) e [UI/UX](reviews/2026-11-23-ux.md). A ordem é de gravidade.
+
+| Item | Repo | O que fazer |
+| --- | --- | --- |
+| Cache vaza no logout (seg. C1, crítico) | front | `queryClient.clear()` em todo logout (menu, "Meu perfil", `signOutAndWipe`) e não persistir o cache do técnico antes de restaurar o do usuário certo |
+| Recusa de quem saiu da dupla sem identificação (UX 1, crítico) | front | número, título e cliente guardados no rascunho e na recusa (versão nova do Dexie); sem "Abrir" quando a O.S. saiu do aparelho; "Mandar ao escritório" antes de "Descartar"; aviso no Reatribuir e no Cancelar com a O.S. em execução; motivo na recusa `order_closed` |
+| Texto livre sem limite (seg. A1) | backend | CHECK de tamanho e `invalid_input` nas RPCs, sem mudar assinatura; não copiar texto grande para o histórico |
+| O.S. enviada sem sinal segue "A fazer" (UX 2) | front | marcar "Enviada · na fila" e tirar da conta; faixa com "N envio(s) no aparelho"; selo de Pendências neutro para fila normal; texto neutro no painel e no aviso até a resposta |
+| "A fazer" fora da ordem do prazo (UX 3) | front | atrasadas, prazo, prioridade, sem prazo, número |
+| Motivo da rejeição some ao refazer (UX 4) | front | `Notice` com o motivo na execução e no painel de revisão do envio |
+| Revisão da 2ª tentativa sem a rejeição anterior (UX 5) | front | linha fixa com o motivo anterior acima de Aprovar |
+| Convite sem limite e emails em inglês (seg. A2, M1; UX 9) | backend | limite por quem convida e por empresa; não revelar perfil nem distinguir email existente; templates pt-BR e remetente "Fast O.S." |
+| Configuração do primeiro deploy (seg. M2, M3, M4, B1) | os dois | `secure_password_change`, senha mínima 8 ou mais, limite de objeto e ciclo do `incoming/` no R2, `public/_headers` (CSP e outros), banir no Auth quem foi removido e não tem outra empresa. Checklist na seção 3 do relatório de segurança |
+| Sair com fila e contagens (UX 6) | front | contar por O.S.; "Ver pendências" primeiro e "Sair e apagar" embaixo |
+| "Atualizar" sem sinal mostra ✓ (UX 7) | front | aviso pelo resultado ("atualizada às" ou "sem sinal: lista de") |
+| "Aprovadas no mês" abre todas (UX 8) | os dois | filtro por "aprovada em" ou sem link |
+
+**Perguntas ao produto** (UX): aceitar o envio de quem estava atribuído no `client_started_at` e saiu da dupla sem sinal? Registrar sem revisão o envio de O.S. cancelada com o serviço feito? Depois de um retrabalho, a prova é a soma das tentativas?
+
 ## Backup (07)
 
 | Item | O que fazer |
