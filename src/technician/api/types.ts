@@ -25,6 +25,8 @@ export type MyOrder = OrderListItem & {
   is_new: boolean;
   /** Motivo da última rejeição (só nas rejeitadas), para o cartão. */
   rejection: string | null;
+  /** Envio novo desta O.S. ainda na fila do aparelho ("Enviada · na fila"). */
+  submission_queued: boolean;
 };
 
 export interface ParticipantOption extends PersonRef {

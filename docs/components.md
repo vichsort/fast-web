@@ -27,7 +27,7 @@ Biblioteca visual das duas interfaces: componentes do domínio em [`src/componen
 | `PhotoSourceBadge` | `badges.tsx` | câmera ou galeria | `source` | fotos |
 | `AlertBadge` | `badges.tsx` | alerta da prova fotográfica (texto longo na dica) | `code` (`PhotoAlert` ou `ExecutionAlert`) | revisão, fotos |
 | `AlertList` | `alert-list.tsx` | alertas por extenso: selo curto e texto num cartão no tom de cada alerta | `alerts` (`code` e, opcional, `text`; sem ele, `alerts.<código>`) | resumo da revisão |
-| `OverdueBadge`, `UnassignedBadge`, `LateSupplementBadge`, `NewBadge` | `badges.tsx` | atrasada, sem técnico, complemento tardio (`count`), não aberta no aparelho | — | listas |
+| `OverdueBadge`, `UnassignedBadge`, `LateSupplementBadge`, `NewBadge`, `QueuedBadge` | `badges.tsx` | atrasada, sem técnico, complemento tardio (`count`), não aberta no aparelho, envio novo ainda no aparelho ("Enviada · na fila") | — | listas |
 | `CountBadge` | `badges.tsx` | contador redondo (some com 0) | `count`, `tone`, `max` | menus, abas |
 | `PageHeader` | `page-header.tsx` | topo da tela | `title`, `description`, `eyebrow`, `meta`, `actions`, `back` (elemento ou callback), `size`, `sticky` | toda tela |
 | `Section` | `section.tsx` | cartão/bloco de conteúdo | `title`, `description`, `icon`, `actions`, `footer`, `variant` (`card`/`muted`/`plain`), `density` | detalhe, formulários |

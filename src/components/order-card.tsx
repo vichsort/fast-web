@@ -12,6 +12,7 @@ import {
   OrderStatusBadge,
   OverdueBadge,
   PriorityBadge,
+  QueuedBadge,
   UnassignedBadge,
 } from './badges';
 import { statusVar } from './tone';
@@ -42,6 +43,8 @@ export interface OrderCardProps extends Omit<React.ComponentProps<'article'>, 'o
   showAssignees?: boolean;
   /** Esconde o selo de status (lista já filtrada por status). */
   hideStatus?: boolean;
+  /** Envio novo ainda no aparelho: "Enviada · na fila" no lugar do status. */
+  queued?: boolean;
   density?: 'compact' | 'comfortable' | 'touch';
   /** Elemento de navegação (ex.: `<Link to="/technician/orders/$id" params={...} />`): o cartão inteiro vira o link. */
   render?: React.ReactElement;
@@ -58,6 +61,7 @@ export function OrderCard({
   isNew,
   showAssignees,
   hideStatus,
+  queued,
   density = 'comfortable',
   render,
   href,
@@ -106,7 +110,7 @@ export function OrderCard({
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
           {isNew && <NewBadge size="sm" />}
-          {!hideStatus && <OrderStatusBadge status={order.status} size="sm" />}
+          {queued ? <QueuedBadge size="sm" /> : !hideStatus && <OrderStatusBadge status={order.status} size="sm" />}
         </div>
       </div>
 

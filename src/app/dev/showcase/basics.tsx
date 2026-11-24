@@ -12,6 +12,7 @@ import {
   OverdueBadge,
   PhotoSourceBadge,
   PriorityBadge,
+  QueuedBadge,
   ReviewStatusBadge,
   RoleBadge,
   ServiceTypeBadge,
@@ -178,12 +179,13 @@ export function BadgesSection() {
             <AlertBadge code="late_delivery" />
           </Row>
         </Demo>
-        <Demo label="OverdueBadge · UnassignedBadge · LateSupplementBadge · NewBadge · CountBadge">
+        <Demo label="OverdueBadge · UnassignedBadge · LateSupplementBadge · NewBadge · QueuedBadge · CountBadge">
           <Row>
             <OverdueBadge />
             <UnassignedBadge />
             <LateSupplementBadge count={2} />
             <NewBadge />
+            <QueuedBadge />
             <CountBadge count={3} />
             <CountBadge count={120} tone="brand" />
           </Row>

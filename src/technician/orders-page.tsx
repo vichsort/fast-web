@@ -207,6 +207,7 @@ function MyOrderCard({ order, hideStatus }: { order: MyOrder; hideStatus?: boole
         timeZone={TZ}
         isNew={order.is_new}
         hideStatus={hideStatus}
+        queued={order.submission_queued}
         density="touch"
         render={link}
         className={cn(order.rejection && 'rounded-b-none')}

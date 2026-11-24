@@ -66,8 +66,24 @@ export function toTechOrder(order: OrderDetail, local: LocalState, now: number):
   };
 }
 
+/** Envio novo (não complemento) desta O.S. ainda na fila do aparelho. */
+function submissionQueued(orderId: string, local: LocalState): boolean {
+  return local.queue.some(
+    (i) =>
+      i.orderId === orderId &&
+      i.type === 'submit' &&
+      local.drafts.some((d) => d.id === i.payload.draftId && d.supplementsExecutionId === null),
+  );
+}
+
+/**
+ * Na lista, o envio ainda no aparelho já conta como enviado: aguardando aprovação, fora de "A fazer" e sem atrasar
+ * (03, R6), como o servidor deixará a O.S. quando ele chegar. Cancelada fica cancelada.
+ */
 export function toMyOrder(order: OrderDetail, local: LocalState, now: number): MyOrder {
-  const status = localStatus(order, local);
+  const queued = submissionQueued(order.id, local);
+  const current = localStatus(order, local);
+  const status = queued && current !== 'cancelled' && current !== 'approved' ? 'pending_approval' : current;
   const last = order.attempts.at(-1);
   return {
     ...order,
@@ -75,6 +91,7 @@ export function toMyOrder(order: OrderDetail, local: LocalState, now: number): M
     overdue: isOverdue({ due_at: order.due_at, status }, now),
     is_new: !local.seen.has(order.id),
     rejection: status === 'rejected' && last?.review_status === 'rejected' ? last.review_comment : null,
+    submission_queued: queued,
   };
 }
 

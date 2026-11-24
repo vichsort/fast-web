@@ -317,7 +317,11 @@ async function fetchMyOrders(): Promise<MyOrder[]> {
   return list.map((o) => {
     const detail = rejected.find((d) => d?.id === o.id);
     const last = detail?.attempts.at(-1);
-    return { ...o, rejection: last?.review_status === 'rejected' ? last.review_comment : null };
+    return {
+      ...o,
+      rejection: last?.review_status === 'rejected' ? last.review_comment : null,
+      submission_queued: false,
+    };
   });
 }
 
@@ -325,20 +329,26 @@ async function fetchMyOrders(): Promise<MyOrder[]> {
 export function useMyOrders() {
   const s = useScratch();
   const query = useQuery({ queryKey: ['technician', 'orders'], queryFn: fetchMyOrders });
+  const pending = usePendingItems().data;
   const data = React.useMemo(
     () =>
       query.data?.map((o) => {
         const local = s.submissions.filter((x) => x.orderId === o.id && x.attemptId === null).length;
-        const status = effectiveStatus(o, s, local);
+        // Envio novo ainda na fila conta como enviado na lista (derive.ts, toMyOrder).
+        const queued = (pending ?? []).some(
+          (i) => i.order_id === o.id && i.kind === 'submit' && ['sending', 'waiting', 'queued'].includes(i.state),
+        );
+        const status = effectiveStatus(o, s, local + Number(queued));
         return {
           ...o,
           status,
           overdue: isOverdue(o.due_at, status),
           is_new: o.is_new && !s.seen.includes(o.id),
           rejection: status === 'rejected' ? o.rejection : null,
+          submission_queued: queued,
         };
       }),
-    [query.data, s],
+    [query.data, s, pending],
   );
   return { ...query, data };
 }

@@ -185,6 +185,39 @@ describe('toMyOrder', () => {
     const late = order({ status: 'open', due_at: '2026-11-18T00:00:00Z' });
     expect(toMyOrder(late, local(), NOW).overdue).toBe(true);
   });
+
+  const submitOf = (draftId: string) =>
+    item({ id: 1, type: 'submit', payload: { draftId, clientSubmittedAt: at, stagedPhotoIds: [] } });
+
+  it('shows a submission still on the device as waiting for approval, out of the to-do and overdue counts', () => {
+    for (const status of ['in_progress', 'rejected'] as const) {
+      const sent = order({
+        status,
+        due_at: '2026-11-18T00:00:00Z',
+        attempts: [{ review_status: 'rejected', review_comment: 'foto escura' } as OrderDetail['attempts'][number]],
+      });
+      const o = toMyOrder(sent, local({ drafts: [draft({ state: 'queued' })], queue: [submitOf('d1')] }), NOW);
+      expect(o).toMatchObject({ status: 'pending_approval', submission_queued: true, overdue: false, rejection: null });
+    }
+  });
+
+  it('keeps the status for a queued supplement, a refused submission and a cancelled order', () => {
+    const supplement = local({
+      drafts: [draft({ state: 'queued', supplementsExecutionId: 'e1' })],
+      queue: [submitOf('d1')],
+    });
+    expect(toMyOrder(order({ status: 'pending_approval' }), supplement, NOW).submission_queued).toBe(false);
+    const refused = local({ drafts: [draft({ state: 'refused', refusal: 'not_assigned' })] });
+    expect(toMyOrder(order({ status: 'in_progress' }), refused, NOW)).toMatchObject({
+      status: 'in_progress',
+      submission_queued: false,
+    });
+    const queued = local({ drafts: [draft({ state: 'queued' })], queue: [submitOf('d1')] });
+    expect(toMyOrder(order({ status: 'cancelled' }), queued, NOW)).toMatchObject({
+      status: 'cancelled',
+      submission_queued: true,
+    });
+  });
 });
 
 describe('pendingItems', () => {

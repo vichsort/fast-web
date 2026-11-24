@@ -54,6 +54,7 @@ export const uiTexts = {
   badge: {
     overdue: 'Atrasada',
     new: 'Nova',
+    queued: 'Enviada · na fila',
     unassigned: 'Sem técnico',
     lateSupplement: 'Complemento tardio',
     unseen: 'Não visto',

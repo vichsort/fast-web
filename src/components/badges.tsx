@@ -12,6 +12,7 @@ import {
   CircleDashed,
   CircleX,
   ClipboardList,
+  Clock,
   ClockExclamationPoint,
   FilePlus,
   HardHat,
@@ -38,6 +39,7 @@ import {
   roleVar,
   serviceTypeVar,
   statusVar,
+  syncVar,
   type Tone,
   toneVar,
 } from './tone';
@@ -247,6 +249,11 @@ export function LateSupplementBadge({ count, ...props }: DomainBadgeProps & { co
       {...props}
     />
   );
+}
+
+/** "Enviada · na fila": envio novo da O.S. ainda no aparelho do técnico (docs/queue.md). */
+export function QueuedBadge(props: DomainBadgeProps) {
+  return <ToneBadge toneClass={syncVar.pending} icon={Clock} label={t('ui.badge.queued')} {...props} />;
 }
 
 /** "Nova": O.S. ainda não aberta neste aparelho (04). Ponto sólido, chamativo. */
