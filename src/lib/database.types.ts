@@ -1029,7 +1029,9 @@ export type Database = {
         Returns: string
       }
       is_assigned: { Args: { p_service_order_id: string }; Returns: boolean }
+      is_long_text: { Args: { p_text: string }; Returns: boolean }
       is_platform_admin: { Args: never; Returns: boolean }
+      is_short_text: { Args: { p_text: string }; Returns: boolean }
       lock_assignee_memberships: {
         Args: { p_assignee_ids: string[]; p_order_id: string }
         Returns: undefined
@@ -1183,6 +1185,8 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      require_long_text: { Args: { p_texts: string[] }; Returns: undefined }
+      require_short_text: { Args: { p_texts: string[] }; Returns: undefined }
       review_execution: {
         Args: {
           p_comment?: string
