@@ -16,6 +16,7 @@ Regras de trabalho neste repositório. O backend (Supabase) fica no repositório
 - **TDD sempre** no que tem regra própria. Primeiro o teste, ver falhar pelo motivo certo, o mínimo para passar, refatorar com tudo verde.
 - **O banco decide.** O front não reimplementa regra de negócio: mostra, chama a RPC e trata a resposta pela classe de erro ([errors.md](../fast/docs/errors.md#classes-de-erro)). Exceção: os alertas da prova fotográfica, que o doc 04 manda o front calcular.
 - **Offline só no técnico.** O escritório trabalha online; o código offline (banco local, fila, fotos, service worker) é carregado só na interface do técnico. Cada área é um pedaço do build: o `routes.tsx` dela carrega as telas de `src/<área>/pages.ts` com `lazyRouteComponent`, e nada fora da área importa essas telas. A biblioteca Dexie entra para todos porque guarda a sessão ([auth-storage.ts](src/lib/auth-storage.ts)).
+- **Bordas à vista.** Toda decisão levada ao usuário vem com o que ela permite ou quebra fora do caminho feliz: quem passa a acessar o quê, sem sinal, com dado antigo no aparelho, com duas pessoas ao mesmo tempo. Borda achada depois, na implementação, vai ao usuário antes do código.
 - **Sem escopo extra.** O que está em "Fora do escopo" na spec do backend fica fora.
 - **Textos em pt-BR, centralizados** (`t('chave')`); as chaves de erro são as do catálogo do backend. Código, nomes e commits em inglês.
 

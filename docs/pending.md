@@ -8,7 +8,7 @@ O que falta no front e no backend. Item feito sai daqui no mesmo commit do códi
 | --- | --- | --- |
 | [1. Código antes do primeiro deploy](#1-código-antes-do-primeiro-deploy) | 2 | sim |
 | [2. Primeiro deploy](#2-primeiro-deploy) | 6 | sim |
-| [3. Antes de entregar à Fast](#3-antes-de-entregar-à-fast) | 4 | sim |
+| [3. Antes de entregar à Fast](#3-antes-de-entregar-à-fast) | 5 | sim |
 | [4. Depois, sem travar](#4-depois-sem-travar) | 9 | não |
 
 ## 1. Código antes do primeiro deploy
@@ -41,8 +41,8 @@ Decisões de 2026-11-24 em [01 Fundação](decisions.md#01-fundação). Contrato
 
 | Parte | Repo | O que fazer |
 | --- | --- | --- |
-| Link do convite | os dois | o `invite_member` cria o usuário sem mandar email e devolve um link do app com um token próprio, de uso único e com validade; o app abre "definir senha" (conta nova) ou "entre com sua senha para aceitar" (conta existente), e o owner vê o mesmo link nos dois casos. A tela de membros mostra o link para copiar ou compartilhar |
-| Link de recuperação | os dois | operação do owner que gera o link de "definir senha" para um membro da empresa, com auditoria; a tela "esqueci a senha" vira "peça o link ao responsável" |
+| Link do convite | os dois | o `invite_member` cria o usuário sem mandar email e devolve um link do app com um token próprio, de uso único, válido por 7 dias, que invalida o anterior; o app abre "definir senha" (conta nova) ou "entre com sua senha para aceitar" (conta existente), e o owner vê o mesmo link nos dois casos. A tela de membros mostra o link para copiar ou compartilhar |
+| Link de recuperação | os dois | operação do owner que gera o link de "definir senha" para um membro da empresa, de uso único, válido por 24 h, com auditoria; a tela "esqueci a senha" vira "peça o link ao responsável" |
 | Trocar a senha | front | pede a senha atual e entra de novo com ela antes de trocar |
 | Config do Auth | backend | sem SMTP e sem os templates de email; `secure_password_change = true` e senha mínima de 6 no `config.toml` |
 
@@ -52,7 +52,7 @@ Roteiro: [operations.md](../../fast/docs/operations.md#primeiro-deploy). Abaixo,
 
 | Passo | Repo | O que fazer |
 | --- | --- | --- |
-| Supabase e R2 | backend | projeto no Supabase Free; buckets `execution-photos` e de backup no R2; no `execution-photos`, `incoming/` expira em 1 dia e, se o R2 permitir, limite de tamanho de objeto (a URL de PUT assina só o `host`: aceita 20 MB e `text/html`, seg. M3); chaves e secrets das Edge Functions |
+| Supabase e R2 | backend | na conta do usuário ([decisão](decisions.md#arquitetura)); projeto no Supabase Free, região São Paulo; buckets `execution-photos` e de backup no R2; no `execution-photos`, `incoming/` expira em 1 dia e, se o R2 permitir, limite de tamanho de objeto (a URL de PUT assina só o `host`: aceita 20 MB e `text/html`, seg. M3); chaves e secrets das Edge Functions |
 | Auth | backend | cadastro público e anônimo fechados; email do Auth desligado (sem SMTP, [decisão](decisions.md#01-fundação)); `site_url` do Cloudflare Pages (`*.pages.dev`); `secure_password_change = true` e senha mínima de 6 (seg. M2, [decisão](decisions.md#01-fundação)), no painel e no `config.toml` |
 | `npm run deploy` | backend | depois dele, migrations só por acréscimo (hoje se editam no lugar): atualizar a linha "Status" do CLAUDE.md do backend |
 | Empresa e admin | backend | cadastrar a Fast e o platform admin direto no banco; o owner convida o time |
@@ -66,6 +66,7 @@ Roteiro: [operations.md](../../fast/docs/operations.md#primeiro-deploy). Abaixo,
 | Backup (07) | backend | GitHub Action diária: `pg_dump` criptografado e cópia incremental das fotos para o bucket de backup no R2 ([07](../../fast/docs/modules/07-backup.md)); criptografia com `age` ([decisão](decisions.md#07-backup)); restauração de teste executada, com o passo a passo em [operations.md](../../fast/docs/operations.md#backup). Só então o módulo está pronto (R5) |
 | Importação de clientes (02) | backend | [abaixo](#importação-de-clientes-02); é migration nova, depois do primeiro deploy |
 | Celulares de teste | — | apagar os dados do site (Dexie juntado numa versão só, [decisão](decisions.md#e2e) de 2026-11-19) |
+| Testes no PC | — | [C1 a C3](e2e.md#no-pc), com o backend local |
 | Roteiro no celular real | — | [roteiro](e2e.md#roteiro-no-celular-real), no app publicado, num Android (o iPhone cobre só as linhas marcadas) |
 
 ### Importação de clientes (02)
@@ -97,13 +98,7 @@ O front não tem tela de importação ([decisão](decisions.md#telas-do-escritó
 
 O emulador roda o Chrome de verdade, com o service worker, o Background Sync e o Doze do sistema. O controle é pelo CDP (`adb forward tcp:9222 localabstract:chrome_devtools_remote` e `chromium.connectOverCDP` do Playwright, API estável; o `_android` do Playwright é experimental e fica fora) e pelo `adb` para o sistema.
 
-| Cenário | Como no emulador | Prova |
-| --- | --- | --- |
-| Envio com o app fechado (T4) | envio sem sinal (`adb shell cmd connectivity airplane-mode enable`), fecha a aba pelo CDP, devolve o sinal | o envio chega ao banco sem abrir o app |
-| Celular parado (T5, Doze) | `adb shell dumpsys deviceidle force-idle` com itens na fila; depois `unforce` e o sinal | o envio chega quando o sistema libera |
-| Rede ruim de verdade (T3, D1) | console do emulador: `network speed edge`, `network delay gprs` | tempos do envio comparáveis às [Medições](e2e.md#medições) |
-| Câmera e GPS | câmera virtual do emulador; `adb emu geo fix` | foto com `captured_at` e localização no banco |
-| Armazenamento (P1) | encher o disco do emulador com itens na fila | o pedido de armazenamento persistente segura os dados |
+Os cenários estão em [e2e.md](e2e.md#android-emulado).
 
 | Custo e limite | |
 | --- | --- |

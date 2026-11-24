@@ -165,35 +165,49 @@ Descartado: filtros "em dois passos" só no front (ids na URL). O `postgrest-js`
 
 ## Fora do Playwright
 
-| O que | Como |
-| --- | --- |
-| Background Sync com o app fechado, aba congelada (Doze), câmera e GPS, rede ruim, armazenamento cheio | Android emulado ([plano](pending.md#android-emulado)) |
-| Economia de bateria dos fabricantes, câmera e rádio de verdade, instalação do PWA | [roteiro no celular real](#roteiro-no-celular-real) |
+Cada teste num lugar só: o que o E2E já prova não se repete à mão. Ordem: PC, Android emulado (quando existir; até lá, os testes dele vão para o celular real), celular real.
 
-## Roteiro no celular real
+### Já no E2E
 
-O que só o aparelho mostra; ~30 min. **Onde:** no app publicado. O servidor local não serve: câmera, localização e service worker exigem HTTPS, e o Supabase local responde em `127.0.0.1`, que no celular é o próprio celular. **Aparelho:** Android com Chrome, como o dos técnicos ([premissas](../../fast/docs/offline.md#premissas)). O iPhone (todo navegador dele é o Safari por baixo) cobre só as linhas marcadas: nele a fila só anda com o app aberto.
+Login, abrir sem sinal (S1), iniciar e enviar sem sinal com câmera e galeria falsas, sinal de volta (T1), rejeição e reenvio (E1), sair com envio na fila (P2), versão mínima, sessão perdida (P3), remoção (P4), recusa (P5), upload interrompido (P6), dupla (P7), aparelho compartilhado (S4): ver [Cobertos](#cobertos). Rede de celular lenta: [Medições](#medições) (D1).
+
+### No PC
+
+Chrome em modo celular (F12, Ctrl+Shift+M) no build com o service worker (`npm run build` e `npm run preview`, na 4173; o `npm run dev` não liga o worker). Backend local.
+
+| # | Teste | Como | Esperado |
+| --- | --- | --- | --- |
+| C1 | Conectado sem dados (T6) | com um envio na fila e a rede ligada, bloquear as URLs do Supabase (DevTools > Network > Request blocking, `127.0.0.1:55321`); enviar; desbloquear | fica na fila, sem erro; desbloqueado, sobe em até 1 min |
+| C2 | Atualização com envio na fila (P8) | um envio na fila sem sinal; mudar um texto qualquer, build e preview de novo; abrir com sinal e atualizar | o envio continua e sobe |
+| C3 | Fotos reais da galeria (F2) | fotos copiadas de celulares de verdade: antiga, recebida pelo WhatsApp, de outro fuso | alertas de foto anterior ao início e de foto sem data nas certas; horário certo nas outras |
+
+### Android emulado
+
+[Plano e custo](pending.md#android-emulado). Controle pelo CDP e pelo `adb`.
+
+| # | Teste | Como no emulador | Esperado |
+| --- | --- | --- | --- |
+| A1 | Instalar no Android | Chrome > Instalar app | ícone na tela inicial; abre sem a barra do navegador |
+| A2 | Botão voltar do Android | no app instalado, voltar a partir de cada tela do técnico | volta uma tela; na lista, sai do app sem perder nada |
+| A3 | App fechado (T4) | envio sem sinal (`adb shell cmd connectivity airplane-mode enable`), fechar a aba pelo CDP, devolver o sinal | o envio chega ao banco sem abrir o app |
+| A4 | Celular parado (T5, Doze) | `adb shell dumpsys deviceidle force-idle` com envios na fila; depois `unforce` e o sinal | o envio chega quando o sistema libera |
+| A5 | Segundo plano | outro app por 5 min com um rascunho aberto, e voltar | rascunho, fotos e fila intactos |
+| A6 | Armazenamento cheio (P1) | encher o disco do emulador com envios na fila | o pedido de armazenamento persistente segura os dados |
+
+### Roteiro no celular real
+
+Só o que o PC e o emulador não mostram; ~20 min. **Onde:** no app publicado. O servidor local não serve: câmera, localização e service worker exigem HTTPS, e o Supabase local responde em `127.0.0.1`, que no celular é o próprio celular. **Aparelho:** Android com Chrome, como o dos técnicos ([premissas](../../fast/docs/offline.md#premissas)); de preferência o celular de um técnico. O iPhone (todo navegador dele é o Safari por baixo) cobre só as linhas marcadas.
 
 **Preparo:** no computador, como escritório, duas O.S. atribuídas ao técnico do celular. **Anotar:** modelo, versão do Android e do Chrome, e o tempo de cada envio.
 
 | # | Teste | Como | Esperado | iPhone |
 | --- | --- | --- | --- | --- |
-| 1 | Instalar | Chrome: menu > Instalar app. iPhone: Safari > Compartilhar > Adicionar à Tela de Início | ícone na tela inicial; abre sem a barra do navegador | sim |
-| 2 | Entrar (P1) | entrar como o técnico; aceitar o pedido de armazenamento, se aparecer | as duas O.S. em Minhas O.S., sem o aviso de armazenamento negado | sim |
-| 3 | Abrir sem sinal (S1) | abrir as duas O.S. com sinal; modo avião; fechar o app pelas recentes e abrir de novo | abre em Minhas O.S., e as duas O.S. abrem | sim |
-| 4 | Iniciar sem sinal | ainda em modo avião, iniciar a O.S. 1 | o início em Pendências, na fila | sim |
-| 5 | Câmera (D2) | 3 fotos pela câmera do app, uma em pé e uma deitada; permitir câmera e localização | fotos nítidas, na orientação certa; a tela não trava mais que ~2 s por foto | sim |
-| 6 | Galeria (D2, F2) | 5 fotos da galeria de uma vez, uma antiga e uma recebida pelo WhatsApp | alertas de foto anterior ao início e de foto sem data; a tela não trava | sim |
-| 7 | Enviar sem sinal | relatório e Enviar | aviso de guardado no aparelho; em Pendências, na fila | sim |
-| 8 | Segundo plano | outro app (câmera, WhatsApp) por 5 min, tela bloqueada, e voltar | rascunho, fotos e fila intactos | sim |
-| 9 | Sinal com o app aberto (T1) | tirar o modo avião com o app aberto | o envio sobe sozinho em até 1 min; no computador, a O.S. em revisão com as fotos, o horário e a localização | sim |
-| 10 | App fechado (T4) | O.S. 2: iniciar e enviar sem sinal; fechar o app pelas recentes; tirar o modo avião; esperar 15 min sem abrir | chega ao computador sem abrir o app. Se não chegar, abrir e anotar quanto demora | não |
-| 11 | Celular parado (T5) | um envio na fila, economia de bateria ligada, tela apagada por 30 min, com sinal | anotar se chegou sem abrir e, ao abrir, quanto demorou | não |
-| 12 | Conectado sem dados (T6) | Wi-Fi de um roteador sem internet (ou o hotspot de outro celular sem dados) e enviar | fica na fila, sem erro; com dados de volta, sobe em até 1 min | sim |
-| 13 | Rede fraca (T3, D1) | rede móvel fraca, ou só 3G nas configurações de rede; envio com 10 fotos | nenhum erro; anotar o tempo até chegar ao computador | sim |
-| 14 | Rejeição (E1) | no computador, rejeitar com um motivo; no celular, abrir a O.S., refazer e enviar | o motivo aparece; o novo envio chega como nova tentativa | sim |
-| 15 | Sair com fila (P2) | com um envio na fila, tocar em Sair | aviso com a quantidade na fila; cancelar, sem confirmar | sim |
-| 16 | Atualização (P8) | com um envio na fila sem sinal, publicar uma versão nova; abrir com sinal | atualiza sem perder o envio, que sobe | sim |
-| 17 | Em campo | ao sol, com uma mão | textos legíveis; os botões principais ao alcance do polegar | sim |
+| R1 | Câmera de verdade | 3 fotos pela câmera do app no app instalado, uma em pé e uma deitada; permitir câmera e localização | o pedido de permissão aparece; fotos nítidas, na orientação certa, com localização | sim |
+| R2 | Celular fraco (D2) | 5 fotos de 12 MP da galeria de uma vez, no celular mais simples disponível | a tela não trava mais que ~2 s por foto | não |
+| R3 | Teclado do celular | escrever o relatório e o motivo; preencher o login | o teclado não cobre o campo nem o botão de enviar | sim |
+| R4 | Rádio de verdade (T3) | rede móvel fraca, ou só 3G nas configurações; envio com 10 fotos | nenhum erro; anotar o tempo até chegar ao computador | sim |
+| R5 | Economia de bateria do fabricante (T4, T5) | envio na fila, app fechado, economia de bateria ligada, tela apagada por 30 min, com sinal | anotar se chegou sem abrir e, ao abrir, quanto demorou | não |
+| R6 | Instalar no iPhone | Safari > Compartilhar > Adicionar à Tela de Início | ícone; abre sem a barra; a câmera funciona no app instalado | sim |
+| R7 | Em campo | ao sol, com uma mão | textos legíveis; os botões principais ao alcance do polegar | sim |
 
 Falhas viram itens em [pending.md](pending.md); os tempos, linhas em [Medições](#medições).

@@ -164,6 +164,7 @@ Doc: [e2e.md](e2e.md).
 
 Doc: [spec.md](../../fast/docs/spec.md).
 
+- **2026-11-24** — Contas de Supabase, Cloudflare (Pages e R2) e GitHub no nome do usuário, não da Fast. Supabase na região de São Paulo; o R2 na região mais próxima que oferecer. *Por quê:* o produto é do usuário e será oferecido a outras empresas ([spec](../../fast/docs/spec.md)); a Fast é a primeira cliente. São Paulo é a região do Supabase mais perto de Santa Catarina, onde o usuário e a Fast estão.
 - **2026-11-24** — O app fica no endereço `*.pages.dev` do Cloudflare Pages; o domínio próprio (do usuário ou da Fast) fica para depois. *Por quê:* sem email ([01](#01-fundação)), o domínio só serve para o endereço, e o `pages.dev` é grátis; trocar depois muda o `site_url` do Auth e o build do Pages. Escolha do usuário.
 - **2026-11-04** — Sem servidor próprio. *Por quê:* o Supabase já entrega API, Auth e Edge Functions; um servidor só acrescentaria custo e manutenção.
 - **2026-11-06** — Fotos no R2. *Por quê:* o Storage Free (~1 GB) era o limite que forçaria o Pro, caro demais para a Fast ([04](../../fast/docs/modules/04-execution-photos.md)).
@@ -180,6 +181,8 @@ Doc: [spec.md](../../fast/docs/spec.md).
 
 Doc: [01-foundation.md](../../fast/docs/modules/01-foundation.md).
 
+- **2026-11-24** — O link de recuperação passa pelo owner, que pode usá-lo para entrar na conta do membro (e agir em nome dele); aceito, com a geração do link na auditoria. O membro percebe, porque a senha dele deixa de funcionar. *Por quê:* escolha do usuário: o owner já controla a empresa inteira (tira o técnico da O.S., remove o membro); a alternativa era manter o email só para a recuperação, com SMTP e domínio.
+- **2026-11-24** — Links de uso único: convite vale 7 dias; recuperação, 24 h. Gerar um link novo invalida o anterior do mesmo membro. *Por quê:* o link passa pelo WhatsApp e pode demorar a ser aberto, mas não pode servir para sempre; a recuperação dá acesso à conta, então vale menos.
 - **2026-11-24** — O sistema não manda email. O convite e o "esqueci a senha" viram links que o owner copia e manda (WhatsApp): o convite é um link do próprio app, igual para conta nova e existente; a recuperação, o owner gera para o membro (a dele, outro owner ou o admin da plataforma). *Por quê:* escolha do usuário: sem SMTP, sem cota de envio, sem cair no spam e sem domínio verificado, e a Fast já fala com o time pelo WhatsApp. O link pronto do Supabase não serve ao convite: para quem já tem conta, seria um login na conta dele entregue ao owner, e dar link só à conta nova revelaria o email (M1, [06](#06-membros)).
 - **2026-11-24** — Trocar a senha pede a senha atual: o app entra de novo com ela e então troca, com `secure_password_change = true`. *Por quê:* revisão de segurança (M2): sem a opção, o access token sozinho trocava a senha. Ligada, o Supabase pede um código por email quando o login tem mais de 24 h, e o sistema não manda email; o login com a senha atual conta como recente.
 - **2026-11-24** — Senha com no mínimo 6 caracteres quaisquer. *Por quê:* escolha do usuário: o técnico digita no celular, e o limite de tentativas do Auth segura a adivinhação. A revisão de segurança (M2) recomendou 8; só números foi descartado (1 milhão de combinações, ao alcance de quem tenta de vários ips).
