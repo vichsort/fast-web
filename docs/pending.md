@@ -77,8 +77,6 @@ Adiado pelo usuário em 2026-11-19. O emulador roda o Chrome de verdade, com o s
 | Item | Onde | O que fazer |
 | --- | --- | --- |
 | Toast cobre a barra inferior no celular | Sonner na interface do técnico | ~4 s em cima de "Pendências" logo depois de enviar; para a revisão de UX |
-| `Notice` único nunca comparado no navegador | `src/components/notice.tsx` | conferir os dois visuais (escritório e técnico) |
-| Perfil do técnico sem teste de tela | `src/technician/profile-page.tsx` | o Vitest browser não carrega o `virtual:pwa-register`; conferir à mão |
 | `inlineDynamicImports` obsoleto no build | `vite-plugin-pwa` | o plugin fixa a opção no build do service worker (2.0.0, a versão mais nova em 2026-11-23), e o Rolldown avisa que ela sai; atualizar o plugin quando uma versão trocar por `codeSplitting: false` |
 
 ## Depois do MVP
