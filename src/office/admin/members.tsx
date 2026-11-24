@@ -29,6 +29,7 @@ import { MEMBER_ROLES, type MemberRole } from '@/lib/enums';
 import { formatDate, formatRelative } from '@/lib/format';
 import { emailText, requiredText } from '@/lib/forms';
 import { errorMessage, t } from '@/lib/i18n';
+import { SHORT_TEXT_MAX } from '@/lib/input';
 import type { MemberView } from '@/lib/views';
 import { inviteMember, removeMember, updateMemberRole } from '../api';
 import { useMembers } from '../queries';
@@ -249,7 +250,7 @@ function InviteDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (op
       <FieldGroup className="gap-4">
         <Field data-invalid={Boolean(errors.name) || undefined}>
           <FieldLabel htmlFor="invite-name">{t('office.members.name')}</FieldLabel>
-          <Input id="invite-name" autoFocus {...register('name')} />
+          <Input id="invite-name" maxLength={SHORT_TEXT_MAX} autoFocus {...register('name')} />
           {errors.name && <FieldError>{errors.name.message}</FieldError>}
         </Field>
         <Field data-invalid={Boolean(errors.email) || undefined}>

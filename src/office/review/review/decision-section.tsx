@@ -10,6 +10,7 @@ import { Field, FieldLabel } from '@/components/ui/field';
 import { Textarea } from '@/components/ui/textarea';
 import { formatNumber } from '@/lib/format';
 import { t } from '@/lib/i18n';
+import { LONG_TEXT_MAX } from '@/lib/input';
 import type { PhotoAlert } from '@/photos/alerts';
 import { ScratchScenario } from '../../shared';
 import type { pendingSummary } from '../queue';
@@ -107,6 +108,7 @@ function DecisionActions({ disabled, onDecide }: { disabled: boolean; onDecide: 
           <FieldLabel htmlFor="approve-comment">{t('office.review.approveComment')}</FieldLabel>
           <Textarea
             id="approve-comment"
+            maxLength={LONG_TEXT_MAX}
             rows={3}
             value={comment}
             onChange={(event) => setComment(event.target.value)}

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { t } from '@/lib/i18n';
+import { LONG_TEXT_MAX } from '@/lib/input';
 import type { OrderDetail } from '@/lib/views';
 import { updateMaterials } from '../../api';
 import { useOffice, useOfficeAction } from '../../session';
@@ -74,6 +75,7 @@ export function MaterialsSection({ order: o }: { order: OrderDetail }) {
           )}
           <Textarea
             aria-label={t('office.orderDetail.sectionMaterials')}
+            maxLength={LONG_TEXT_MAX}
             rows={4}
             value={text}
             onChange={(event) => setText(event.target.value)}

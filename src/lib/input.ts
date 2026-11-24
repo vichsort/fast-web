@@ -10,3 +10,11 @@ export const phoneDigits = (value: string): string => value.replace(/\D/g, '');
 /** Telefone como vai ao banco: só os dígitos; sem nenhum dígito, `null`. */
 export const phoneDigitsOrNull = (value: string | null | undefined): string | null =>
   blankToNull(value == null ? null : phoneDigits(value));
+
+/**
+ * Tamanho máximo do texto que o banco aceita ([api.md](../../../fast/docs/api.md#tamanho-do-texto)), para o
+ * `maxLength` dos campos. O `maxLength` conta unidades UTF-16, e o banco conta caracteres: o campo nunca passa
+ * do limite.
+ */
+export const SHORT_TEXT_MAX = 200;
+export const LONG_TEXT_MAX = 4000;

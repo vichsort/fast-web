@@ -18,6 +18,7 @@ import { UserAvatar } from '@/components/user';
 import { formatPhone } from '@/lib/format';
 import { requiredText } from '@/lib/forms';
 import { t } from '@/lib/i18n';
+import { SHORT_TEXT_MAX } from '@/lib/input';
 import { updateProfile } from './api';
 import { useOffice, useOfficeAction } from './session';
 
@@ -68,13 +69,19 @@ export function ProfilePage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <Field data-invalid={Boolean(errors.name) || undefined}>
                 <FieldLabel htmlFor="profile-name">{t('office.profile.name')}</FieldLabel>
-                <Input id="profile-name" aria-invalid={Boolean(errors.name) || undefined} {...register('name')} />
+                <Input
+                  id="profile-name"
+                  maxLength={SHORT_TEXT_MAX}
+                  aria-invalid={Boolean(errors.name) || undefined}
+                  {...register('name')}
+                />
                 {errors.name && <FieldError>{errors.name.message}</FieldError>}
               </Field>
               <Field>
                 <FieldLabel htmlFor="profile-phone">{t('office.profile.phone')}</FieldLabel>
                 <Input
                   id="profile-phone"
+                  maxLength={SHORT_TEXT_MAX}
                   type="tel"
                   {...register('phone', {
                     onBlur: (event: React.FocusEvent<HTMLInputElement>) =>

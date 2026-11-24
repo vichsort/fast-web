@@ -26,6 +26,7 @@ import { ORDER_PRIORITIES, type OrderPriority, SERVICE_TYPES } from '@/lib/enums
 import { calendarDay, formatOrderNumber, formatPhone } from '@/lib/format';
 import { requiredChoice, requiredText } from '@/lib/forms';
 import { errorMessage, t } from '@/lib/i18n';
+import { LONG_TEXT_MAX, SHORT_TEXT_MAX } from '@/lib/input';
 import { cn } from '@/lib/utils';
 import type { OrderDetail } from '@/lib/views';
 import { addressText, createOrder, updateOrder } from '../api';
@@ -357,6 +358,7 @@ function OrderForm({ order, initialClientId = null }: { order?: OrderDetail; ini
                   <FieldLabel htmlFor="order-title">{t('office.orderForm.title')}</FieldLabel>
                   <Input
                     id="order-title"
+                    maxLength={SHORT_TEXT_MAX}
                     placeholder={t('office.orderForm.titlePlaceholder')}
                     aria-invalid={Boolean(errors.title) || undefined}
                     {...register('title')}
@@ -444,6 +446,7 @@ function OrderForm({ order, initialClientId = null }: { order?: OrderDetail; ini
                   </FieldLabel>
                   <Textarea
                     id="order-instructions"
+                    maxLength={LONG_TEXT_MAX}
                     rows={5}
                     placeholder={t('office.orderForm.instructionsPlaceholder')}
                     {...register('instructions')}
@@ -492,6 +495,7 @@ function OrderForm({ order, initialClientId = null }: { order?: OrderDetail; ini
                 <FieldLabel htmlFor="order-materials">{t('office.orderForm.materials')}</FieldLabel>
                 <Textarea
                   id="order-materials"
+                  maxLength={LONG_TEXT_MAX}
                   rows={5}
                   placeholder={t('office.orderForm.materialsPlaceholder')}
                   {...register('materials')}

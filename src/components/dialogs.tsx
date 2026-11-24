@@ -39,6 +39,7 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { errorMessage, t } from '@/lib/i18n';
+import { LONG_TEXT_MAX } from '@/lib/input';
 import { cn } from '@/lib/utils';
 
 /** Abre/fecha controlado por fora ou pelo próprio componente. */
@@ -206,6 +207,7 @@ export function ReasonDialog({
             <Textarea
               id={id}
               autoFocus
+              maxLength={LONG_TEXT_MAX}
               value={reason}
               onChange={(event) => {
                 setReason(event.target.value);

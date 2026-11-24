@@ -20,7 +20,7 @@ import { UserAvatar } from '@/components/user';
 import { formatPhone } from '@/lib/format';
 import { requiredText } from '@/lib/forms';
 import { t } from '@/lib/i18n';
-import { phoneDigitsOrNull } from '@/lib/input';
+import { phoneDigitsOrNull, SHORT_TEXT_MAX } from '@/lib/input';
 import { act, useOffline } from './act';
 import { saveProfile, usePendingItems, useSimulatedOffline, useTechSession } from './api';
 
@@ -85,6 +85,7 @@ function Profile({ data }: { data: NonNullable<ReturnType<typeof useTechSession>
               <FieldLabel htmlFor={ids.name}>{t('technician.profile.name')}</FieldLabel>
               <Input
                 id={ids.name}
+                maxLength={SHORT_TEXT_MAX}
                 aria-invalid={Boolean(nameError)}
                 autoComplete="name"
                 className="h-12 text-base"
@@ -96,6 +97,7 @@ function Profile({ data }: { data: NonNullable<ReturnType<typeof useTechSession>
               <FieldLabel htmlFor={ids.phone}>{t('technician.profile.phone')}</FieldLabel>
               <Input
                 id={ids.phone}
+                maxLength={SHORT_TEXT_MAX}
                 type="tel"
                 inputMode="tel"
                 placeholder={t('technician.profile.phonePlaceholder')}

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Textarea } from '@/components/ui/textarea';
 import { t } from '@/lib/i18n';
+import { LONG_TEXT_MAX } from '@/lib/input';
 import { cn } from '@/lib/utils';
 import { act } from './act';
 import { resolveConflict, saveMaterials, type TechOrder, usePendingItems } from './api';
@@ -63,6 +64,7 @@ export function MaterialsSection({ order }: { order: TechOrder }) {
             </FieldLabel>
             <Textarea
               id={textareaId}
+              maxLength={LONG_TEXT_MAX}
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder={t('technician.materials.placeholder')}
@@ -156,6 +158,7 @@ function MaterialsConflict({ order, conflict }: { order: TechOrder; conflict: { 
           <FieldLabel htmlFor={textareaId}>{t('technician.materials.conflictResult')}</FieldLabel>
           <Textarea
             id={textareaId}
+            maxLength={LONG_TEXT_MAX}
             value={text}
             onChange={(e) => setText(e.target.value)}
             rows={4}

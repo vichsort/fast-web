@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { formatPhone } from '@/lib/format';
 import { requiredText } from '@/lib/forms';
 import { t } from '@/lib/i18n';
+import { LONG_TEXT_MAX, SHORT_TEXT_MAX } from '@/lib/input';
 import type { Client } from '@/lib/views';
 import { createClient, updateClient } from '../api';
 import { useOfficeAction } from '../session';
@@ -50,6 +51,7 @@ function ClientFields({ withNotes = true }: { withNotes?: boolean }) {
         <FieldLabel htmlFor={`${id}-name`}>{t('office.clientForm.name')}</FieldLabel>
         <Input
           id={`${id}-name`}
+          maxLength={SHORT_TEXT_MAX}
           autoFocus
           placeholder={t('office.clientForm.namePlaceholder')}
           aria-invalid={Boolean(nameError) || undefined}
@@ -64,6 +66,7 @@ function ClientFields({ withNotes = true }: { withNotes?: boolean }) {
         </FieldLabel>
         <Input
           id={`${id}-phone`}
+          maxLength={SHORT_TEXT_MAX}
           type="tel"
           inputMode="tel"
           placeholder={t('office.clientForm.phonePlaceholder')}
@@ -81,6 +84,7 @@ function ClientFields({ withNotes = true }: { withNotes?: boolean }) {
           </FieldLabel>
           <Textarea
             id={`${id}-notes`}
+            maxLength={LONG_TEXT_MAX}
             rows={3}
             placeholder={t('office.clientForm.notesPlaceholder')}
             {...register('notes')}

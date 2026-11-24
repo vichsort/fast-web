@@ -10,6 +10,7 @@ import { Field, FieldLabel } from '@/components/ui/field';
 import { Textarea } from '@/components/ui/textarea';
 import { UserAvatar } from '@/components/user';
 import { t } from '@/lib/i18n';
+import { LONG_TEXT_MAX } from '@/lib/input';
 import { cn } from '@/lib/utils';
 import type { PhotoInput } from '@/photos/process';
 import { act } from './act';
@@ -100,6 +101,7 @@ export function SubmissionForm({
           </FieldLabel>
           <Textarea
             id={descriptionId}
+            maxLength={LONG_TEXT_MAX}
             value={fields.description}
             onChange={(e) => change({ description: e.target.value })}
             placeholder={descriptionPlaceholder}

@@ -13,6 +13,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/in
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
 import { Spinner } from '@/components/ui/spinner';
 import { t } from '@/lib/i18n';
+import { SHORT_TEXT_MAX } from '@/lib/input';
 import type { ClientAddress } from '@/lib/views';
 import { addAddress, lookupZip, updateAddress } from '../api';
 import { useOfficeAction } from '../session';
@@ -79,6 +80,7 @@ export function AddressFields({
           </FieldLabel>
           <Input
             id={`${id}-label`}
+            maxLength={SHORT_TEXT_MAX}
             value={value.label}
             onChange={set('label')}
             placeholder={t('office.address.labelPlaceholder')}
@@ -120,6 +122,7 @@ export function AddressFields({
           <FieldLabel htmlFor={`${id}-street`}>{t('office.address.street')}</FieldLabel>
           <Input
             id={`${id}-street`}
+            maxLength={SHORT_TEXT_MAX}
             value={value.street}
             onChange={set('street')}
             aria-invalid={Boolean(missing('street')) || undefined}
@@ -128,17 +131,22 @@ export function AddressFields({
         </Field>
         <Field>
           <FieldLabel htmlFor={`${id}-number`}>{t('office.address.number')}</FieldLabel>
-          <Input id={`${id}-number`} value={value.number} onChange={set('number')} />
+          <Input id={`${id}-number`} maxLength={SHORT_TEXT_MAX} value={value.number} onChange={set('number')} />
         </Field>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field>
           <FieldLabel htmlFor={`${id}-complement`}>{t('office.address.complement')}</FieldLabel>
-          <Input id={`${id}-complement`} value={value.complement} onChange={set('complement')} />
+          <Input
+            id={`${id}-complement`}
+            maxLength={SHORT_TEXT_MAX}
+            value={value.complement}
+            onChange={set('complement')}
+          />
         </Field>
         <Field>
           <FieldLabel htmlFor={`${id}-district`}>{t('office.address.district')}</FieldLabel>
-          <Input id={`${id}-district`} value={value.district} onChange={set('district')} />
+          <Input id={`${id}-district`} maxLength={SHORT_TEXT_MAX} value={value.district} onChange={set('district')} />
         </Field>
       </div>
       <div className="grid gap-4 sm:grid-cols-[1fr_7rem]">
@@ -146,6 +154,7 @@ export function AddressFields({
           <FieldLabel htmlFor={`${id}-city`}>{t('office.address.city')}</FieldLabel>
           <Input
             id={`${id}-city`}
+            maxLength={SHORT_TEXT_MAX}
             value={value.city}
             onChange={set('city')}
             aria-invalid={Boolean(missing('city')) || undefined}
@@ -175,6 +184,7 @@ export function AddressFields({
         <FieldLabel htmlFor={`${id}-reference`}>{t('office.address.reference')}</FieldLabel>
         <Input
           id={`${id}-reference`}
+          maxLength={SHORT_TEXT_MAX}
           value={value.reference}
           onChange={set('reference')}
           placeholder={t('office.address.referencePlaceholder')}

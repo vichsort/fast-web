@@ -16,7 +16,7 @@ import { formatDate, formatOrderNumber, formatPhone } from '@/lib/format';
 import { requiredText } from '@/lib/forms';
 import { t } from '@/lib/i18n';
 import { ptBR } from '@/lib/i18n/pt-BR';
-import { phoneDigitsOrNull } from '@/lib/input';
+import { phoneDigitsOrNull, SHORT_TEXT_MAX } from '@/lib/input';
 import { updateCompany } from '../api';
 import { useOffice, useOfficeAction } from '../session';
 import { OwnerOnly } from '../shared';
@@ -91,22 +91,27 @@ function CompanyForm() {
             <FieldGroup className="gap-4">
               <Field data-invalid={Boolean(errors.name) || undefined}>
                 <FieldLabel htmlFor="company-name">{t('office.company.name')}</FieldLabel>
-                <Input id="company-name" aria-invalid={Boolean(errors.name) || undefined} {...register('name')} />
+                <Input
+                  id="company-name"
+                  maxLength={SHORT_TEXT_MAX}
+                  aria-invalid={Boolean(errors.name) || undefined}
+                  {...register('name')}
+                />
                 {errors.name && <FieldError>{errors.name.message}</FieldError>}
               </Field>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field>
                   <FieldLabel htmlFor="company-document">{t('office.company.document')}</FieldLabel>
-                  <Input id="company-document" {...register('document')} />
+                  <Input id="company-document" maxLength={SHORT_TEXT_MAX} {...register('document')} />
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="company-phone">{t('office.company.phone')}</FieldLabel>
-                  <Input id="company-phone" type="tel" {...register('phone')} />
+                  <Input id="company-phone" maxLength={SHORT_TEXT_MAX} type="tel" {...register('phone')} />
                 </Field>
               </div>
               <Field>
                 <FieldLabel htmlFor="company-email">{t('office.company.email')}</FieldLabel>
-                <Input id="company-email" type="email" {...register('email')} />
+                <Input id="company-email" maxLength={SHORT_TEXT_MAX} type="email" {...register('email')} />
               </Field>
               <Field>
                 <FieldLabel htmlFor="company-timezone">{t('office.company.timezone')}</FieldLabel>
