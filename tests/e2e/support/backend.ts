@@ -106,6 +106,14 @@ export async function updateMaterialsAs(email: string, orderId: string, text: st
   if (error) throw error;
 }
 
+/** O escritório troca os técnicos da O.S. (03, `set_assignees`). */
+export async function setAssignees(orderId: string, emails: string[]) {
+  const { client } = await signIn(users.manager);
+  const ids = await Promise.all(emails.map(async (email) => (await signIn(email)).userId));
+  const { error } = await client.rpc('set_assignees', { p_order_id: orderId, p_assignee_ids: ids });
+  if (error) throw error;
+}
+
 /** O escritório cancela a O.S. (03, `cancel_order`). */
 export async function cancelOrder(orderId: string, reason: string) {
   const { client } = await signIn(users.manager);
