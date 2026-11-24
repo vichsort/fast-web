@@ -23,7 +23,7 @@ Relatórios completos: [segurança](reviews/2026-11-24-security.md) e [UI/UX](re
 
 | Item | Repo | O que fazer |
 | --- | --- | --- |
-| Recusa de quem saiu da dupla (UX 1, crítico) | front | "Mandar ao escritório" (Web Share, fotos e resumo) antes de "Descartar"; aviso no Reatribuir e no Cancelar com a O.S. em execução (no Cancelar: o envio fica registrado sem revisão, R19) |
+| Recusa de quem saiu da dupla (UX 1, crítico) | front | aviso no Reatribuir e no Cancelar com a O.S. em execução (no Cancelar: o envio fica registrado sem revisão, R19) |
 | Texto livre sem limite (seg. A1) | backend | CHECK de tamanho e `invalid_input` nas RPCs, sem mudar assinatura; não copiar texto grande para o histórico |
 | O.S. enviada sem sinal segue "A fazer" (UX 2) | front | marcar "Enviada · na fila" e tirar da conta; faixa com "N envio(s) no aparelho"; selo de Pendências neutro para fila normal; texto neutro no painel e no aviso até a resposta |
 | "A fazer" fora da ordem do prazo (UX 3) | front | atrasadas, prazo, prioridade, sem prazo, número |

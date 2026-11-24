@@ -30,6 +30,8 @@ export const {
   resolveConflict,
   removePending,
   retryPending,
+  canShare,
+  shareRefused,
   saveProfile,
   CameraSheet,
   pickFromGallery,

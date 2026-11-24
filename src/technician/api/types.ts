@@ -109,6 +109,10 @@ export interface TechnicianApi {
   removePending(id: string): Promise<void>;
   /** Tenta agora um item bloqueado ou esperando a rede. */
   retryPending(id: string): Promise<void>;
+  /** O celular tem o compartilhamento do sistema (Web Share): só então Pendências oferece "Mandar ao escritório". */
+  canShare: boolean;
+  /** Abre o compartilhamento com o resumo e as fotos do envio recusado (share.ts). `cancelled`: o técnico desistiu. */
+  shareRefused(id: string, timeZone: string): Promise<'shared' | 'cancelled'>;
   saveProfile(profile: { full_name: string; phone: string | null }): Promise<void>;
   /** Câmera do app: a de exemplo ou a real (getUserMedia). */
   CameraSheet: (props: CameraSheetProps) => React.ReactNode;

@@ -8,6 +8,7 @@ import { db, type Draft as LocalDraft, type OrderSnapshot } from '@/offline/db';
 import { dismissRefusal, enqueueMaterials, enqueueStart, enqueueSubmit, retryBlocked } from '@/offline/queue';
 import { removePhotoFromDraft, savePhotoToDraft } from '@/photos/draft-photos';
 import { processPhoto } from '@/photos/process';
+import { refusedShareText, sharePhotoName } from '../../share';
 import type { DraftFields, TechnicianApi, TechOrder } from '../types';
 import { current } from './context';
 import { localSnapshot, parseDraftKey } from './local';
@@ -215,6 +216,38 @@ export const actions: Omit<
       const draft = await db.drafts.get(key);
       if (draft?.state === 'refused' && draft.userId === current().userId) await deleteDraft(key);
     } else if (kind === 'refusal' && key) await dismissRefusal(db, Number(key));
+  },
+
+  canShare: typeof navigator !== 'undefined' && 'share' in navigator,
+
+  /** O envio recusado sai pelo compartilhamento do celular: o resumo e as fotos (share.ts). Sem suporte a arquivos, só o texto. */
+  async shareRefused(id, timeZone) {
+    const [kind, key] = id.split(':');
+    const draft = kind === 'draft' && key ? await db.drafts.get(key) : undefined;
+    if (!draft || draft.userId !== current().userId || draft.state !== 'refused') return 'cancelled';
+    const photos = await db.photos.where('draftId').equals(draft.id).sortBy('createdAt');
+    const order = cachedSnapshot(draft.orderId) ?? draft.order;
+    const number = order?.number ?? 0;
+    const { title, text } = refusedShareText({
+      orderNumber: number,
+      orderTitle: order?.title ?? '',
+      clientName: order?.clientName ?? null,
+      refusal: draft.refusal ?? '',
+      startedAt: draft.clientStartedAt,
+      submittedAt: draft.updatedAt,
+      description: draft.description,
+      photos: photos.length,
+      timeZone,
+    });
+    const files = photos.map((p, i) => new File([p.blob], sharePhotoName(number, i), { type: 'image/jpeg' }));
+    const withFiles = { title, text, files };
+    try {
+      await navigator.share(navigator.canShare?.(withFiles) ? withFiles : { title, text });
+      return 'shared';
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return 'cancelled';
+      throw error;
+    }
   },
 
   async retryPending(id) {

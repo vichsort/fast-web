@@ -64,6 +64,11 @@ export const mockApi: TechnicianApi = {
   async removePending(id) {
     scratch.removePending(id);
   },
+  canShare: true,
+  async shareRefused() {
+    scratchToast(t('ui.queue.share'));
+    return 'shared';
+  },
   async retryPending(id) {
     scratch.retryPending(id);
   },

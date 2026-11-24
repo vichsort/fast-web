@@ -9,6 +9,15 @@ import { createOrder, serverOrder, setAssignees, users } from '../support/backen
 test('envio de quem saiu da O.S. fica com o motivo até o técnico apagar', async ({ page, context }) => {
   const order = await createOrder([users.technician1]);
   const description = 'Serviço feito sem sinal, mas saí da O.S.';
+  // O Chromium do Linux não tem o compartilhamento do sistema: um falso guarda o que a tela mandou.
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'canShare', { value: () => true });
+    Object.defineProperty(navigator, 'share', {
+      value: async (data: ShareData) => {
+        Object.assign(window, { shared: { text: data.text, files: (data.files ?? []).map((f) => f.name) } });
+      },
+    });
+  });
 
   await login(page, users.technician1);
   await page.getByText(order.title).click();
@@ -42,6 +51,15 @@ test('envio de quem saiu da O.S. fica com o motivo até o técnico apagar', asyn
   await expect(card.getByText(order.title)).toBeVisible();
   await expect(card.getByText(order.clientName)).toBeVisible();
   await expect(attention.getByRole('button', { name: t('ui.actions.open') })).toHaveCount(0);
+
+  // "Mandar ao escritório" leva o resumo e a foto pelo compartilhamento do celular.
+  await card.getByRole('button', { name: t('ui.queue.share') }).click();
+  const shared = await page.waitForFunction(() => (window as { shared?: unknown }).shared);
+  const { text, files } = (await shared.jsonValue()) as { text: string; files: string[] };
+  for (const part of [order.title, order.clientName, errorMessage('not_assigned'), description]) {
+    expect(text).toContain(part);
+  }
+  expect(files).toEqual([`OS-${String(order.orderNumber).padStart(4, '0')}-foto-1.jpg`]);
 
   // Continua no aparelho depois de reabrir o app.
   await page.reload();

@@ -13,7 +13,16 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { t } from '@/lib/i18n';
 import type { PendingItem } from '@/lib/views';
 import { act } from './act';
-import { removePending, retryPending, usePendingItems, useQueueDraft, useSyncStatus, useTimeZone } from './api';
+import {
+  canShare,
+  removePending,
+  retryPending,
+  shareRefused,
+  usePendingItems,
+  useQueueDraft,
+  useSyncStatus,
+  useTimeZone,
+} from './api';
 import { GroupHeading } from './parts';
 
 /** Pendências: a fila do aparelho e as recusas (docs/queue.md; docs/screens-technician.md). */
@@ -112,7 +121,7 @@ export function PendingPage() {
 
 /**
  * Um item com as ações que o estado permite (queue.md): esperando rede ou bloqueado → tentar agora; envio recusado →
- * apagar o rascunho (com confirmação); início ou materiais recusados → dispensar; `conflict` → abrir a O.S. para
+ * mandar ao escritório pelo compartilhamento do celular (o destaque) e apagar o rascunho (com confirmação); início ou materiais recusados → dispensar; `conflict` → abrir a O.S. para
  * escolher o texto. O que foi feito (texto e fotos) fica à vista nos envios.
  */
 function PendingEntry({ item, onDiscard }: { item: PendingItem; onDiscard: () => void }) {
@@ -135,6 +144,9 @@ function PendingEntry({ item, onDiscard }: { item: PendingItem; onDiscard: () =>
             : undefined
         }
         onDiscard={item.state === 'refused' && isDraft ? onDiscard : undefined}
+        onShare={
+          item.state === 'refused' && isDraft && canShare ? () => void act(shareRefused(item.id, TZ)) : undefined
+        }
         onDismiss={
           item.state === 'refused' && !isDraft && !conflict
             ? () => void act(removePending(item.id), t('technician.pending.dismissed'))

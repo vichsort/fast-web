@@ -85,6 +85,11 @@ export function SyncSection() {
                     ? () => scratchToast(t('ui.actions.discard'))
                     : undefined
                 }
+                onShare={
+                  item.state === 'refused' && item.kind !== 'materials' && item.kind !== 'start'
+                    ? () => scratchToast(t('ui.queue.share'))
+                    : undefined
+                }
                 onDismiss={
                   item.state === 'refused' && item.kind === 'materials'
                     ? () => scratchToast(t('ui.actions.dismiss'))

@@ -157,6 +157,16 @@ export const technicianTexts = {
     noTarget: 'Não há tentativa para complementar nesta O.S.',
   },
 
+  share: {
+    title: 'O.S. {number} · {title}',
+    client: 'Cliente: {name}',
+    refused: 'Envio recusado: {reason}',
+    times: 'Iniciado em {started} · enviado em {submitted}',
+    submitted: 'Enviado em {submitted}',
+    done: 'O que foi feito:',
+    photos: '{count} foto(s) anexada(s).',
+  },
+
   pending: {
     title: 'Pendências',
     description: 'O que você fez neste aparelho e ainda não chegou ao escritório.',

@@ -16,6 +16,7 @@ import {
   Play,
   RotateCw,
   Send,
+  Share2,
   Trash,
   WifiOff,
 } from 'lucide-react';
@@ -173,6 +174,8 @@ export interface PendingItemCardProps extends React.ComponentProps<'article'> {
   onRetry?: () => void;
   /** "Descartar" o rascunho recusado (pede confirmação na tela). */
   onDiscard?: () => void;
+  /** "Mandar ao escritório" o envio recusado (compartilhamento do celular); vem antes de descartar. */
+  onShare?: () => void;
   /** "Dispensar" a recusa de início ou materiais. */
   onDismiss?: () => void;
   /** Abre a O.S. ou o rascunho (só com a O.S. ainda no aparelho). */
@@ -186,6 +189,7 @@ export function PendingItemCard({
   now,
   onRetry,
   onDiscard,
+  onShare,
   onDismiss,
   onOpen,
   className,
@@ -259,7 +263,7 @@ export function PendingItemCard({
         </p>
       )}
 
-      {(onRetry || onDiscard || onDismiss || onOpen) && (
+      {(onRetry || onDiscard || onShare || onDismiss || onOpen) && (
         <div className="flex flex-wrap justify-end gap-2">
           {onOpen && (
             <Button variant="ghost" size="sm" onClick={onOpen}>
@@ -272,9 +276,15 @@ export function PendingItemCard({
             </Button>
           )}
           {onDiscard && (
-            <Button variant="destructive" size="sm" onClick={onDiscard}>
+            <Button variant={onShare ? 'ghost' : 'destructive'} size="sm" onClick={onDiscard}>
               <Trash />
               {t('ui.actions.discard')}
+            </Button>
+          )}
+          {onShare && (
+            <Button size="sm" onClick={onShare}>
+              <Share2 />
+              {t('ui.queue.share')}
             </Button>
           )}
           {onRetry && (
