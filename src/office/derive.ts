@@ -137,3 +137,19 @@ export function seenUntil(supplements: Pick<ExecutionView, 'received_at'>[]): st
     null,
   );
 }
+
+/**
+ * A dupla pode estar trabalhando sem sinal (o servidor só sabe do início que já chegou): em execução ou refazendo.
+ * Cancelar aí registra sem revisão o envio que ainda vier (04, R19); o Cancelar avisa.
+ */
+export function mayHaveOfflineWork(order: Pick<OfficeOrderListItem, 'status'>): boolean {
+  return order.status === 'in_progress' || order.status === 'rejected';
+}
+
+/** Quem sai da O.S. enquanto a dupla pode estar trabalhando sem sinal: o envio dele será recusado (`not_assigned`). */
+export function leavingWhileWorking(
+  order: Pick<OfficeOrderListItem, 'status' | 'assignees'>,
+  ids: string[],
+): PersonRef[] {
+  return mayHaveOfflineWork(order) ? order.assignees.filter((a) => !ids.includes(a.id)) : [];
+}

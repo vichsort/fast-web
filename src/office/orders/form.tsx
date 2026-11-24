@@ -34,6 +34,7 @@ import { QuickClientDialog } from '../clients/client-form';
 import { useClient, useClientNames, useOrder, useTechnicians } from '../queries';
 import { useOffice, useOfficeAction } from '../session';
 import { ChoiceCards, NotFound } from '../shared';
+import { LeavingNotice } from './detail/dialogs';
 import { conflictCurrent, NO_ADDRESS, orderEdit } from './edit';
 
 const newRoute = getRouteApi('/office/orders/new');
@@ -122,6 +123,7 @@ function OrderForm({ order, initialClientId = null }: { order?: OrderDetail; ini
   const { control, register, setValue } = form;
   const { errors, submitCount, isSubmitting } = form.formState;
   const clientId = useWatch({ control, name: 'client_id' });
+  const assigneeIds = useWatch({ control, name: 'assignee_ids' });
   const [quickClient, setQuickClient] = React.useState<string | null>(null);
   const [addingAddress, setAddingAddress] = React.useState(false);
   // O que a tela carregou: a base do "mudou?" dos materiais e dos técnicos, e o `expected` dos materiais até um
@@ -474,6 +476,7 @@ function OrderForm({ order, initialClientId = null }: { order?: OrderDetail; ini
                   )}
                 />
                 <FieldDescription>{t('office.orderForm.techniciansHint')}</FieldDescription>
+                {order && <LeavingNotice order={order} ids={assigneeIds} />}
               </Field>
             </Section>
             <Section title={t('office.orderForm.sectionMaterials')}>

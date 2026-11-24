@@ -2,6 +2,8 @@ import {
   type ClientRow,
   clientMatches,
   directWriteError,
+  leavingWhileWorking,
+  mayHaveOfflineWork,
   type OrderListRow,
   splitOrderFilters,
   toClientListItem,
@@ -200,5 +202,22 @@ describe('directWriteError', () => {
   it('classifies the rest like any other call', () => {
     expect(directWriteError({ message: 'Failed to fetch' }, 0).errorClass).toBe('network');
     expect(directWriteError({ code: '42501', message: 'denied' }, 403).errorClass).toBe('bug');
+  });
+});
+
+describe('offline work warnings (UX review 1)', () => {
+  it('a cancel may land on offline work while the pair works on the order or redoes it', () => {
+    expect(
+      (['open', 'in_progress', 'pending_approval', 'rejected', 'approved', 'cancelled'] as const).filter((status) =>
+        mayHaveOfflineWork({ status }),
+      ),
+    ).toEqual(['in_progress', 'rejected']);
+  });
+
+  it('names who leaves the order while the pair may be working offline: their submission will be refused', () => {
+    const working = { status: 'in_progress' as const, assignees: [ana, bia] };
+    expect(leavingWhileWorking(working, [bia.id, boss.id])).toEqual([ana]);
+    expect(leavingWhileWorking(working, [ana.id, bia.id])).toEqual([]);
+    expect(leavingWhileWorking({ ...working, status: 'open' }, [])).toEqual([]);
   });
 });

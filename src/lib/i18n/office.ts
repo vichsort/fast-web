@@ -164,6 +164,14 @@ export const officeTexts = {
     reassignDescription:
       'Escolha o conjunto final. Quem sai fica registrado no histórico; trocar técnico não exige motivo.',
     reassigned: 'Reatribuir técnicos',
+    leavingTitle: 'Quem sai pode ter feito o serviço sem sinal',
+    leavingOne:
+      'A O.S. está em execução, e {names} sai dela. Um envio feito sem sinal será recusado e fica só no celular, que pode mandá-lo ao escritório.',
+    leavingMany:
+      'A O.S. está em execução, e {names} saem dela. Um envio feito sem sinal será recusado e fica só nos celulares, que podem mandá-lo ao escritório.',
+    cancelWorkingTitle: 'A O.S. está em execução',
+    cancelWorkingBody:
+      'Se a dupla fez o serviço sem sinal, o envio ainda chega e fica registrado na O.S. cancelada, sem revisão.',
     sectionHistory: 'Histórico',
     cancelledTitle: 'O.S. cancelada',
     cancelledBy: 'Por {name}, {time}.',
