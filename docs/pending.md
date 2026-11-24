@@ -6,7 +6,7 @@ O que falta no front e no backend. Item feito sai daqui no mesmo commit do códi
 
 | Fase | Itens | Trava a produção |
 | --- | --- | --- |
-| [1. Código antes do primeiro deploy](#1-código-antes-do-primeiro-deploy) | 2 | sim |
+| [1. Código antes do primeiro deploy](#1-código-antes-do-primeiro-deploy) | 3 | sim |
 | [2. Primeiro deploy](#2-primeiro-deploy) | 6 | sim |
 | [3. Antes de entregar à Fast](#3-antes-de-entregar-à-fast) | 5 | sim |
 | [4. Depois, sem travar](#4-depois-sem-travar) | 9 | não |
@@ -19,6 +19,7 @@ Na ordem de gravidade. Custo do relatório: P = pequeno, M = médio.
 | --- | --- | --- | --- |
 | Convite com aceite (seg. M1) | os dois | [abaixo](#convite-com-aceite-seg-m1) | M |
 | Sem email | os dois | [abaixo](#sem-email) | M |
+| Versão e atualização automática | os dois | [abaixo](#versão-e-atualização-automática) | M |
 
 ### Convite com aceite (seg. M1)
 
@@ -45,6 +46,17 @@ Decisões de 2026-11-24 em [01 Fundação](decisions.md#01-fundação). Contrato
 | Link de recuperação | os dois | operação do owner que gera o link de "definir senha" para um membro da empresa, de uso único, válido por 24 h, com auditoria; a tela "esqueci a senha" vira "peça o link ao responsável" |
 | Trocar a senha | front | pede a senha atual e entra de novo com ela antes de trocar |
 | Config do Auth | backend | sem SMTP e sem os templates de email; `secure_password_change = true` e senha mínima de 6 no `config.toml` |
+
+### Versão e atualização automática
+
+Decisões de 2026-11-24 em [Versão e atualização](decisions.md#versão-e-atualização). [Versionamento](e2e.md#versionamento), [queue.md](queue.md#service-worker), [screens.md](screens.md) e o 01 do backend mudam no mesmo commit do código.
+
+| Parte | Repo | O que fazer |
+| --- | --- | --- |
+| Versão | os dois | `package.json` em semver; `version.ts` lê a do `package.json`; comparação por número; `min_client_version` com o formato semver no CHECK (01, R8) |
+| Técnico | front | o aviso "Versão nova" sai: o worker novo entra ao abrir o app e na troca de tela, fora da câmera e do seletor da galeria; procura versão nova de tempos em tempos e ao voltar à aba (hoje só ao abrir). "Atualize o app" (abaixo da mínima) atualiza sozinho; o botão fica só se falhar |
+| Escritório | front | procura versão nova (arquivo de versão do build, de tempos em tempos e ao voltar à aba) e recarrega na troca de tela; tela que falha ao carregar recarrega uma vez |
+| Testes | front | unit da comparação e da escolha do momento; E2E da atualização sozinha com envio na fila |
 
 ## 2. Primeiro deploy
 

@@ -13,6 +13,11 @@ As decisões do front e do backend, com data e o porquê, por assunto. Decisão 
 - **2026-11-24** — O ícone do app continua a marca provisória (`public/logo.svg`). A logo da Fast (o escudo, só em PNG) fica guardada em [`docs/assets/fast-logo.png`](assets/fast-logo.png), fora do `public/`. *Por quê:* não há outra versão da logo, e o escudo tem texto e telefone que viram borrão em 48 px. Em `public/`, o service worker baixaria os 272 KB para todo técnico sem uso. Escolha do usuário.
 - **2026-11-19** — Ícones do PWA gerados no build (`@vite-pwa/assets-generator`, pelo `pwaAssets` do plugin) a partir de um arquivo só, `public/logo.svg`; o maskable e o apple-touch levam o fundo da marca e margem para o recorte do Android. *Por quê:* a logo da Fast ainda não chegou; quando chegar, basta trocar o arquivo, sem mexer em tamanhos, manifest ou `<head>`.
 
+### Versão e atualização
+
+- **2026-11-24** — Versão semântica (major.minor.patch) nos dois repositórios, no `package.json`, no lugar da versão pela data do build. O app só mostra a versão no Perfil e a manda no `x-client-version`; nada guarda a versão nem o último contato de cada membro. *Por quê:* escolha do usuário: um número legível e o mesmo padrão nos dois repositórios; acompanhar aparelho por aparelho não vale o custo nem o controle sobre o técnico. A comparação passa a ser por número (1.10.0 é maior que 1.9.0), e o formato do `min_client_version` muda junto (01, R8).
+- **2026-11-24** — Todos atualizam sozinhos, sem botão: a versão nova entra ao abrir o app ou na próxima troca de tela, nunca no meio de uma tela. No técnico, nunca com a câmera aberta nem com o seletor da galeria (a página fica escondida esperando as fotos). O escritório, que não tem service worker, passa a procurar versão nova e segue a mesma regra; tela que falha ao carregar recarrega a página (aba aberta durante um deploy pede arquivos que o Pages não serve mais). A versão mínima continua como trava para quem ficou para trás. *Por quê:* escolha do usuário: ninguém fica em versão velha por não tocar em "Atualizar", e a troca de tela é o momento em que nada digitado se perde (o rascunho do técnico é salvo a cada toque; os formulários do escritório, não).
+
 ### Telas
 
 Doc: [screens.md](screens.md).
