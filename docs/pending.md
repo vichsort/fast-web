@@ -9,7 +9,7 @@ O que falta no front e no backend. Item feito sai daqui no mesmo commit do códi
 | [1. Código antes do primeiro deploy](#1-código-antes-do-primeiro-deploy) | 1 | sim |
 | [2. Primeiro deploy](#2-primeiro-deploy) | 7 | sim |
 | [3. Antes de entregar à Fast](#3-antes-de-entregar-à-fast) | 5 | sim |
-| [4. Depois, sem travar](#4-depois-sem-travar) | 8 | não |
+| [4. Depois, sem travar](#4-depois-sem-travar) | 9 | não |
 
 ## 1. Código antes do primeiro deploy
 
@@ -17,7 +17,22 @@ Na ordem de gravidade. Custo do relatório: P = pequeno, M = médio.
 
 | Item | Repo | O que fazer | Custo |
 | --- | --- | --- | --- |
-| Convite revela perfil e emails (seg. M1) | os dois | conforme a [decisão](decisions.md#06-membros) de 2026-11-24: sem nome e telefone até o aceite; tirar as flags da resposta; contrato do `invite_member` ([06](../../fast/docs/modules/06-members.md)) e tela de membros | P a M |
+| Convite com aceite (seg. M1) | os dois | [abaixo](#convite-com-aceite-seg-m1) | M |
+
+### Convite com aceite (seg. M1)
+
+Decisões de 2026-11-24 em [06 Membros](decisions.md#06-membros). Contrato em [01](../../fast/docs/modules/01-foundation.md), [03](../../fast/docs/modules/03-service-orders.md) e [06](../../fast/docs/modules/06-members.md), no mesmo commit do código.
+
+| Parte | Repo | O que fazer |
+| --- | --- | --- |
+| Vínculo pendente | backend | `company_members` com o estado do aceite e o nome digitado no convite; o vínculo pendente não dá acesso à empresa nem entra no `colleague_ids()` (o owner não lê o perfil); a lista de membros mostra o nome e o email do convite até o aceite |
+| `invite_member` | backend | saída sem `already`, `reactivated` e `created`, igual para email novo e existente; convite a quem tem vínculo aceito em outra empresa fica pendente |
+| Aceitar e recusar | backend | operações do próprio convidado; aceitar recusa se ele já tem vínculo aceito em outra empresa (um por pessoa); conta nova aceita ao definir a senha pelo link do convite |
+| Atribuição | backend | `create_order` e `set_assignees` recusam técnico pendente |
+| Remoção (R8) | backend | não bane quem tem convite pendente |
+| Tela de membros | front | pendente com o nome e o email do convite; aviso de "já era membro" sai junto com o `already` |
+| Convite no app | front | sem vínculo ativo e com convite pendente: tela "A empresa X convidou você" (aceitar, recusar) no lugar do aviso de removido; "definir senha" pelo link do convite aceita |
+| Técnicos da O.S. | front | seletor só com técnicos aceitos |
 
 ## 2. Primeiro deploy
 
@@ -66,6 +81,7 @@ O front não tem tela de importação ([decisão](decisions.md#telas-do-escritó
 | Listas do escritório, opção B | medir em campo | view no backend com filtros e paginação no banco, quando o volume pedir (dezenas de milhares de O.S.); análise em [e2e.md](e2e.md#listas-do-escritório) |
 | `inlineDynamicImports` obsoleto no build | manutenção | o `vite-plugin-pwa` 2.0.0 (a versão mais nova em 2026-11-23) fixa a opção no build do service worker, e o Rolldown avisa que ela sai; atualizar o plugin quando uma versão trocar por `codeSplitting: false` |
 | Fotos órfãs no R2 | manutenção | limpeza das fotos confirmadas que nunca entraram num envio ([04](../../fast/docs/modules/04-execution-photos.md)) |
+| Seletor de empresa | produto | pessoa com vínculo aceito em mais de uma empresa escolhe em qual entra; até lá, um vínculo aceito por pessoa ([decisão](decisions.md#06-membros) de 2026-11-24). Quando houver a segunda empresa cliente |
 
 ### Android emulado
 
