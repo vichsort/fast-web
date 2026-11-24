@@ -1,4 +1,4 @@
-import { authTimeoutFetch, signalingFetch } from './supabase-fetch';
+import { authTimeoutFetch, bannedFetch, signalingFetch } from './supabase-fetch';
 
 describe('signalingFetch', () => {
   it('tells after any HTTP response, an error status too: the network reached the server', async () => {
@@ -54,5 +54,42 @@ describe('authTimeoutFetch', () => {
     caller.abort(new Error('caller gave up'));
 
     await expect(request).rejects.toThrow('caller gave up');
+  });
+});
+
+describe('bannedFetch', () => {
+  const answer = (status: number, body: unknown) => async () => new Response(JSON.stringify(body), { status });
+  const token = 'http://x.test/auth/v1/token?grant_type=refresh_token';
+
+  it('tells when the session renewal is refused because the account was banned (06, R8: removed from every company)', async () => {
+    const banned = vi.fn();
+    const fetch = bannedFetch(answer(400, { code: 400, error_code: 'user_banned', msg: 'User Banned' }), banned);
+
+    const response = await fetch(token, { method: 'POST' });
+
+    expect(banned).toHaveBeenCalledOnce();
+    // O supabase-js ainda lê a resposta inteira.
+    expect(await response.json()).toMatchObject({ error_code: 'user_banned' });
+  });
+
+  it('reads the code in the format of the API version the supabase-js asks for (code instead of error_code)', async () => {
+    const banned = vi.fn();
+    await bannedFetch(answer(400, { code: 'user_banned', message: 'Invalid Refresh Token: User Banned' }), banned)(
+      token,
+      {
+        method: 'POST',
+      },
+    );
+
+    expect(banned).toHaveBeenCalledOnce();
+  });
+
+  it('says nothing for another refusal of the renewal, nor for a banned answer outside the token endpoint', async () => {
+    const banned = vi.fn();
+    await bannedFetch(answer(400, { error_code: 'refresh_token_not_found' }), banned)(token, { method: 'POST' });
+    await bannedFetch(answer(400, { error_code: 'user_banned' }), banned)('http://x.test/rest/v1/orders');
+    await bannedFetch(async () => new Response('<html>', { status: 502 }), banned)(token, { method: 'POST' });
+
+    expect(banned).not.toHaveBeenCalled();
   });
 });

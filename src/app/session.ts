@@ -3,7 +3,7 @@ import type { Session } from '@supabase/supabase-js';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { classifyRpcError } from '@/lib/errors';
-import { supabase } from '@/lib/supabase';
+import { accountBanned, supabase } from '@/lib/supabase';
 import { type Access, type AccessLookup, type Membership, type ResolvedAccess, resolveAccess } from './access';
 import { forgetOnUserChange } from './query-client';
 
@@ -16,7 +16,15 @@ export function useSession(): { session: Session | null; ready: boolean } {
   const [state, setState] = useState<{ session: Session | null; ready: boolean }>({ session: null, ready: false });
   useEffect(() => {
     const sessionChanged = forgetOnUserChange(queryClient);
+    let wiping = false;
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      // Conta banida (06, R8): sem token não dá para conferir o vínculo; faz o mesmo que a remoção detectada.
+      const banned = accountBanned();
+      if (!session && banned) {
+        if (!wiping) void wipeUser(banned).then(() => window.location.replace('/login?removed=true'));
+        wiping = true;
+        return;
+      }
       sessionChanged(session?.user.id ?? null);
       setState({ session, ready: true });
     });
@@ -95,9 +103,14 @@ export async function pendingItems(userId: string): Promise<number> {
  * deixava uma gravação no meio do logout trazer o cache de volta.
  */
 export async function signOutAndWipe(userId: string): Promise<void> {
-  const [{ clearUser }, { db }] = await Promise.all([import('@/offline/queue'), import('@/offline/db')]);
   const { error } = await supabase.auth.signOut();
   if (error) await supabase.auth.signOut({ scope: 'local' });
+  await wipeUser(userId);
+}
+
+/** Apaga do aparelho os dados do usuário: rascunhos, fotos, fila, cache e o acesso guardado (Q10). */
+async function wipeUser(userId: string): Promise<void> {
+  const [{ clearUser }, { db }] = await Promise.all([import('@/offline/queue'), import('@/offline/db')]);
   await clearUser(db, userId);
   try {
     localStorage.removeItem(cacheKey(userId));

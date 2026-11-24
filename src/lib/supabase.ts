@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { authLinkError, authLinkType } from '@/app/access';
 import { createAuthStorage } from './auth-storage';
 import type { Database } from './database.types';
-import { authTimeoutFetch, signalingFetch } from './supabase-fetch';
+import { authTimeoutFetch, bannedFetch, signalingFetch } from './supabase-fetch';
 import { VERSION_HEADERS } from './version';
 
 const url = import.meta.env.VITE_SUPABASE_URL;
@@ -30,12 +30,35 @@ export function onSupabaseResponse(listener: () => void): () => void {
   return () => responseListeners.delete(listener);
 }
 
+// A chave padrão do supabase-js, dita aqui para ler a sessão guardada quando a renovação é recusada.
+const storageKey = `sb-${new URL(url).hostname.split('.')[0]}-auth-token`;
+const authStorage = createAuthStorage();
+let bannedUser: string | null = null;
+
+/**
+ * Usuário cuja renovação da sessão foi recusada com `user_banned` (06, R8: saiu de todas as empresas), lido da sessão
+ * guardada antes de o supabase-js apagá-la; `null` se não houve.
+ */
+export const accountBanned = () => bannedUser;
+
+async function rememberBannedUser(): Promise<void> {
+  try {
+    const stored = await authStorage.getItem(storageKey);
+    bannedUser = stored ? ((JSON.parse(stored) as { user?: { id?: string } }).user?.id ?? null) : null;
+  } catch {
+    bannedUser = null;
+  }
+}
+
 export const supabase = createClient<Database>(url, anonKey, {
-  auth: { storage: createAuthStorage(), persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+  auth: { storage: authStorage, storageKey, persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
   global: {
     headers: VERSION_HEADERS,
     fetch: signalingFetch(
-      authTimeoutFetch((...args) => fetch(...args)),
+      bannedFetch(
+        authTimeoutFetch((...args) => fetch(...args)),
+        rememberBannedUser,
+      ),
       () => {
         for (const listener of responseListeners) listener();
       },

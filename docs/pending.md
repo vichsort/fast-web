@@ -7,7 +7,7 @@ O que falta no front e no backend. Item feito sai daqui no mesmo commit do códi
 | Fase | Itens | Trava a produção |
 | --- | --- | --- |
 | [1. Decisões em aberto](#1-decisões-em-aberto) | 2 | sim: mudam itens da fase 2 |
-| [2. Código antes do primeiro deploy](#2-código-antes-do-primeiro-deploy) | 3 | sim |
+| [2. Código antes do primeiro deploy](#2-código-antes-do-primeiro-deploy) | 2 | sim |
 | [3. Primeiro deploy](#3-primeiro-deploy) | 7 | sim |
 | [4. Antes de entregar à Fast](#4-antes-de-entregar-à-fast) | 5 | sim |
 | [5. Depois, sem travar](#5-depois-sem-travar) | 8 | não |
@@ -26,7 +26,6 @@ Na ordem de gravidade. Custo do relatório: P = pequeno, M = médio.
 | Item | Repo | O que fazer | Custo |
 | --- | --- | --- | --- |
 | Convite revela perfil e emails (seg. M1) | os dois | conforme a [decisão](#1-decisões-em-aberto); tirar as flags da resposta | P a M |
-| Ex-membro continua com conta (seg. B1) | backend | na Edge Function `remove_member`, banir a conta no Auth se ela não tem vínculo ativo em outra empresa; hoje ele loga, renova o token e gasta cota de Edge Function (o RLS já corta os dados) | P |
 | Emails do Auth em inglês (UX 9) | backend | templates pt-BR de convite e de recuperação de senha, com o nome da empresa (hoje comentados no `config.toml`); no hospedado, os mesmos pelo painel | P |
 
 ## 3. Primeiro deploy

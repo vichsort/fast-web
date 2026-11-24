@@ -29,3 +29,25 @@ export function authTimeoutFetch(base: typeof fetch, ms = AUTH_TIMEOUT_MS): type
     return base(input, { ...init, signal });
   };
 }
+
+/**
+ * A renovação da sessão recusada com `user_banned`: a remoção deixou a conta sem empresa e o backend a baniu
+ * (../fast/docs/modules/06-members.md, R8). Sem token, o app não consegue conferir o vínculo; esse aviso faz o
+ * mesmo que a remoção detectada (../fast/docs/offline.md, proteção dos dados no aparelho).
+ */
+export function bannedFetch(base: typeof fetch, onBanned: () => void | Promise<void>): typeof fetch {
+  return async (input, init) => {
+    const response = await base(input, init);
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+    if (response.ok || new URL(url).pathname !== '/auth/v1/token') return response;
+    try {
+      // O formato muda com a versão da API que o supabase-js pede (`X-Supabase-Api-Version`): `code` ou `error_code`.
+      const body = (await response.clone().json()) as { code?: unknown; error_code?: unknown };
+      // Esperado antes de devolver: o supabase-js só apaga a sessão guardada depois, e quem ouve ainda a lê.
+      if (body.error_code === 'user_banned' || body.code === 'user_banned') await onBanned();
+    } catch {
+      // Resposta sem JSON (gateway): não é a recusa do Auth.
+    }
+    return response;
+  };
+}
