@@ -33,7 +33,7 @@ function CancelledNotice({ order }: { order: TechOrder }) {
   );
 }
 
-function RejectedNotice({ attempt }: { attempt: Attempt }) {
+export function RejectedNotice({ attempt }: { attempt: Attempt }) {
   const TZ = useTimeZone();
   return (
     <Notice

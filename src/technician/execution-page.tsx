@@ -1,5 +1,14 @@
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
-import { Clock, CloudUpload, HardDriveDownload, Send, Trash, TriangleAlert, WifiOff } from 'lucide-react';
+import {
+  Clock,
+  CloudUpload,
+  HardDriveDownload,
+  MessageSquareWarning,
+  Send,
+  Trash,
+  TriangleAlert,
+  WifiOff,
+} from 'lucide-react';
 import * as React from 'react';
 import { AlertBadge } from '@/components/badges';
 import { ConfirmDialog, SidePanel } from '@/components/dialogs';
@@ -27,6 +36,7 @@ import {
   withAlerts,
 } from './api';
 import { sendNotice } from './derive';
+import { RejectedNotice } from './order-detail/notices';
 import { ActionBar } from './parts';
 import { defaultParticipants, SubmissionForm } from './submission-form';
 
@@ -80,6 +90,8 @@ function Execution({ order }: { order: TechOrder }) {
   const hasDraft = saved !== null;
   const canSend = draft.photos.length > 0; // 04, R3: envio novo exige ao menos 1 foto.
   const back = () => navigate({ to: '/technician/orders/$orderId', params: { orderId: order.id } });
+  const lastAttempt = order.attempts.at(-1);
+  const lastRejected = lastAttempt?.review_status === 'rejected' ? lastAttempt : null;
 
   return (
     <div className="flex flex-col gap-4">
@@ -89,6 +101,8 @@ function Execution({ order }: { order: TechOrder }) {
         title={t('technician.execution.title')}
         description={order.title}
       />
+
+      {lastRejected && <RejectedNotice attempt={lastRejected} />}
 
       {order.startedHere ? (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-card px-3.5 py-3 text-sm">
@@ -193,6 +207,8 @@ function ReviewPanel({
   onSend: () => void;
 }) {
   const TZ = useTimeZone();
+  const lastAttempt = order.attempts.at(-1);
+  const rejection = lastAttempt?.review_status === 'rejected' ? lastAttempt.review_comment : null;
   const photos = withAlerts(draft.photos, draft.startedAt);
   const photoAlertCounts = new Map<PhotoAlert, number>();
   for (const alert of photos.flatMap((p) => p.alerts)) {
@@ -229,6 +245,12 @@ function ReviewPanel({
       }
     >
       <div className="mx-auto flex w-full max-w-lg flex-col gap-4 text-sm">
+        {rejection && (
+          <p className="flex items-start gap-2 font-medium">
+            <MessageSquareWarning aria-hidden className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+            <span className="whitespace-pre-line">{t('technician.execution.reviewAsked', { reason: rejection })}</span>
+          </p>
+        )}
         <PhotoGrid photos={photos} timeZone={TZ} density="compact" />
         <p className={draft.description.trim() ? 'text-base whitespace-pre-line' : 'text-muted-foreground italic'}>
           {draft.description.trim() || t('technician.execution.reviewNoDescription')}
