@@ -6,27 +6,20 @@ O que falta no front e no backend. Item feito sai daqui no mesmo commit do códi
 
 | Fase | Itens | Trava a produção |
 | --- | --- | --- |
-| [1. Decisões em aberto](#1-decisões-em-aberto) | 1 | sim: muda um item da fase 2 |
-| [2. Código antes do primeiro deploy](#2-código-antes-do-primeiro-deploy) | 1 | sim |
-| [3. Primeiro deploy](#3-primeiro-deploy) | 7 | sim |
-| [4. Antes de entregar à Fast](#4-antes-de-entregar-à-fast) | 5 | sim |
-| [5. Depois, sem travar](#5-depois-sem-travar) | 8 | não |
+| [1. Código antes do primeiro deploy](#1-código-antes-do-primeiro-deploy) | 1 | sim |
+| [2. Primeiro deploy](#2-primeiro-deploy) | 7 | sim |
+| [3. Antes de entregar à Fast](#3-antes-de-entregar-à-fast) | 5 | sim |
+| [4. Depois, sem travar](#4-depois-sem-travar) | 8 | não |
 
-## 1. Decisões em aberto
-
-| Pergunta | Opções | Muda |
-| --- | --- | --- |
-| Convite a um email de outra empresa: o owner passa a ler nome e telefone dessa pessoa, e as flags `already`, `reactivated` e `created` da resposta permitem enumerar emails (seg. M1) | recusar o convite, ou não revelar o perfil até o aceite; nos dois casos, a resposta deixa de distinguir email existente de novo | M1 na fase 2; contrato do `invite_member` ([06](../../fast/docs/modules/06-members.md)) e tela de membros |
-
-## 2. Código antes do primeiro deploy
+## 1. Código antes do primeiro deploy
 
 Na ordem de gravidade. Custo do relatório: P = pequeno, M = médio.
 
 | Item | Repo | O que fazer | Custo |
 | --- | --- | --- | --- |
-| Convite revela perfil e emails (seg. M1) | os dois | conforme a [decisão](#1-decisões-em-aberto); tirar as flags da resposta | P a M |
+| Convite revela perfil e emails (seg. M1) | os dois | conforme a [decisão](decisions.md#06-membros) de 2026-11-24: sem nome e telefone até o aceite; tirar as flags da resposta; contrato do `invite_member` ([06](../../fast/docs/modules/06-members.md)) e tela de membros | P a M |
 
-## 3. Primeiro deploy
+## 2. Primeiro deploy
 
 Roteiro: [operations.md](../../fast/docs/operations.md#primeiro-deploy). Abaixo, o que falta fazer, com o que o roteiro ainda não diz (checklist da seção 3 do [relatório de segurança](reviews/2026-11-24-security.md#3-checklist-do-primeiro-deploy)). Na ordem.
 
@@ -40,7 +33,7 @@ Roteiro: [operations.md](../../fast/docs/operations.md#primeiro-deploy). Abaixo,
 | Cloudflare Pages | front | ligado ao Supabase de produção; a versão do build vem de `CF_PAGES_COMMIT_SHA` (`vite.config.ts`) |
 | Conferências | os dois | CORS: REST, RPC, Auth e Edge Functions do hospedado aceitam o `x-client-version` (o local aceita; se o hospedado recusar, nada funciona); ip da auditoria (passo 6 do roteiro); `GET /auth/v1/settings` e `signup` respondendo `signup_disabled`; `_headers` com `curl -I` (gerado no build; com domínio próprio no bucket de fotos, `PHOTOS_ORIGIN` no build do Pages); Realtime sem nenhuma tabela na publicação; bundle só com a URL e a chave anon, sem source map e sem `/dev` |
 
-## 4. Antes de entregar à Fast
+## 3. Antes de entregar à Fast
 
 | Item | Repo | O que fazer |
 | --- | --- | --- |
@@ -61,7 +54,7 @@ O front não tem tela de importação ([decisão](decisions.md#telas-do-escritó
 | Implementação | validação por linha (inclusive o [tamanho do texto](../../fast/docs/api.md#tamanho-do-texto)), possíveis duplicados, `p_dry_run` e gravação tudo ou nada |
 | Carga inicial | os clientes da Fast em produção |
 
-## 5. Depois, sem travar
+## 4. Depois, sem travar
 
 | Item | Tipo | O que fazer |
 | --- | --- | --- |
