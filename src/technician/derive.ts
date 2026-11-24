@@ -95,6 +95,22 @@ export function toMyOrder(order: OrderDetail, local: LocalState, now: number): M
   };
 }
 
+const PRIORITY_RANK: Record<OrderDetail['priority'], number> = { urgent: 0, high: 1, normal: 2, low: 3 };
+
+type ToDoKey = Pick<OrderDetail, 'order_number' | 'priority' | 'due_at' | 'overdue'>;
+
+/** Ordem de "A fazer": atrasadas, prazo mais próximo (a prioridade desempata), sem prazo pela prioridade, número. */
+export function sortToDo<T extends ToDoKey>(orders: T[]): T[] {
+  const due = (o: ToDoKey) => (o.due_at ? Date.parse(o.due_at) : Number.POSITIVE_INFINITY);
+  return [...orders].sort(
+    (a, b) =>
+      Number(b.overdue) - Number(a.overdue) ||
+      due(a) - due(b) ||
+      PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority] ||
+      a.order_number - b.order_number,
+  );
+}
+
 /** O que Pendências mostra de uma O.S. que o servidor ainda manda (está no aparelho). */
 export type OrderRef = {
   order_number: number;

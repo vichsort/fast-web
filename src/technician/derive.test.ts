@@ -5,6 +5,7 @@ import {
   type LocalState,
   pendingItems,
   sendNotice,
+  sortToDo,
   toMyOrder,
   toTechOrder,
   withLocalPhotos,
@@ -410,5 +411,22 @@ describe('sendNotice', () => {
 
   it('já enviado, avisa que foi enviado', () => {
     expect(sendNotice('sent', false)).toBe('sentToast');
+  });
+});
+
+describe('sortToDo', () => {
+  const item = (order_number: number, over: Partial<OrderDetail> = {}) =>
+    order({ id: `o${order_number}`, order_number, ...over });
+
+  it('puts overdue first, then the nearest due date, priority breaking ties, then no due date, then the number', () => {
+    const list = [
+      item(1),
+      item(2, { priority: 'urgent' }),
+      item(3, { due_at: '2026-11-21T12:00:00Z' }),
+      item(4, { due_at: '2026-11-20T12:00:00Z' }),
+      item(5, { due_at: '2026-11-20T12:00:00Z', priority: 'high' }),
+      item(6, { due_at: '2026-11-18T12:00:00Z', overdue: true }),
+    ];
+    expect(sortToDo(list).map((o) => o.order_number)).toEqual([6, 5, 4, 3, 2, 1]);
   });
 });

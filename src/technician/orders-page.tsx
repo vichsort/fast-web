@@ -20,6 +20,7 @@ import {
   useTechSession,
   useTimeZone,
 } from './api';
+import { sortToDo } from './derive';
 import { GroupHeading } from './parts';
 
 /** Minhas O.S.: as atribuídas, agrupadas pelo que o técnico tem de fazer (docs/screens-technician.md). */
@@ -35,7 +36,7 @@ export function OrdersPage() {
 
   const list = orders.data ?? [];
   const rejected = list.filter((o) => o.status === 'rejected');
-  const todo = list.filter((o) => o.status === 'open' || o.status === 'in_progress');
+  const todo = sortToDo(list.filter((o) => o.status === 'open' || o.status === 'in_progress'));
   const waiting = list.filter((o) => o.status === 'pending_approval');
   const closed = list.filter((o) => o.status === 'approved' || o.status === 'cancelled');
   const overdue = list.filter((o) => o.overdue).length;

@@ -7,7 +7,7 @@ O que falta no front e no backend. Item feito sai daqui no mesmo commit do códi
 | Fase | Itens | Trava a produção |
 | --- | --- | --- |
 | [1. Decisões em aberto](#1-decisões-em-aberto) | 3 | sim: mudam itens da fase 2 |
-| [2. Código antes do primeiro deploy](#2-código-antes-do-primeiro-deploy) | 13 | sim |
+| [2. Código antes do primeiro deploy](#2-código-antes-do-primeiro-deploy) | 12 | sim |
 | [3. Primeiro deploy](#3-primeiro-deploy) | 7 | sim |
 | [4. Antes de entregar à Fast](#4-antes-de-entregar-à-fast) | 5 | sim |
 | [5. Depois, sem travar](#5-depois-sem-travar) | 8 | não |
@@ -26,7 +26,6 @@ Na ordem de gravidade. Custo do relatório: P = pequeno, M = médio.
 
 | Item | Repo | O que fazer | Custo |
 | --- | --- | --- | --- |
-| "A fazer" fora da ordem do prazo (UX 3) | front | ordenar o grupo em `orders-page.tsx`: atrasadas, prazo mais próximo, prioridade, sem prazo, número; teste unitário da ordem | P |
 | Motivo da rejeição some ao refazer (UX 4) | front | `Notice` "O escritório pediu: <motivo>" na execução e no painel de revisão do envio | P |
 | Revisão da 2ª tentativa sem a rejeição anterior (UX 5) | front | em `/office/review/$orderId`, linha fixa "Rejeição anterior: <motivo>" em "Pontos de atenção", acima de Aprovar; hoje só aparece em "Tentativas anteriores", recolhida | P |
 | Convite sem limite (seg. A2) | backend | limite por quem convida e por empresa na Edge Function `invite_member`; a admin API do Auth ignora o rate limit de email (9 convites viraram 9 emails, ~35 ms cada) | P a M |
