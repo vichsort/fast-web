@@ -6,8 +6,8 @@ O que falta no front e no backend. Item feito sai daqui no mesmo commit do códi
 
 | Fase | Itens | Trava a produção |
 | --- | --- | --- |
-| [1. Código antes do primeiro deploy](#1-código-antes-do-primeiro-deploy) | 1 | sim |
-| [2. Primeiro deploy](#2-primeiro-deploy) | 7 | sim |
+| [1. Código antes do primeiro deploy](#1-código-antes-do-primeiro-deploy) | 2 | sim |
+| [2. Primeiro deploy](#2-primeiro-deploy) | 6 | sim |
 | [3. Antes de entregar à Fast](#3-antes-de-entregar-à-fast) | 4 | sim |
 | [4. Depois, sem travar](#4-depois-sem-travar) | 9 | não |
 
@@ -18,6 +18,7 @@ Na ordem de gravidade. Custo do relatório: P = pequeno, M = médio.
 | Item | Repo | O que fazer | Custo |
 | --- | --- | --- | --- |
 | Convite com aceite (seg. M1) | os dois | [abaixo](#convite-com-aceite-seg-m1) | M |
+| Sem email | os dois | [abaixo](#sem-email) | M |
 
 ### Convite com aceite (seg. M1)
 
@@ -26,13 +27,24 @@ Decisões de 2026-11-24 em [06 Membros](decisions.md#06-membros). Contrato em [0
 | Parte | Repo | O que fazer |
 | --- | --- | --- |
 | Vínculo pendente | backend | `company_members` com o estado do aceite e o nome digitado no convite; o vínculo pendente não dá acesso à empresa nem entra no `colleague_ids()` (o owner não lê o perfil); a lista de membros mostra o nome e o email do convite até o aceite |
-| `invite_member` | backend | saída sem `already`, `reactivated` e `created`, igual para email novo e existente; convite a quem tem vínculo aceito em outra empresa fica pendente |
+| `invite_member` | backend | saída sem `already`, `reactivated` e `created`, igual para email novo e existente, com o link do convite ([sem email](#sem-email)); convite a quem tem vínculo aceito em outra empresa fica pendente |
 | Aceitar e recusar | backend | operações do próprio convidado; a recusa deixa o vínculo como recusado, e o convite seguinte o reabre; aceitar recusa se ele já tem vínculo aceito em outra empresa (um por pessoa); conta nova aceita ao definir a senha pelo link do convite |
 | Atribuição | backend | `create_order` e `set_assignees` recusam técnico pendente |
 | Remoção (R8) | backend | não bane quem tem convite pendente |
 | Tela de membros | front | pendente com o nome e o email do convite; recusado; cancelar o pendente pela remoção; aviso de "já era membro" sai junto com o `already` |
 | Convite no app | front | sem vínculo ativo e com convite pendente: tela "A empresa X convidou você" (aceitar, recusar) no lugar do aviso de removido; "definir senha" pelo link do convite aceita |
 | Técnicos da O.S. | front | seletor só com técnicos aceitos |
+
+### Sem email
+
+Decisões de 2026-11-24 em [01 Fundação](decisions.md#01-fundação). Contrato em [01](../../fast/docs/modules/01-foundation.md) e [06](../../fast/docs/modules/06-members.md), e o roteiro de deploy em [operations.md](../../fast/docs/operations.md#primeiro-deploy) sem SMTP, no mesmo commit do código.
+
+| Parte | Repo | O que fazer |
+| --- | --- | --- |
+| Link do convite | os dois | o `invite_member` cria o usuário sem mandar email e devolve um link do app com um token próprio, de uso único e com validade; o app abre "definir senha" (conta nova) ou "entre com sua senha para aceitar" (conta existente), e o owner vê o mesmo link nos dois casos. A tela de membros mostra o link para copiar ou compartilhar |
+| Link de recuperação | os dois | operação do owner que gera o link de "definir senha" para um membro da empresa, com auditoria; a tela "esqueci a senha" vira "peça o link ao responsável" |
+| Trocar a senha | front | pede a senha atual e entra de novo com ela antes de trocar |
+| Config do Auth | backend | sem SMTP e sem os templates de email; `secure_password_change = true` e senha mínima de 6 no `config.toml` |
 
 ## 2. Primeiro deploy
 
@@ -41,8 +53,7 @@ Roteiro: [operations.md](../../fast/docs/operations.md#primeiro-deploy). Abaixo,
 | Passo | Repo | O que fazer |
 | --- | --- | --- |
 | Supabase e R2 | backend | projeto no Supabase Free; buckets `execution-photos` e de backup no R2; no `execution-photos`, `incoming/` expira em 1 dia e, se o R2 permitir, limite de tamanho de objeto (a URL de PUT assina só o `host`: aceita 20 MB e `text/html`, seg. M3); chaves e secrets das Edge Functions |
-| Auth | backend | cadastro público e anônimo fechados; `site_url` do Cloudflare Pages; `secure_password_change = true` (hoje troca a senha só com o access token) e senha mínima de 8 ou mais (seg. M2), no painel e no `config.toml` |
-| SMTP | backend | Resend (100/dia) ou Brevo (300/dia), grátis; remetente "Fast O.S." (UX 9); limite próprio e monitoramento da cota |
+| Auth | backend | cadastro público e anônimo fechados; email do Auth desligado (sem SMTP, [decisão](decisions.md#01-fundação)); `site_url` do Cloudflare Pages (`*.pages.dev`); `secure_password_change = true` e senha mínima de 6 (seg. M2, [decisão](decisions.md#01-fundação)), no painel e no `config.toml` |
 | `npm run deploy` | backend | depois dele, migrations só por acréscimo (hoje se editam no lugar): atualizar a linha "Status" do CLAUDE.md do backend |
 | Empresa e admin | backend | cadastrar a Fast e o platform admin direto no banco; o owner convida o time |
 | Cloudflare Pages | front | ligado ao Supabase de produção; a versão do build vem de `CF_PAGES_COMMIT_SHA` (`vite.config.ts`) |
@@ -52,10 +63,10 @@ Roteiro: [operations.md](../../fast/docs/operations.md#primeiro-deploy). Abaixo,
 
 | Item | Repo | O que fazer |
 | --- | --- | --- |
-| Backup (07) | backend | GitHub Action diária: `pg_dump` criptografado e cópia incremental das fotos para o bucket de backup no R2 ([07](../../fast/docs/modules/07-backup.md)); escolher a ferramenta de criptografia e registrar em [decisions.md](decisions.md#07-backup); restauração de teste executada, com o passo a passo em [operations.md](../../fast/docs/operations.md#backup). Só então o módulo está pronto (R5) |
+| Backup (07) | backend | GitHub Action diária: `pg_dump` criptografado e cópia incremental das fotos para o bucket de backup no R2 ([07](../../fast/docs/modules/07-backup.md)); criptografia com `age` ([decisão](decisions.md#07-backup)); restauração de teste executada, com o passo a passo em [operations.md](../../fast/docs/operations.md#backup). Só então o módulo está pronto (R5) |
 | Importação de clientes (02) | backend | [abaixo](#importação-de-clientes-02); é migration nova, depois do primeiro deploy |
 | Celulares de teste | — | apagar os dados do site (Dexie juntado numa versão só, [decisão](decisions.md#e2e) de 2026-11-19) |
-| Roteiro no celular real | — | ~15 min: economia de bateria do fabricante, câmera e rádio de verdade, instalação do PWA |
+| Roteiro no celular real | — | [roteiro](e2e.md#roteiro-no-celular-real), no app publicado, num Android (o iPhone cobre só as linhas marcadas) |
 
 ### Importação de clientes (02)
 

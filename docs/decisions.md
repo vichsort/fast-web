@@ -164,6 +164,7 @@ Doc: [e2e.md](e2e.md).
 
 Doc: [spec.md](../../fast/docs/spec.md).
 
+- **2026-11-24** — O app fica no endereço `*.pages.dev` do Cloudflare Pages; o domínio próprio (do usuário ou da Fast) fica para depois. *Por quê:* sem email ([01](#01-fundação)), o domínio só serve para o endereço, e o `pages.dev` é grátis; trocar depois muda o `site_url` do Auth e o build do Pages. Escolha do usuário.
 - **2026-11-04** — Sem servidor próprio. *Por quê:* o Supabase já entrega API, Auth e Edge Functions; um servidor só acrescentaria custo e manutenção.
 - **2026-11-06** — Fotos no R2. *Por quê:* o Storage Free (~1 GB) era o limite que forçaria o Pro, caro demais para a Fast ([04](../../fast/docs/modules/04-execution-photos.md)).
 - **2026-11-06** — Sem Express/Railway e sem Neon. *Por quê:* a Railway custa e exigiria refazer Auth, API e autorização; a Neon só troca o banco, que não é o gargalo, e tira Auth e Storage.
@@ -179,6 +180,9 @@ Doc: [spec.md](../../fast/docs/spec.md).
 
 Doc: [01-foundation.md](../../fast/docs/modules/01-foundation.md).
 
+- **2026-11-24** — O sistema não manda email. O convite e o "esqueci a senha" viram links que o owner copia e manda (WhatsApp): o convite é um link do próprio app, igual para conta nova e existente; a recuperação, o owner gera para o membro (a dele, outro owner ou o admin da plataforma). *Por quê:* escolha do usuário: sem SMTP, sem cota de envio, sem cair no spam e sem domínio verificado, e a Fast já fala com o time pelo WhatsApp. O link pronto do Supabase não serve ao convite: para quem já tem conta, seria um login na conta dele entregue ao owner, e dar link só à conta nova revelaria o email (M1, [06](#06-membros)).
+- **2026-11-24** — Trocar a senha pede a senha atual: o app entra de novo com ela e então troca, com `secure_password_change = true`. *Por quê:* revisão de segurança (M2): sem a opção, o access token sozinho trocava a senha. Ligada, o Supabase pede um código por email quando o login tem mais de 24 h, e o sistema não manda email; o login com a senha atual conta como recente.
+- **2026-11-24** — Senha com no mínimo 6 caracteres quaisquer. *Por quê:* escolha do usuário: o técnico digita no celular, e o limite de tentativas do Auth segura a adivinhação. A revisão de segurança (M2) recomendou 8; só números foi descartado (1 milhão de combinações, ao alcance de quem tenta de vários ips).
 - **2026-11-19** — Versão mínima do app numa tabela de uma linha (`app_settings`), lida por todo usuário logado, e não numa RPC ou num arquivo do front. *Por quê:* quem decide que um app ficou velho é o backend, quando o contrato muda; a leitura direta não precisa de RPC, e uma linha só evita configuração espalhada. O formato do build (data e hora UTC) é ordenável como texto, então o front compara sem tabela de versões.
 - **2026-11-19** — Policies de leitura por conjunto (`member_company_ids`, `colleague_ids`), não por função linha a linha; `shares_company()` saiu. *Por quê:* a função por linha roda uma vez por linha lida e por relação embutida. Medido no stack local com 5.500 O.S.: a leitura do escritório caiu de 132 ms para 1,4 ms. O conjunto é calculado uma vez por consulta (`hashed SubPlan`).
 - **2026-11-04** — Papéis da empresa no vínculo, platform admin como flag. *Por quê:* um usuário pode estar em mais de uma empresa no futuro, com papéis diferentes.
@@ -284,5 +288,6 @@ Doc: [06-members.md](../../fast/docs/modules/06-members.md).
 
 Doc: [07-backup.md](../../fast/docs/modules/07-backup.md).
 
+- **2026-11-24** — Criptografia do backup com `age`: a Action guarda só a chave pública, e a privada fica com o usuário, fora do GitHub. *Por quê:* quem vazar os secrets do GitHub não abre nenhum backup. O `gpg` faz o mesmo com chaveiro e muitas opções, fácil de errar; no modo simples dele (uma senha), o secret do GitHub abriria tudo. Escolha do usuário.
 - **2026-11-04** — Backup próprio também das fotos. *Por quê:* nem o Pro do Supabase cobre arquivos.
 - **2026-11-06** — A cópia das fotos fica no mesmo R2. *Por quê:* custo zero; ela conta no limite de 10 GB da conta, e acima disso são centavos por GB.

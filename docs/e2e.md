@@ -168,4 +168,32 @@ Descartado: filtros "em dois passos" só no front (ids na URL). O `postgrest-js`
 | O que | Como |
 | --- | --- |
 | Background Sync com o app fechado, aba congelada (Doze), câmera e GPS, rede ruim, armazenamento cheio | Android emulado ([plano](pending.md#android-emulado)) |
-| Economia de bateria dos fabricantes, câmera e rádio de verdade, instalação do PWA | roteiro curto num celular real antes do deploy |
+| Economia de bateria dos fabricantes, câmera e rádio de verdade, instalação do PWA | [roteiro no celular real](#roteiro-no-celular-real) |
+
+## Roteiro no celular real
+
+O que só o aparelho mostra; ~30 min. **Onde:** no app publicado. O servidor local não serve: câmera, localização e service worker exigem HTTPS, e o Supabase local responde em `127.0.0.1`, que no celular é o próprio celular. **Aparelho:** Android com Chrome, como o dos técnicos ([premissas](../../fast/docs/offline.md#premissas)). O iPhone (todo navegador dele é o Safari por baixo) cobre só as linhas marcadas: nele a fila só anda com o app aberto.
+
+**Preparo:** no computador, como escritório, duas O.S. atribuídas ao técnico do celular. **Anotar:** modelo, versão do Android e do Chrome, e o tempo de cada envio.
+
+| # | Teste | Como | Esperado | iPhone |
+| --- | --- | --- | --- | --- |
+| 1 | Instalar | Chrome: menu > Instalar app. iPhone: Safari > Compartilhar > Adicionar à Tela de Início | ícone na tela inicial; abre sem a barra do navegador | sim |
+| 2 | Entrar (P1) | entrar como o técnico; aceitar o pedido de armazenamento, se aparecer | as duas O.S. em Minhas O.S., sem o aviso de armazenamento negado | sim |
+| 3 | Abrir sem sinal (S1) | abrir as duas O.S. com sinal; modo avião; fechar o app pelas recentes e abrir de novo | abre em Minhas O.S., e as duas O.S. abrem | sim |
+| 4 | Iniciar sem sinal | ainda em modo avião, iniciar a O.S. 1 | o início em Pendências, na fila | sim |
+| 5 | Câmera (D2) | 3 fotos pela câmera do app, uma em pé e uma deitada; permitir câmera e localização | fotos nítidas, na orientação certa; a tela não trava mais que ~2 s por foto | sim |
+| 6 | Galeria (D2, F2) | 5 fotos da galeria de uma vez, uma antiga e uma recebida pelo WhatsApp | alertas de foto anterior ao início e de foto sem data; a tela não trava | sim |
+| 7 | Enviar sem sinal | relatório e Enviar | aviso de guardado no aparelho; em Pendências, na fila | sim |
+| 8 | Segundo plano | outro app (câmera, WhatsApp) por 5 min, tela bloqueada, e voltar | rascunho, fotos e fila intactos | sim |
+| 9 | Sinal com o app aberto (T1) | tirar o modo avião com o app aberto | o envio sobe sozinho em até 1 min; no computador, a O.S. em revisão com as fotos, o horário e a localização | sim |
+| 10 | App fechado (T4) | O.S. 2: iniciar e enviar sem sinal; fechar o app pelas recentes; tirar o modo avião; esperar 15 min sem abrir | chega ao computador sem abrir o app. Se não chegar, abrir e anotar quanto demora | não |
+| 11 | Celular parado (T5) | um envio na fila, economia de bateria ligada, tela apagada por 30 min, com sinal | anotar se chegou sem abrir e, ao abrir, quanto demorou | não |
+| 12 | Conectado sem dados (T6) | Wi-Fi de um roteador sem internet (ou o hotspot de outro celular sem dados) e enviar | fica na fila, sem erro; com dados de volta, sobe em até 1 min | sim |
+| 13 | Rede fraca (T3, D1) | rede móvel fraca, ou só 3G nas configurações de rede; envio com 10 fotos | nenhum erro; anotar o tempo até chegar ao computador | sim |
+| 14 | Rejeição (E1) | no computador, rejeitar com um motivo; no celular, abrir a O.S., refazer e enviar | o motivo aparece; o novo envio chega como nova tentativa | sim |
+| 15 | Sair com fila (P2) | com um envio na fila, tocar em Sair | aviso com a quantidade na fila; cancelar, sem confirmar | sim |
+| 16 | Atualização (P8) | com um envio na fila sem sinal, publicar uma versão nova; abrir com sinal | atualiza sem perder o envio, que sobe | sim |
+| 17 | Em campo | ao sol, com uma mão | textos legíveis; os botões principais ao alcance do polegar | sim |
+
+Falhas viram itens em [pending.md](pending.md); os tempos, linhas em [Medições](#medições).
