@@ -82,6 +82,9 @@ export function toOrderDetail(row: OrderRow, now: number, photoUrls: Map<string,
     overdue: isOverdue(row, now),
     late_supplements_unseen: own.filter((e) => e.is_late && e.acknowledged_at === null).length,
     attempts: attemptViews,
-    history: [...(history ?? [])].sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at)),
+    // O nome guardado no evento (03): renomear o perfil depois não reescreve o histórico.
+    history: [...(history ?? [])]
+      .sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at))
+      .map((h) => ({ ...h, actor: h.actor && { ...h.actor, full_name: h.actor_name ?? h.actor.full_name } })),
   };
 }

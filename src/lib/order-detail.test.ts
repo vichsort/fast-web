@@ -193,6 +193,7 @@ describe('toOrderDetail', () => {
       company_id: 'c1',
       service_order_id: 'o1',
       actor_id: null,
+      actor_name: null,
       event_type: 'updated',
       metadata: {},
       created_at,
@@ -203,5 +204,27 @@ describe('toOrderDetail', () => {
       NOW,
     );
     expect(detail.history.map((h) => h.id)).toEqual(['h1', 'h2']);
+  });
+
+  it('names who acted by the name kept in the event, not by the current profile (a later rename does not rewrite it)', () => {
+    const detail = toOrderDetail(
+      order({
+        history: [
+          {
+            id: 'h1',
+            company_id: 'c1',
+            service_order_id: 'o1',
+            actor_id: 'u1',
+            actor_name: 'Nome da época',
+            event_type: 'updated',
+            metadata: {},
+            created_at: '2026-11-01T00:00:00Z',
+            actor: { id: 'u1', full_name: 'Nome novo' },
+          },
+        ],
+      }),
+      NOW,
+    );
+    expect(detail.history[0]?.actor).toEqual({ id: 'u1', full_name: 'Nome da época' });
   });
 });

@@ -6,7 +6,7 @@ O que falta no front e no backend. Item feito sai daqui no mesmo commit do códi
 
 | Fase | Itens | Trava a produção |
 | --- | --- | --- |
-| [1. Decisões em aberto](#1-decisões-em-aberto) | 2 | sim: mudam itens da fase 2 |
+| [1. Decisões em aberto](#1-decisões-em-aberto) | 1 | sim: muda um item da fase 2 |
 | [2. Código antes do primeiro deploy](#2-código-antes-do-primeiro-deploy) | 1 | sim |
 | [3. Primeiro deploy](#3-primeiro-deploy) | 7 | sim |
 | [4. Antes de entregar à Fast](#4-antes-de-entregar-à-fast) | 5 | sim |
@@ -17,7 +17,6 @@ O que falta no front e no backend. Item feito sai daqui no mesmo commit do códi
 | Pergunta | Opções | Muda |
 | --- | --- | --- |
 | Convite a um email de outra empresa: o owner passa a ler nome e telefone dessa pessoa, e as flags `already`, `reactivated` e `created` da resposta permitem enumerar emails (seg. M1) | recusar o convite, ou não revelar o perfil até o aceite; nos dois casos, a resposta deixa de distinguir email existente de novo | M1 na fase 2; contrato do `invite_member` ([06](../../fast/docs/modules/06-members.md)) e tela de membros |
-| Um membro renomeia o próprio perfil com o nome de outra pessoa, e o histórico passa a mostrar esse nome (seg. B1, 2ª parte) | guardar o nome de quem fez no evento (muda o `metadata` do histórico e da auditoria) ou aceitar o risco e registrar | contrato do [03](../../fast/docs/modules/03-service-orders.md#eventos-do-histórico) e do [05](../../fast/docs/modules/05-dashboard-audit.md) |
 
 ## 2. Código antes do primeiro deploy
 

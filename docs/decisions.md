@@ -247,6 +247,7 @@ Doc: [04-execution-photos.md](../../fast/docs/modules/04-execution-photos.md).
 
 Doc: [05-dashboard-audit.md](../../fast/docs/modules/05-dashboard-audit.md).
 
+- **2026-11-24** — O histórico da O.S. (03) e a auditoria (05) guardam o nome de quem fez no momento do evento (`actor_name`, coluna preenchida por trigger a partir do perfil, `fill_actor_name`), e as telas mostram esse nome, não o do perfil atual. Os outros nomes citados nos eventos (técnico atribuído, membro convidado) continuam o do perfil atual. *Por quê:* revisão de segurança (B1, 2ª parte), decidido pelo usuário: um membro renomeava o próprio perfil com o nome de outra pessoa, e o histórico passado passava a mostrar esse nome. Coluna, e não `metadata`, para um trigger só cobrir todos os eventos, sem mexer nas RPCs que os gravam.
 - **2026-11-04** — `get_dashboard` é `security invoker`. *Por quê:* reaproveita o RLS em vez de repetir as regras de visibilidade.
 - **2026-11-04** — `pending_approval` não conta como atrasada. *Por quê:* a demora passa a ser do gestor.
 - **2026-11-06** — Definições de "sem técnico" e "aprovadas no mês", e as `action` da auditoria. *Por quê:* a spec dava só os nomes dos contadores; o front e os testes precisam do critério exato.

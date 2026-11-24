@@ -414,6 +414,8 @@ async function officeAudit(): Promise<AuditView[]> {
   const memberName = new Map(members.map((m) => [m.id, m.profile.full_name]));
   return logs.map((log) => ({
     ...log,
+    // O nome guardado no registro (05): renomear o perfil depois não reescreve a auditoria.
+    actor: log.actor && { ...log.actor, full_name: log.actor_name ?? log.actor.full_name },
     target_name: log.entity_type === 'company' ? company.name : (memberName.get(log.entity_id) ?? '—'),
   }));
 }

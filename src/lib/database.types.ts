@@ -31,6 +31,7 @@ export type Database = {
         Row: {
           action: string
           actor_id: string | null
+          actor_name: string | null
           company_id: string
           created_at: string
           entity_id: string
@@ -42,6 +43,7 @@ export type Database = {
         Insert: {
           action: string
           actor_id?: string | null
+          actor_name?: string | null
           company_id: string
           created_at?: string
           entity_id: string
@@ -53,6 +55,7 @@ export type Database = {
         Update: {
           action?: string
           actor_id?: string | null
+          actor_name?: string | null
           company_id?: string
           created_at?: string
           entity_id?: string
@@ -312,6 +315,42 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      member_invite_attempts: {
+        Row: {
+          actor_id: string
+          company_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          actor_id: string
+          company_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          actor_id?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_invite_attempts_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_invite_attempts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -585,6 +624,7 @@ export type Database = {
       service_order_history: {
         Row: {
           actor_id: string | null
+          actor_name: string | null
           company_id: string
           created_at: string
           event_type: string
@@ -594,6 +634,7 @@ export type Database = {
         }
         Insert: {
           actor_id?: string | null
+          actor_name?: string | null
           company_id: string
           created_at?: string
           event_type: string
@@ -603,6 +644,7 @@ export type Database = {
         }
         Update: {
           actor_id?: string | null
+          actor_name?: string | null
           company_id?: string
           created_at?: string
           event_type?: string
@@ -920,6 +962,10 @@ export type Database = {
         Args: { p_company_id: string; p_user_ids: string[] }
         Returns: string[]
       }
+      claim_member_invite: {
+        Args: { p_actor_id: string; p_company_id: string }
+        Returns: undefined
+      }
       close_member_assignments: {
         Args: {
           p_actor_id: string
@@ -1149,6 +1195,7 @@ export type Database = {
           width: number
         }[]
       }
+      photo_cap_reached: { Args: { p_execution_id: string }; Returns: boolean }
       photo_storage_path: {
         Args: {
           p_execution_id: string
@@ -1185,6 +1232,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      removed_user_to_ban: { Args: { p_member_id: string }; Returns: string }
       require_long_text: { Args: { p_texts: string[] }; Returns: undefined }
       require_short_text: { Args: { p_texts: string[] }; Returns: undefined }
       review_execution: {
