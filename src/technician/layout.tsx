@@ -52,6 +52,7 @@ function TechnicianFrame() {
       label: t('ui.nav.pending'),
       icon: ListTodo,
       badge: pending?.length,
+      badgeTone: pending?.some((i) => i.state === 'refused' || i.state === 'blocked') ? 'danger' : 'neutral',
       active: section === 'pending',
       render: <Link to="/technician/pending" />,
     },

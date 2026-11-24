@@ -10,7 +10,7 @@ Mapa das telas da interface do técnico ([screens.md](screens.md#técnico-celula
 | --- | --- |
 | Topo | marca e `SyncIndicator` (pill), que leva a Pendências |
 | Faixa | `ScratchBanner` (só nos dados de exemplo) |
-| Barra inferior | Minhas O.S. (contador de "Nova"), Pendências (contador de itens), Perfil |
+| Barra inferior | Minhas O.S. (contador de "Nova"), Pendências (contador de itens: vermelho com recusado ou bloqueado, neutro se tudo só espera a vez ou a rede), Perfil |
 | Barra de ação | botão principal da tela preso acima da barra inferior (`ActionBar`), alvo de 48 px |
 
 ## Telas

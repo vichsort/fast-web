@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { CountBadge } from './badges';
+import type { Tone } from './tone';
 
 export interface NavItem {
   id: string;
@@ -14,6 +15,8 @@ export interface NavItem {
   icon: LucideIcon;
   /** Contador no ícone (ex.: itens na fila, O.S. aguardando aprovação). */
   badge?: number;
+  /** Tom do contador: vermelho (`danger`) por padrão; `neutral` para o que só espera (fila sem problema). */
+  badgeTone?: Tone;
   active?: boolean;
   render?: React.ReactElement;
   href?: string;
@@ -114,7 +117,11 @@ export function TechnicianBottomNav({ items, position = 'fixed', className, ...p
                 )}
                 <span className="relative">
                   <Icon aria-hidden className="size-6" strokeWidth={item.active ? 2.4 : 2} />
-                  <CountBadge count={item.badge ?? 0} className="absolute -top-1.5 -right-2.5 ring-2 ring-card" />
+                  <CountBadge
+                    count={item.badge ?? 0}
+                    tone={item.badgeTone}
+                    className="absolute -top-1.5 -right-2.5 ring-2 ring-card"
+                  />
                 </span>
                 {item.label}
               </NavLink>
