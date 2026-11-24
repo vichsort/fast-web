@@ -6,8 +6,8 @@ O que falta no front e no backend. Item feito sai daqui no mesmo commit do códi
 
 | Fase | Itens | Trava a produção |
 | --- | --- | --- |
-| [1. Decisões em aberto](#1-decisões-em-aberto) | 3 | sim: mudam itens da fase 2 |
-| [2. Código antes do primeiro deploy](#2-código-antes-do-primeiro-deploy) | 7 | sim |
+| [1. Decisões em aberto](#1-decisões-em-aberto) | 2 | sim: mudam itens da fase 2 |
+| [2. Código antes do primeiro deploy](#2-código-antes-do-primeiro-deploy) | 6 | sim |
 | [3. Primeiro deploy](#3-primeiro-deploy) | 7 | sim |
 | [4. Antes de entregar à Fast](#4-antes-de-entregar-à-fast) | 5 | sim |
 | [5. Depois, sem travar](#5-depois-sem-travar) | 8 | não |
@@ -16,7 +16,6 @@ O que falta no front e no backend. Item feito sai daqui no mesmo commit do códi
 
 | Pergunta | Opções | Muda |
 | --- | --- | --- |
-| "Aprovadas no mês" no dashboard do escritório abre todas as aprovadas, sem período; a partir do 2º mês o número não bate com a lista (UX 8) | filtrar a lista por "aprovada em" (filtro novo por data de aprovação, nos dois repos) ou tirar o link do contador (só front) | UX 8 na fase 2 |
 | Convite a um email de outra empresa: o owner passa a ler nome e telefone dessa pessoa, e as flags `already`, `reactivated` e `created` da resposta permitem enumerar emails (seg. M1) | recusar o convite, ou não revelar o perfil até o aceite; nos dois casos, a resposta deixa de distinguir email existente de novo | M1 na fase 2; contrato do `invite_member` ([06](../../fast/docs/modules/06-members.md)) e tela de membros |
 | Um membro renomeia o próprio perfil com o nome de outra pessoa, e o histórico passa a mostrar esse nome (seg. B1, 2ª parte) | guardar o nome de quem fez no evento (muda o `metadata` do histórico e da auditoria) ou aceitar o risco e registrar | contrato do [03](../../fast/docs/modules/03-service-orders.md#eventos-do-histórico) e do [05](../../fast/docs/modules/05-dashboard-audit.md) |
 
@@ -31,7 +30,6 @@ Na ordem de gravidade. Custo do relatório: P = pequeno, M = médio.
 | Fotos sem teto (seg. M3, código) | backend | teto de fotos por execução em `request_photo_upload` | P |
 | Sem cabeçalhos de segurança (seg. M4) | front | `public/_headers` com CSP compatível com o service worker, o Supabase, as URLs assinadas do R2 e o ViaCEP; `frame-ancestors 'none'`, `Referrer-Policy`, `X-Content-Type-Options: nosniff`, HSTS | P |
 | Ex-membro continua com conta (seg. B1) | backend | na Edge Function `remove_member`, banir a conta no Auth se ela não tem vínculo ativo em outra empresa; hoje ele loga, renova o token e gasta cota de Edge Function (o RLS já corta os dados) | P |
-| "Aprovadas no mês" abre todas (UX 8) | front ou os dois | conforme a [decisão](#1-decisões-em-aberto) | P a M |
 | Emails do Auth em inglês (UX 9) | backend | templates pt-BR de convite e de recuperação de senha, com o nome da empresa (hoje comentados no `config.toml`); no hospedado, os mesmos pelo painel | P |
 
 ## 3. Primeiro deploy

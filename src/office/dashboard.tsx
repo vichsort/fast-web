@@ -15,8 +15,11 @@ import type { OfficeOrderListItem, OrderDetail } from '@/lib/views';
 import { useDashboard, useLateSupplements, useOrders, usePendingOrders } from './queries';
 import { useOffice } from './session';
 
-/** Link de cada contador para a lista filtrada (05). */
-const statLinks: Record<DashboardStatKey, React.ReactElement> = {
+/**
+ * Link de cada contador para a lista filtrada (05). "Aprovadas no mês" não tem: a lista não filtra pela data de
+ * aprovação, e o número não bateria (docs/decisions.md, Telas do escritório, 2026-11-24).
+ */
+const statLinks: Record<Exclude<DashboardStatKey, 'approved_this_month'>, React.ReactElement> = {
   pending_approval: <Link to="/office/review" />,
   overdue: <Link to="/office/orders" search={{ overdue: true }} />,
   late_supplements_unseen: <Link to="/office/review" search={{ tab: 'late' }} />,
@@ -24,7 +27,6 @@ const statLinks: Record<DashboardStatKey, React.ReactElement> = {
   open: <Link to="/office/orders" search={{ status: ['open'] }} />,
   in_progress: <Link to="/office/orders" search={{ status: ['in_progress'] }} />,
   rejected: <Link to="/office/orders" search={{ status: ['rejected'] }} />,
-  approved_this_month: <Link to="/office/orders" search={{ status: ['approved'] }} />,
 };
 
 const LIST_SIZE = 5;
@@ -96,7 +98,7 @@ export function DashboardPage() {
                 toneClass={stat.toneClass}
                 hint={stat.key === 'approved_this_month' ? t('office.dashboard.approvedHint') : stat.hint}
                 highlight={stat.alertWhenPositive && (value ?? 0) > 0}
-                render={statLinks[stat.key]}
+                render={stat.key === 'approved_this_month' ? undefined : statLinks[stat.key]}
               />
             );
           })}
