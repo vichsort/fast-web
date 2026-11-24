@@ -68,11 +68,6 @@ describe('toOrderListItem', () => {
     });
   });
 
-  it('marks overdue by the due date and status (03, R6)', () => {
-    expect(toOrderListItem(listRow({ due_at: '2026-11-18T00:00:00Z', status: 'rejected' }), NOW).overdue).toBe(true);
-    expect(toOrderListItem(listRow({ due_at: '2026-11-18T00:00:00Z', status: 'approved' }), NOW).overdue).toBe(false);
-  });
-
   it('counts the unacknowledged late supplements the query brought (04, R11)', () => {
     expect(toOrderListItem(listRow({ late: [{ id: 'e1' }, { id: 'e2' }] }), NOW).late_supplements_unseen).toBe(2);
   });

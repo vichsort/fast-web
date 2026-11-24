@@ -124,7 +124,7 @@ describe('toOrderDetail', () => {
     expect(detail.attempts[0]?.participant_refs).toEqual([ana, bia]);
   });
 
-  it('marks overdue only when the due date passed in open, in_progress or rejected', () => {
+  it('marks overdue only when the due date passed in open, in_progress or rejected (03, R6)', () => {
     const past = '2026-11-18T23:59:59Z';
     expect(toOrderDetail(order({ due_at: past, status: 'open' }), NOW).overdue).toBe(true);
     expect(toOrderDetail(order({ due_at: past, status: 'rejected' }), NOW).overdue).toBe(true);

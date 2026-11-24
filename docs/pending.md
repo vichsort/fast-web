@@ -80,7 +80,6 @@ Adiado pelo usuário em 2026-11-19. O emulador roda o Chrome de verdade, com o s
 | `Notice` único nunca comparado no navegador | `src/components/notice.tsx` | conferir os dois visuais (escritório e técnico) |
 | Perfil do técnico sem teste de tela | `src/technician/profile-page.tsx` | o Vitest browser não carrega o `virtual:pwa-register`; conferir à mão |
 | `role="status"` só no `Notice` do escritório | `src/components/notice.tsx` | decidir um papel para os dois |
-| Regra de atraso testada em dois lugares | `src/lib/order-detail.test.ts`, `src/office/derive.test.ts` | ficar com um |
 | `AttemptsSection` fora da vitrine | `src/app/dev` | acrescentar a demonstração |
 | Avisos do build que viram erro no próximo Vite | `vite.config.ts` | import sem extensão, `inlineDynamicImports` obsoleto, pedaço acima de 500 kB |
 
