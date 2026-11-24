@@ -26,7 +26,10 @@ export function pendingSummary(o: OrderDetail) {
   const all = [attempt, ...attempt.supplements];
   const photos = all.flatMap((e) => e.photos);
   const alerts = [...new Set([...attempt.alerts, ...photos.flatMap((p) => p.alerts)])];
-  return { attempt, photos, alerts };
+  // A rejeição que a tentativa pendente responde: a da tentativa logo antes dela.
+  const before = o.attempts[o.attempts.indexOf(attempt) - 1];
+  const previousRejection = before?.review_status === 'rejected' ? before.review_comment : null;
+  return { attempt, photos, alerts, previousRejection };
 }
 
 export function ReviewQueuePage() {

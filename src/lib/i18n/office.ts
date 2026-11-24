@@ -150,6 +150,7 @@ export const officeTexts = {
     materialsConflict:
       'Alguém mudou os materiais enquanto você editava. Recarregue para ver o texto atual antes de salvar.',
     sectionExecutions: 'Tentativas e complementos',
+    executionsHint: 'A prova da O.S. é a soma das tentativas, inclusive as rejeitadas.',
     executionsEmpty: 'Nada enviado ainda. As tentativas aparecem aqui quando a dupla enviar.',
     sectionClient: 'Cliente',
     clientDeleted: 'Cliente excluído',
@@ -201,6 +202,8 @@ export const officeTexts = {
     openOrder: 'Abrir O.S.',
     eyebrow: 'Revisão · O.S. {number}',
     previousAttempts: 'Tentativas anteriores ({count})',
+    previousAttemptsHint: 'A prova da O.S. é a soma das tentativas: a nova pode trazer só o que a rejeição pediu.',
+    previousRejection: 'Rejeição anterior:',
     decisionTitle: 'Decisão',
     decisionDescription: 'A decisão cobre a tentativa e os complementos que você vê nesta tela.',
     approve: 'Aprovar',

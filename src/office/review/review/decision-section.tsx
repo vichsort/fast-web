@@ -1,6 +1,6 @@
 // Decisão da revisão (04): resumo (fotos, complementos, alertas), alertas por extenso, aprovar com comentário opcional
 // ou rejeitar com justificativa, e o cenário de exemplo do stale_review.
-import { CircleCheck, CircleX } from 'lucide-react';
+import { CircleCheck, CircleX, MessageSquareWarning } from 'lucide-react';
 import * as React from 'react';
 import { AlertList } from '@/components/alert-list';
 import { ConfirmDialog, ReasonDialog } from '@/components/dialogs';
@@ -63,13 +63,21 @@ function ReviewSummary({ summary: { attempt, photos, alerts } }: { summary: Summ
   );
 }
 
-function ReviewAlerts({ summary: { attempt, photos } }: { summary: Summary }) {
+function ReviewAlerts({ summary: { attempt, photos, previousRejection } }: { summary: Summary }) {
   const photoAlertCounts = (['gallery_without_exif', 'gallery_before_start'] as PhotoAlert[])
     .map((code) => ({ code, count: photos.filter((p) => p.alerts.includes(code)).length }))
     .filter((x) => x.count > 0);
   return (
     <div className="flex flex-col gap-2">
       <span className="text-xs font-semibold text-muted-foreground">{t('office.review.alertsTitle')}</span>
+      {previousRejection && (
+        <p className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm">
+          <MessageSquareWarning aria-hidden className="mt-0.5 size-4 shrink-0 text-destructive" />
+          <span className="whitespace-pre-line">
+            <span className="font-semibold">{t('office.review.previousRejection')}</span> {previousRejection}
+          </span>
+        </p>
+      )}
       {attempt.alerts.length === 0 && photoAlertCounts.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t('office.review.noAlerts')}</p>
       ) : (

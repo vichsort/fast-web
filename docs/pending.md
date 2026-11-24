@@ -7,7 +7,7 @@ O que falta no front e no backend. Item feito sai daqui no mesmo commit do códi
 | Fase | Itens | Trava a produção |
 | --- | --- | --- |
 | [1. Decisões em aberto](#1-decisões-em-aberto) | 3 | sim: mudam itens da fase 2 |
-| [2. Código antes do primeiro deploy](#2-código-antes-do-primeiro-deploy) | 11 | sim |
+| [2. Código antes do primeiro deploy](#2-código-antes-do-primeiro-deploy) | 9 | sim |
 | [3. Primeiro deploy](#3-primeiro-deploy) | 7 | sim |
 | [4. Antes de entregar à Fast](#4-antes-de-entregar-à-fast) | 5 | sim |
 | [5. Depois, sem travar](#5-depois-sem-travar) | 8 | não |
@@ -26,13 +26,11 @@ Na ordem de gravidade. Custo do relatório: P = pequeno, M = médio.
 
 | Item | Repo | O que fazer | Custo |
 | --- | --- | --- | --- |
-| Revisão da 2ª tentativa sem a rejeição anterior (UX 5) | front | em `/office/review/$orderId`, linha fixa "Rejeição anterior: <motivo>" em "Pontos de atenção", acima de Aprovar; hoje só aparece em "Tentativas anteriores", recolhida | P |
 | Convite sem limite (seg. A2) | backend | limite por quem convida e por empresa na Edge Function `invite_member`; a admin API do Auth ignora o rate limit de email (9 convites viraram 9 emails, ~35 ms cada) | P a M |
 | Convite revela perfil e emails (seg. M1) | os dois | conforme a [decisão](#1-decisões-em-aberto); tirar as flags da resposta | P a M |
 | Fotos sem teto (seg. M3, código) | backend | teto de fotos por execução em `request_photo_upload` | P |
 | Sem cabeçalhos de segurança (seg. M4) | front | `public/_headers` com CSP compatível com o service worker, o Supabase, as URLs assinadas do R2 e o ViaCEP; `frame-ancestors 'none'`, `Referrer-Policy`, `X-Content-Type-Options: nosniff`, HSTS | P |
 | Ex-membro continua com conta (seg. B1) | backend | na Edge Function `remove_member`, banir a conta no Auth se ela não tem vínculo ativo em outra empresa; hoje ele loga, renova o token e gasta cota de Edge Function (o RLS já corta os dados) | P |
-| Prova somada depois de um retrabalho ([decisão](decisions.md#telas) de 2026-11-24) | front | revisão: fotos das tentativas anteriores abaixo das novas, com a tentativa de origem, sem recolher; detalhe da O.S. aprovada: a prova de todas as tentativas | P |
 | Sair com fila e contagens (UX 6) | front | contar por O.S., com início e envio da mesma O.S. num cartão só (hoje 1 envio e 1 recusa viram "4 envios"); com pendências, "Ver pendências" primeiro e "Sair e apagar" embaixo, fora da zona do polegar | P |
 | "Atualizar" sem sinal mostra ✓ (UX 7) | front | aviso pelo resultado: "Lista atualizada às HH:MM" ou "Sem sinal: lista de HH:MM" (hoje o texto da ação com ícone de sucesso) | P |
 | "Aprovadas no mês" abre todas (UX 8) | front ou os dois | conforme a [decisão](#1-decisões-em-aberto) | P a M |

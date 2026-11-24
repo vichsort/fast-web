@@ -11,6 +11,7 @@ export function ExecutionsSection({ order: o }: { order: OrderDetail }) {
   return (
     <AttemptsSection
       title={t('office.orderDetail.sectionExecutions')}
+      hint={o.attempts.length > 1 ? t('office.orderDetail.executionsHint') : undefined}
       empty={t('office.orderDetail.executionsEmpty')}
       attempts={o.attempts}
       timeZone={timeZone}
