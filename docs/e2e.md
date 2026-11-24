@@ -68,7 +68,7 @@ O pior caso do produto: serviço feito que nunca chega ao escritório.
 | T4 | Background Sync com o app fechado | o Chrome tenta o `sync` poucas vezes, com espera própria; esgotado, só a página manda (o app tem de abrir) | `sw.ts` | unit | campo; o Playwright não simula |
 | T5 | Aba congelada pelo Android em segundo plano | a fila da página para; só o `sync` do worker cobre | `runner.ts` | — | campo |
 | T6 | Celular "conectado" sem dados | o `online` não dispara; só a resposta HTTP e o timer (até 1 min) acordam a fila | `supabase-fetch.ts` | unit | — |
-| T7 | Envio com sinal avisava "Sem sinal: o envio entrou na fila" | o `submit` real sempre enfileira (Q4) e devolve `'queued'`, e a tela escolhia o aviso por esse retorno. Achado no E1 | `derive.ts` (`sendNotice`), `execution-page.tsx`, `supplement-page.tsx` | corrigido em 2026-11-19: com sinal, "Enviando…" | unit; o E1 confere o aviso |
+| T7 | Envio com sinal avisava "Sem sinal: o envio entrou na fila" | o `submit` real sempre enfileira (Q4) e devolve `'queued'`, e a tela escolhia o aviso por esse retorno. Achado no E1 | `derive.ts` (`sendNotice`), `execution-page.tsx`, `supplement-page.tsx` | corrigido em 2026-11-19: com sinal, "Enviando…"; desde 2026-11-24, "guardado no aparelho" (neutro até a resposta) | unit; o E1 confere o aviso |
 
 ## Gargalos
 

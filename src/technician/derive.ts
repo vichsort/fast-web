@@ -225,10 +225,11 @@ export function inTechnicianList(o: Pick<OrderDetail, 'status' | 'updated_at'>, 
 }
 
 /**
- * Aviso depois de "Enviar" (execução e complemento). O real sempre enfileira (queue.md, Q4); com sinal, a fila
- * manda na hora, então o aviso é de envio em andamento, não de falta de sinal.
+ * Aviso depois de "Enviar" (execução e complemento). O real sempre enfileira (queue.md, Q4). "Com sinal" é só o
+ * último pedido que deu certo (Q7): até a resposta, o aviso diz que o envio ficou guardado e sobe sozinho, sem
+ * afirmar que já está subindo. Sem sinal conhecido, que entrou na fila.
  */
-export function sendNotice(result: 'sent' | 'queued', offline: boolean): 'sentToast' | 'queuedToast' | 'sendingToast' {
+export function sendNotice(result: 'sent' | 'queued', offline: boolean): 'sentToast' | 'queuedToast' | 'storedToast' {
   if (result === 'sent') return 'sentToast';
-  return offline ? 'queuedToast' : 'sendingToast';
+  return offline ? 'queuedToast' : 'storedToast';
 }

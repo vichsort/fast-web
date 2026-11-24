@@ -23,7 +23,6 @@ Relatórios completos: [segurança](reviews/2026-11-24-security.md) e [UI/UX](re
 
 | Item | Repo | O que fazer |
 | --- | --- | --- |
-| O.S. enviada sem sinal segue "A fazer" (UX 2) | front | marcar "Enviada · na fila" e tirar da conta; faixa com "N envio(s) no aparelho"; selo de Pendências neutro para fila normal; texto neutro no painel e no aviso até a resposta |
 | "A fazer" fora da ordem do prazo (UX 3) | front | atrasadas, prazo, prioridade, sem prazo, número |
 | Motivo da rejeição some ao refazer (UX 4) | front | `Notice` com o motivo na execução e no painel de revisão do envio |
 | Revisão da 2ª tentativa sem a rejeição anterior (UX 5) | front | linha fixa com o motivo anterior acima de Aprovar |

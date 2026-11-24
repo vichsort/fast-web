@@ -26,7 +26,7 @@ test('rejeitar, o técnico refaz com o motivo à vista, aprovar', async ({
   await submitWithGalleryPhoto(tech, 'Primeira tentativa.');
   // Com sinal, o aviso é de envio em andamento (e2e.md, T7).
   await expect(
-    tech.getByRole('region', { name: /Notifications/ }).getByText(t('technician.execution.sendingToast')),
+    tech.getByRole('region', { name: /Notifications/ }).getByText(t('technician.execution.storedToast')),
   ).toBeVisible();
   await expect(tech.getByText(t('technician.detail.waitingBody'))).toBeVisible();
 

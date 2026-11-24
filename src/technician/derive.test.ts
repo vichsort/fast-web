@@ -400,8 +400,8 @@ describe('inTechnicianList', () => {
 });
 
 describe('sendNotice', () => {
-  it('na fila com sinal, avisa que está enviando, não que falta sinal', () => {
-    expect(sendNotice('queued', false)).toBe('sendingToast');
+  it('na fila com sinal, avisa que ficou guardado e sobe sozinho, sem afirmar que já está subindo', () => {
+    expect(sendNotice('queued', false)).toBe('storedToast');
   });
 
   it('na fila sem sinal, avisa que entrou na fila', () => {
