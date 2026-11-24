@@ -25,6 +25,11 @@ import {
 } from './api';
 import { GroupHeading } from './parts';
 
+/** A ação do cartão vale também para o início dobrado nele (o mesmo serviço). */
+async function forAll(item: PendingItem, action: (id: string) => Promise<void>) {
+  for (const id of [...item.folded, item.id]) await action(id);
+}
+
 /** Pendências: a fila do aparelho e as recusas (docs/queue.md; docs/screens-technician.md). */
 export function PendingPage() {
   const navigate = useNavigate();
@@ -112,7 +117,7 @@ export function PendingPage() {
         description={t('technician.pending.discardDescription')}
         confirmLabel={t('technician.pending.discardConfirm')}
         onConfirm={() => {
-          if (discarding) void act(removePending(discarding.id), t('ui.actions.discard'));
+          if (discarding) void act(forAll(discarding, removePending), t('ui.actions.discard'));
         }}
       />
     </div>
@@ -140,7 +145,7 @@ function PendingEntry({ item, onDiscard }: { item: PendingItem; onDiscard: () =>
         onOpen={item.on_device ? () => void open() : undefined}
         onRetry={
           item.state === 'waiting' || item.state === 'blocked'
-            ? () => void act(retryPending(item.id), t('technician.pending.retried'))
+            ? () => void act(forAll(item, retryPending), t('technician.pending.retried'))
             : undefined
         }
         onDiscard={item.state === 'refused' && isDraft ? onDiscard : undefined}
@@ -149,7 +154,7 @@ function PendingEntry({ item, onDiscard }: { item: PendingItem; onDiscard: () =>
         }
         onDismiss={
           item.state === 'refused' && !isDraft && !conflict
-            ? () => void act(removePending(item.id), t('technician.pending.dismissed'))
+            ? () => void act(forAll(item, removePending), t('technician.pending.dismissed'))
             : undefined
         }
         className={draft ? 'rounded-b-none' : undefined}

@@ -274,6 +274,7 @@ export const uiTexts = {
       supplement: 'Complemento',
       materials: 'Materiais',
     },
+    startAndSubmit: 'Início e envio para aprovação',
     state: {
       sending: 'Enviando',
       waiting: 'Esperando rede',

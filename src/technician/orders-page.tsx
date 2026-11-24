@@ -20,7 +20,7 @@ import {
   useTechSession,
   useTimeZone,
 } from './api';
-import { sortToDo } from './derive';
+import { pendingOrderCounts, sortToDo } from './derive';
 import { GroupHeading } from './parts';
 
 /** Minhas O.S.: as atribuídas, agrupadas pelo que o técnico tem de fazer (docs/screens-technician.md). */
@@ -31,8 +31,7 @@ export function OrdersPage() {
   const sync = useSyncStatus();
   const storage = useStorageProtection();
   const pending = usePendingItems().data ?? [];
-  const problems = pending.filter((i) => i.state === 'refused' || i.state === 'blocked').length;
-  const onDevice = pending.length - problems;
+  const { attention: problems, onDevice } = pendingOrderCounts(pending);
 
   const list = orders.data ?? [];
   const rejected = list.filter((o) => o.status === 'rejected');

@@ -158,6 +158,10 @@ export interface PendingItem {
   /** Erro técnico quando bloqueado. */
   error: string | null;
   photos: { done: number; total: number } | null;
+  /** Envio com o início da mesma O.S. dobrado no cartão (os dois na fila, ou os dois recusados). */
+  with_start: boolean;
+  /** Ids dos itens dobrados neste cartão: as ações valem para eles também. */
+  folded: string[];
 }
 
 export interface SyncState {

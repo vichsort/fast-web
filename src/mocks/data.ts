@@ -1112,6 +1112,8 @@ export const pendingItems: PendingItem[] = [
     refusal: null,
     error: null,
     photos: { done: 2, total: 5 },
+    with_start: false,
+    folded: [],
   },
   {
     id: 'q2',
@@ -1123,6 +1125,8 @@ export const pendingItems: PendingItem[] = [
     refusal: null,
     error: null,
     photos: null,
+    with_start: false,
+    folded: [],
   },
   {
     id: 'q3',
@@ -1134,6 +1138,8 @@ export const pendingItems: PendingItem[] = [
     refusal: null,
     error: null,
     photos: null,
+    with_start: false,
+    folded: [],
   },
   {
     id: 'q4',
@@ -1145,6 +1151,8 @@ export const pendingItems: PendingItem[] = [
     refusal: 'not_assigned',
     error: null,
     photos: { done: 0, total: 3 },
+    with_start: false,
+    folded: [],
   },
   {
     id: 'q5',
@@ -1156,6 +1164,8 @@ export const pendingItems: PendingItem[] = [
     refusal: 'conflict',
     error: null,
     photos: null,
+    with_start: false,
+    folded: [],
   },
   {
     id: 'q7',
@@ -1168,6 +1178,8 @@ export const pendingItems: PendingItem[] = [
     refusal: 'order_closed',
     error: null,
     photos: null,
+    with_start: false,
+    folded: [],
   },
   {
     id: 'q6',
@@ -1179,6 +1191,8 @@ export const pendingItems: PendingItem[] = [
     refusal: null,
     error: 'PGRST202',
     photos: { done: 1, total: 1 },
+    with_start: false,
+    folded: [],
   },
 ];
 

@@ -152,6 +152,8 @@ function queueItem(order: OrderRef, kind: PendingItem['kind'], photos: number | 
     refusal: null,
     error: null,
     photos: photos === null ? null : { done: 0, total: photos },
+    with_start: false,
+    folded: [],
   };
 }
 

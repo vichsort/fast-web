@@ -149,6 +149,8 @@ export interface PendingItemData {
   refusal: string | null;
   error: string | null;
   photos: { done: number; total: number } | null;
+  /** Envio com o início da mesma O.S. no mesmo cartão. */
+  with_start?: boolean;
 }
 
 const kindIcon: Record<PendingItemData['kind'], LucideIcon> = {
@@ -216,7 +218,9 @@ export function PendingItemCard({
         </span>
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="text-sm font-semibold">{t(`ui.queue.kind.${item.kind}`)}</span>
+            <span className="text-sm font-semibold">
+              {item.with_start ? t('ui.queue.startAndSubmit') : t(`ui.queue.kind.${item.kind}`)}
+            </span>
             <ToneBadge
               toneClass={state.toneClass}
               icon={state.icon}

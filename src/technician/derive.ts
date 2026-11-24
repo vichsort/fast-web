@@ -169,6 +169,8 @@ export function pendingItems(
       refusal: null,
       error: i.state === 'blocked' ? i.lastError : null,
       photos: photos ? { done: photos.filter((p) => p.uploaded).length, total: photos.length } : null,
+      with_start: false,
+      folded: [],
     };
   });
 
@@ -185,6 +187,8 @@ export function pendingItems(
         refusal: d.refusal,
         error: null,
         photos: null,
+        with_start: false,
+        folded: [],
       }),
     );
 
@@ -199,10 +203,42 @@ export function pendingItems(
       refusal: r.code,
       error: null,
       photos: null,
+      with_start: false,
+      folded: [],
     }),
   );
 
-  return [...fromQueue, ...refusedDrafts, ...refusals];
+  return foldStarts([...fromQueue, ...refusedDrafts, ...refusals]);
+}
+
+/**
+ * O início e o envio da mesma O.S. são um serviço só: o início entra no cartão do envio (na fila com o da fila, recusado
+ * com o recusado). Na fila, o início está à frente (Q2), e o cartão mostra o estado dele.
+ */
+function foldStarts(items: PendingItem[]): PendingItem[] {
+  const group = (i: PendingItem) => (i.id.startsWith('queue:') ? 'queue' : 'refused');
+  const folded = new Set<string>();
+  const merged = items.map((target) => {
+    if (target.kind !== 'submit') return target;
+    const start = items.find(
+      (s) => s.kind === 'start' && s.order_id === target.order_id && group(s) === group(target) && !folded.has(s.id),
+    );
+    if (!start) return target;
+    folded.add(start.id);
+    const ahead =
+      group(target) === 'queue'
+        ? { state: start.state, next_attempt_at: start.next_attempt_at, error: start.error }
+        : {};
+    return { ...target, ...ahead, with_start: true, folded: [start.id] };
+  });
+  return merged.filter((i) => !folded.has(i.id));
+}
+
+/** Pendências contadas por O.S.: com recusa ou bloqueio precisa do técnico; as outras só esperam no aparelho. */
+export function pendingOrderCounts(items: Pick<PendingItem, 'order_id' | 'state'>[]) {
+  const all = new Set(items.map((i) => i.order_id));
+  const attention = new Set(items.filter((i) => i.state === 'refused' || i.state === 'blocked').map((i) => i.order_id));
+  return { attention: attention.size, onDevice: all.size - attention.size, total: all.size };
 }
 
 /** Alertas das fotos do rascunho, calculados como o doc 04 manda (src/photos/alerts.ts). */

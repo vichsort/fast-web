@@ -7,7 +7,7 @@ O que falta no front e no backend. Item feito sai daqui no mesmo commit do códi
 | Fase | Itens | Trava a produção |
 | --- | --- | --- |
 | [1. Decisões em aberto](#1-decisões-em-aberto) | 3 | sim: mudam itens da fase 2 |
-| [2. Código antes do primeiro deploy](#2-código-antes-do-primeiro-deploy) | 9 | sim |
+| [2. Código antes do primeiro deploy](#2-código-antes-do-primeiro-deploy) | 8 | sim |
 | [3. Primeiro deploy](#3-primeiro-deploy) | 7 | sim |
 | [4. Antes de entregar à Fast](#4-antes-de-entregar-à-fast) | 5 | sim |
 | [5. Depois, sem travar](#5-depois-sem-travar) | 8 | não |
@@ -31,7 +31,6 @@ Na ordem de gravidade. Custo do relatório: P = pequeno, M = médio.
 | Fotos sem teto (seg. M3, código) | backend | teto de fotos por execução em `request_photo_upload` | P |
 | Sem cabeçalhos de segurança (seg. M4) | front | `public/_headers` com CSP compatível com o service worker, o Supabase, as URLs assinadas do R2 e o ViaCEP; `frame-ancestors 'none'`, `Referrer-Policy`, `X-Content-Type-Options: nosniff`, HSTS | P |
 | Ex-membro continua com conta (seg. B1) | backend | na Edge Function `remove_member`, banir a conta no Auth se ela não tem vínculo ativo em outra empresa; hoje ele loga, renova o token e gasta cota de Edge Function (o RLS já corta os dados) | P |
-| Sair com fila e contagens (UX 6) | front | contar por O.S., com início e envio da mesma O.S. num cartão só (hoje 1 envio e 1 recusa viram "4 envios"); com pendências, "Ver pendências" primeiro e "Sair e apagar" embaixo, fora da zona do polegar | P |
 | "Atualizar" sem sinal mostra ✓ (UX 7) | front | aviso pelo resultado: "Lista atualizada às HH:MM" ou "Sem sinal: lista de HH:MM" (hoje o texto da ação com ícone de sucesso) | P |
 | "Aprovadas no mês" abre todas (UX 8) | front ou os dois | conforme a [decisão](#1-decisões-em-aberto) | P a M |
 | Emails do Auth em inglês (UX 9) | backend | templates pt-BR de convite e de recuperação de senha, com o nome da empresa (hoje comentados no `config.toml`); no hospedado, os mesmos pelo painel | P |

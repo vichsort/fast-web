@@ -1,9 +1,10 @@
-import type { OrderDetail } from '@/lib/views';
+import type { OrderDetail, PendingItem } from '@/lib/views';
 import type { Draft, DraftPhoto, QueueItem, QueueRefusal } from '@/offline/db';
 import {
   inTechnicianList,
   type LocalState,
   pendingItems,
+  pendingOrderCounts,
   sendNotice,
   sortToDo,
   toMyOrder,
@@ -287,7 +288,7 @@ describe('pendingItems', () => {
           {
             id: 4,
             userId: ME,
-            orderId: 'o1',
+            orderId: 'o2',
             type: 'start',
             payload: { clientStartedAt: at },
             code: 'not_assigned',
@@ -302,6 +303,48 @@ describe('pendingItems', () => {
     expect(list.map((i) => [i.id, i.kind, i.state, i.refusal])).toEqual([
       ['draft:d9', 'submit', 'refused', 'order_closed'],
       ['refusal:4', 'start', 'refused', 'not_assigned'],
+    ]);
+  });
+
+  it('folds a queued start into the submission of the same order: one card, with the state of the start ahead', () => {
+    const list = pendingItems(
+      local({
+        drafts: [draft({ id: 'd1', state: 'queued' })],
+        queue: [
+          item({ id: 1, type: 'start', payload: { clientStartedAt: at }, attempts: 1, nextAttemptAt: NOW + 5_000 }),
+          item({ id: 2, type: 'submit', payload: { draftId: 'd1', clientSubmittedAt: at, stagedPhotoIds: [] } }),
+        ],
+      }),
+      orders,
+      { now: NOW, sending: false },
+    );
+    expect(list.map((i) => [i.id, i.kind, i.state, i.with_start, i.folded])).toEqual([
+      ['queue:2', 'submit', 'waiting', true, ['queue:1']],
+    ]);
+  });
+
+  it('folds a refused start into the refused submission of the same order', () => {
+    const list = pendingItems(
+      local({
+        drafts: [draft({ id: 'd9', state: 'refused', refusal: 'not_assigned' })],
+        refusals: [
+          {
+            id: 4,
+            userId: ME,
+            orderId: 'o1',
+            type: 'start',
+            payload: { clientStartedAt: at },
+            code: 'not_assigned',
+            current: null,
+            createdAt: at,
+          },
+        ],
+      }),
+      orders,
+      { now: NOW, sending: false },
+    );
+    expect(list.map((i) => [i.id, i.state, i.with_start, i.folded])).toEqual([
+      ['draft:d9', 'refused', true, ['refusal:4']],
     ]);
   });
 
@@ -428,5 +471,20 @@ describe('sortToDo', () => {
       item(6, { due_at: '2026-11-18T12:00:00Z', overdue: true }),
     ];
     expect(sortToDo(list).map((o) => o.order_number)).toEqual([6, 5, 4, 3, 2, 1]);
+  });
+});
+
+describe('pendingOrderCounts', () => {
+  const entry = (order_id: string, state: PendingItem['state']) => ({ order_id, state }) as PendingItem;
+
+  it('counts orders, not queue items: an order with a refusal needs the technician, the others are still on the device', () => {
+    expect(
+      pendingOrderCounts([
+        entry('o1', 'refused'),
+        entry('o1', 'queued'),
+        entry('o2', 'sending'),
+        entry('o2', 'queued'),
+      ]),
+    ).toEqual({ attention: 1, onDevice: 1, total: 2 });
   });
 });

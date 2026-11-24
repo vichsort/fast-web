@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from '@tanstack/react-router';
-import { FlaskConical, LogOut, Save, WifiOff } from 'lucide-react';
+import { FlaskConical, ListTodo, LogOut, Save, WifiOff } from 'lucide-react';
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -12,6 +12,14 @@ import { ConfirmDialog } from '@/components/dialogs';
 import { PageHeader } from '@/components/page-header';
 import { Section } from '@/components/section';
 import { LoadingDetail } from '@/components/states';
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
@@ -23,6 +31,7 @@ import { t } from '@/lib/i18n';
 import { phoneDigitsOrNull, SHORT_TEXT_MAX } from '@/lib/input';
 import { act, useOffline } from './act';
 import { saveProfile, usePendingItems, useSimulatedOffline, useTechSession } from './api';
+import { pendingOrderCounts } from './derive';
 
 /** Nome obrigatório (React Hook Form + Zod); o erro aparece ao sair do campo ou ao salvar. */
 const profileSchema = z.object({ name: requiredText(t('technician.profile.nameRequired')), phone: z.string() });
@@ -39,7 +48,7 @@ function Profile({ data }: { data: NonNullable<ReturnType<typeof useTechSession>
   const navigate = useNavigate();
   const simulated = useSimulatedOffline();
   const offline = useOffline();
-  const pending = usePendingItems().data?.length ?? 0;
+  const pending = pendingOrderCounts(usePendingItems().data ?? []).total;
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     mode: 'onTouched',
@@ -49,6 +58,11 @@ function Profile({ data }: { data: NonNullable<ReturnType<typeof useTechSession>
   const nameError = form.formState.errors.name?.message;
   const [logout, setLogout] = React.useState(false);
   const ids = { name: React.useId(), phone: React.useId(), offline: React.useId() };
+  async function wipe() {
+    // Sair é real (a sessão do login); a contagem de pendências é a dos dados de exemplo no modo de exemplo.
+    if (session) await signOutAndWipe(session.user.id);
+    await navigate({ to: '/login' });
+  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -141,23 +155,40 @@ function Profile({ data }: { data: NonNullable<ReturnType<typeof useTechSession>
         {t('technician.profile.logout')}
       </Button>
 
-      <ConfirmDialog
-        open={logout}
-        onOpenChange={setLogout}
-        tone="destructive"
-        title={t('technician.profile.logoutTitle')}
-        description={
-          pending > 0
-            ? t('technician.profile.logoutPendingDescription', { count: pending })
-            : t('technician.profile.logoutDescription')
-        }
-        confirmLabel={t('technician.profile.logoutConfirm')}
-        onConfirm={async () => {
-          // Sair é real (a sessão do login); a contagem acima é a dos dados de exemplo.
-          if (session) await signOutAndWipe(session.user.id);
-          await navigate({ to: '/login' });
-        }}
-      />
+      {pending > 0 ? (
+        <AlertDialog open={logout} onOpenChange={setLogout}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t('technician.profile.logoutTitle')}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {t('technician.profile.logoutPendingDescription', { count: pending })}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            {/* Com pendências, o caminho seguro vem primeiro; apagar fica por último, longe do toque rápido. */}
+            <div className="flex flex-col gap-2">
+              <Button className="h-11" onClick={() => void navigate({ to: '/technician/pending' })}>
+                <ListTodo />
+                {t('technician.profile.logoutSeePending')}
+              </Button>
+              <AlertDialogCancel className="h-11">{t('ui.actions.cancel')}</AlertDialogCancel>
+              <Button variant="ghost" className="mt-2 h-11 text-destructive" onClick={() => void wipe()}>
+                <LogOut />
+                {t('technician.profile.logoutWipe')}
+              </Button>
+            </div>
+          </AlertDialogContent>
+        </AlertDialog>
+      ) : (
+        <ConfirmDialog
+          open={logout}
+          onOpenChange={setLogout}
+          tone="destructive"
+          title={t('technician.profile.logoutTitle')}
+          description={t('technician.profile.logoutDescription')}
+          confirmLabel={t('technician.profile.logoutConfirm')}
+          onConfirm={wipe}
+        />
+      )}
       <AppVersion />
     </div>
   );
