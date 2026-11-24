@@ -13,8 +13,8 @@ export interface NoticeProps extends Omit<React.ComponentProps<'div'>, 'title'> 
   /** Botões ou links do aviso. */
   action?: React.ReactNode;
   /**
-   * `inline` (computador): ícone pequeno e ação à direita, quebrando para baixo se faltar espaço; anunciado ao leitor
-   * de tela (`role="status"`). `stacked` (celular): ícone maior e ação embaixo do texto, alinhada a ele.
+   * `inline` (computador): ícone pequeno e ação à direita, quebrando para baixo se faltar espaço. `stacked` (celular):
+   * ícone maior e ação embaixo do texto, alinhada a ele. Os dois são `role="status"` (troca-se por `role`).
    */
   layout?: 'inline' | 'stacked';
 }
@@ -36,6 +36,7 @@ export function Notice({
   if (layout === 'stacked') {
     return (
       <div
+        role="status"
         className={cn('tone-soft flex flex-col gap-3 rounded-xl border p-3.5 text-sm', toneCls, className)}
         {...props}
       >

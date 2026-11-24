@@ -79,7 +79,6 @@ Adiado pelo usuário em 2026-11-19. O emulador roda o Chrome de verdade, com o s
 | Toast cobre a barra inferior no celular | Sonner na interface do técnico | ~4 s em cima de "Pendências" logo depois de enviar; para a revisão de UX |
 | `Notice` único nunca comparado no navegador | `src/components/notice.tsx` | conferir os dois visuais (escritório e técnico) |
 | Perfil do técnico sem teste de tela | `src/technician/profile-page.tsx` | o Vitest browser não carrega o `virtual:pwa-register`; conferir à mão |
-| `role="status"` só no `Notice` do escritório | `src/components/notice.tsx` | decidir um papel para os dois |
 | `AttemptsSection` fora da vitrine | `src/app/dev` | acrescentar a demonstração |
 | Avisos do build que viram erro no próximo Vite | `vite.config.ts` | import sem extensão, `inlineDynamicImports` obsoleto, pedaço acima de 500 kB |
 
