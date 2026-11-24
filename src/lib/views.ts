@@ -115,8 +115,11 @@ export interface ClientListItem extends Client {
   open_orders: number;
 }
 
-/** Cliente só para escolher num filtro: id, nome e se foi excluído. */
-export type ClientName = Pick<Client, 'id' | 'name' | 'deleted_at'>;
+/** Cliente só para escolher (filtro da lista de O.S., formulário de O.S.): id, nome, telefone e exclusão. */
+export interface ClientName extends Pick<Client, 'id' | 'name' | 'phone' | 'deleted_at'> {
+  /** Bairro do endereço principal ativo. */
+  district: string | null;
+}
 
 export interface ClientDetail extends Client {
   addresses: ClientAddress[];

@@ -276,20 +276,27 @@ async function officeListClients(filters: { includeDeleted?: boolean } = {}) {
   return found.map(toClientListItem).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
 }
 
-/** Id, nome e exclusão de todos os clientes, para o filtro da lista de O.S. (que mostra O.S. de excluídos). */
+/**
+ * Todos os clientes, inclusive excluídos, só com o que um seletor mostra: o filtro da lista de O.S. (que mostra O.S.
+ * de excluídos) e o formulário de O.S. O bairro é o do principal ativo, filtrado no banco.
+ */
 async function officeClientNames(): Promise<ClientName[]> {
   const found = await readAll((from, to) =>
     rows(
       supabase
         .from('clients')
-        .select('id, name, deleted_at')
+        .select('id, name, phone, deleted_at, primary:client_addresses(district)')
         .eq('company_id', current().companyId)
+        .eq('primary.is_primary', true)
+        .is('primary.deleted_at', null)
         .order('name')
         .order('id')
         .range(from, to),
     ),
   );
-  return found.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+  return found
+    .map(({ primary, ...c }) => ({ ...c, district: primary[0]?.district ?? null }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
 }
 
 async function officeGetClient(id: string) {

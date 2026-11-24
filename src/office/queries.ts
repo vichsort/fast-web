@@ -61,7 +61,7 @@ export function useClients(filters: { search?: string; includeDeleted?: boolean 
   });
 }
 
-/** Id e nome de todos os clientes, inclusive excluídos: o filtro de cliente da lista de O.S. */
+/** Todos os clientes, inclusive excluídos, enxutos: o filtro da lista de O.S. e o seletor do formulário de O.S. */
 export const useClientNames = () =>
   useQuery({ queryKey: ['office', 'client-names'], queryFn: () => officeClientNames() });
 

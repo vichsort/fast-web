@@ -31,7 +31,7 @@ import type { OrderDetail } from '@/lib/views';
 import { addressText, createOrder, updateOrder } from '../api';
 import { AddressDialog } from '../clients/address-form';
 import { QuickClientDialog } from '../clients/client-form';
-import { useClient, useClients, useOrder, useTechnicians } from '../queries';
+import { useClient, useClientNames, useOrder, useTechnicians } from '../queries';
 import { useOffice, useOfficeAction } from '../session';
 import { ChoiceCards, NotFound } from '../shared';
 import { conflictCurrent, NO_ADDRESS, orderEdit } from './edit';
@@ -136,7 +136,7 @@ function OrderForm({ order, initialClientId = null }: { order?: OrderDetail; ini
   const [unchosen, setUnchosen] = React.useState(0);
   const conflictRef = React.useRef<HTMLDivElement>(null);
 
-  const clients = useClients();
+  const clients = useClientNames();
   const client = useClient(clientId);
   const technicians = useTechnicians();
 
@@ -265,14 +265,14 @@ function OrderForm({ order, initialClientId = null }: { order?: OrderDetail; ini
                           loading={clients.isPending}
                           placeholder={t('office.orderForm.clientPlaceholder')}
                           aria-invalid={Boolean(errors.client_id)}
-                          options={(clients.data ?? []).map((c) => ({
-                            value: c.id,
-                            label: c.name,
-                            description: [c.phone && formatPhone(c.phone), c.primary_address?.district]
-                              .filter(Boolean)
-                              .join(' · '),
-                            keywords: c.phone ? [c.phone] : undefined,
-                          }))}
+                          options={(clients.data ?? [])
+                            .filter((c) => c.deleted_at === null)
+                            .map((c) => ({
+                              value: c.id,
+                              label: c.name,
+                              description: [c.phone && formatPhone(c.phone), c.district].filter(Boolean).join(' · '),
+                              keywords: c.phone ? [c.phone] : undefined,
+                            }))}
                           onCreate={(text) => setQuickClient(text)}
                         />
                       )}

@@ -77,7 +77,6 @@ Adiado pelo usuário em 2026-11-19. O emulador roda o Chrome de verdade, com o s
 | Item | Onde | O que fazer |
 | --- | --- | --- |
 | Toast cobre a barra inferior no celular | Sonner na interface do técnico | ~4 s em cima de "Pendências" logo depois de enviar; para a revisão de UX |
-| Formulário de O.S. lê todos os clientes completos | `src/office/orders/form.tsx` (`useClients`) | usar a leitura enxuta (`useClientNames`) e os endereços só do cliente escolhido |
 | `Notice` único nunca comparado no navegador | `src/components/notice.tsx` | conferir os dois visuais (escritório e técnico) |
 | Perfil do técnico sem teste de tela | `src/technician/profile-page.tsx` | o Vitest browser não carrega o `virtual:pwa-register`; conferir à mão |
 | `role="status"` só no `Notice` do escritório | `src/components/notice.tsx` | decidir um papel para os dois |

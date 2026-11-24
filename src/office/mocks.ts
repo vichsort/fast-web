@@ -242,12 +242,18 @@ export async function officeListClients(filters: { includeDeleted?: boolean } = 
   );
 }
 
-/** Id, nome e exclusão de todos os clientes (filtro da lista de O.S.). */
+/** Todos os clientes, só com o que um seletor mostra (filtro da lista de O.S., formulário de O.S.). */
 export async function officeClientNames(): Promise<ClientName[]> {
   const s = await store();
   return wait(
     s.clients
-      .map((c) => ({ id: c.id, name: c.name, deleted_at: c.deleted_at }))
+      .map((c) => ({
+        id: c.id,
+        name: c.name,
+        phone: c.phone,
+        deleted_at: c.deleted_at,
+        district: c.addresses.find((a) => a.is_primary && a.deleted_at === null)?.district ?? null,
+      }))
       .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')),
   );
 }
