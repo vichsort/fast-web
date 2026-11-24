@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { CircleCheck, CircleX, Eye } from 'lucide-react';
 import * as React from 'react';
 import { AddressBlock, ContactActions } from '@/components/address-block';
+import { AttemptsSection } from '@/components/attempts-section';
 import { ConfirmDialog, ReasonDialog } from '@/components/dialogs';
 import { ExecutionCard } from '@/components/execution-card';
 import { AddPhoto, type PhotoData, PhotoGrid, PhotoMeta, PhotoThumb } from '@/components/photos';
@@ -225,13 +226,16 @@ export function ExecutionsSection() {
         onConfirm={() => scratchToast(t('ui.dialogs.rejectConfirm'))}
       />
       <div className="grid gap-6 xl:grid-cols-2">
-        <Demo label='ExecutionCard review_status="rejected" · alerts'>
+        <Demo label='AttemptsSection hint compactPhotos · ExecutionCard review_status="rejected" · alerts'>
           {rejected.data ? (
-            <div className="flex flex-col gap-3">
-              {[...rejected.data.attempts].reverse().map((a) => (
-                <ExecutionCard key={a.id} attempt={a} timeZone={TZ} compactPhotos />
-              ))}
-            </div>
+            <AttemptsSection
+              title={t('ui.showcase.demo.attemptsTitle')}
+              hint={t('ui.showcase.demo.attemptsHint')}
+              empty={t('ui.showcase.demo.attemptsEmpty')}
+              attempts={rejected.data.attempts}
+              timeZone={TZ}
+              compactPhotos={(a) => a.id !== rejected.data?.attempts.at(-1)?.id}
+            />
           ) : (
             <LoadingDetail />
           )}
@@ -252,6 +256,14 @@ export function ExecutionsSection() {
           ) : (
             <LoadingDetail />
           )}
+        </Demo>
+        <Demo label="AttemptsSection · empty">
+          <AttemptsSection
+            title={t('ui.showcase.demo.attemptsTitle')}
+            empty={t('ui.showcase.demo.attemptsEmpty')}
+            attempts={[]}
+            timeZone={TZ}
+          />
         </Demo>
       </div>
     </ShowcaseSection>
