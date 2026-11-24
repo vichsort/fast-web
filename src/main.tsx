@@ -5,7 +5,6 @@ import { createRoot } from 'react-dom/client';
 import { SessionProvider } from '@/app/auth-context';
 import { createQueryClient } from '@/app/query-client';
 import { router } from '@/app/router';
-import { Toaster } from '@/components/ui/sonner';
 import './index.css';
 
 const root = document.getElementById('root');
@@ -18,7 +17,6 @@ createRoot(root).render(
     <QueryClientProvider client={queryClient}>
       <SessionProvider>
         <RouterProvider router={router} />
-        <Toaster />
       </SessionProvider>
     </QueryClientProvider>
   </StrictMode>,

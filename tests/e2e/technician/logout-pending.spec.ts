@@ -18,10 +18,6 @@ test('sair com envios na fila: o aviso conta, e cancelar não apaga nada', async
   // O início e o envio: os dois itens que Pendências mostra.
   expect(await readStore(page, 'queue')).toHaveLength(2);
 
-  // No celular o toast cobre a barra inferior, e o Sonner o segura enquanto o ponteiro está em cima: o ponteiro do
-  // teste, parado onde ficava "Enviar para aprovação", prendia o toast e o clique em Perfil nunca acontecia.
-  await page.mouse.move(0, 0);
-  await expect(toast).toBeHidden();
   await page.getByRole('link', { name: t('ui.nav.profile') }).click();
   await page.getByRole('button', { name: t('technician.profile.logout') }).click();
   const dialog = page.getByRole('alertdialog');
