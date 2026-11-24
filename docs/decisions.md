@@ -224,6 +224,7 @@ Doc: [03-service-orders.md](../../fast/docs/modules/03-service-orders.md).
 
 Doc: [04-execution-photos.md](../../fast/docs/modules/04-execution-photos.md).
 
+- **2026-11-24** — Até 30 fotos por execução, tentativa ou complemento (R20): `authorize_photo_upload` não dá URL e `register_photo_upload` não registra a 31ª (`too_many_photos`; o registro trava por execução); no aparelho, o formulário troca o adicionar pelo aviso do limite. *Por quê:* revisão de segurança (M3): não havia teto, e cada foto confirmada fica no R2 para sempre. 30 cobre o antes, o depois e o equipamento com folga; o que passar vai num complemento, que tem o próprio teto.
 - **2026-11-04** — A execução nasce no envio. *Por quê:* offline, "iniciar" e "enviar" podem chegar juntos; só o envio tem conteúdo.
 - **2026-11-04** — Segundo envio da dupla vira complemento automático. *Por quê:* os dois celulares podem voltar ao sinal juntos, e nenhuma prova pode ficar presa.
 - **2026-11-04** — Complemento depois da revisão é aceito, mas não conta como aprovado. *Por quê:* não perder prova sem reabrir a revisão.

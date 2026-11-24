@@ -106,6 +106,7 @@ export const technicianTexts = {
     photos: 'Fotos',
     photosHint: 'Ao menos 1 foto. Mostre o antes, o depois e o equipamento funcionando.',
     photosRequired: 'Tire ao menos uma foto para enviar.',
+    photosMax: 'Limite de {max} fotos por envio. O que faltar vai num complemento.',
     galleryToast: 'Escolher da galeria',
     description: 'O que foi feito',
     descriptionPlaceholder: 'Ex.: Instaladas as 3 câmeras, cabos pela canaleta, imagens conferidas com o cliente.',

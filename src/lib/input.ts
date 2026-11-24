@@ -18,3 +18,6 @@ export const phoneDigitsOrNull = (value: string | null | undefined): string | nu
  */
 export const SHORT_TEXT_MAX = 200;
 export const LONG_TEXT_MAX = 4000;
+
+/** Fotos por execução, tentativa ou complemento (04, R20: acima disso, `too_many_photos`). */
+export const PHOTOS_MAX = 30;

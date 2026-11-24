@@ -10,7 +10,7 @@ import { Field, FieldLabel } from '@/components/ui/field';
 import { Textarea } from '@/components/ui/textarea';
 import { UserAvatar } from '@/components/user';
 import { t } from '@/lib/i18n';
-import { LONG_TEXT_MAX } from '@/lib/input';
+import { LONG_TEXT_MAX, PHOTOS_MAX } from '@/lib/input';
 import { cn } from '@/lib/utils';
 import type { PhotoInput } from '@/photos/process';
 import { act } from './act';
@@ -63,7 +63,15 @@ export function SubmissionForm({
     const next = latest.current;
     write(() => saveDraft(draftKey, next));
   };
-  const add = (photo: PhotoInput) => write(() => addPhoto(draftKey, latest.current, photo));
+  // R20: até 30 fotos por envio. A contagem anda a cada foto, antes de o rascunho voltar (galeria com várias).
+  const count = React.useRef(draft.photos.length);
+  count.current = Math.max(count.current, draft.photos.length);
+  const add = (photo: PhotoInput) => {
+    if (count.current >= PHOTOS_MAX) return;
+    count.current += 1;
+    if (count.current >= PHOTOS_MAX) setCamera(false);
+    write(() => addPhoto(draftKey, latest.current, photo));
+  };
   const photos = withAlerts(draft.photos, draft.startedAt);
 
   return (
@@ -82,16 +90,27 @@ export function SubmissionForm({
         }
       >
         {photos.length > 0 && (
-          <PhotoGrid photos={photos} timeZone={TZ} onRemove={(photo) => write(() => removePhoto(draftKey, photo.id))} />
+          <PhotoGrid
+            photos={photos}
+            timeZone={TZ}
+            onRemove={(photo) => {
+              count.current = Math.max(0, count.current - 1);
+              write(() => removePhoto(draftKey, photo.id));
+            }}
+          />
         )}
-        <AddPhoto
-          onCamera={() => setCamera(true)}
-          onGallery={() => {
-            void pickFromGallery().then((picked) => {
-              for (const photo of picked) add(photo);
-            });
-          }}
-        />
+        {photos.length >= PHOTOS_MAX ? (
+          <p className="text-sm text-muted-foreground">{t('technician.execution.photosMax', { max: PHOTOS_MAX })}</p>
+        ) : (
+          <AddPhoto
+            onCamera={() => setCamera(true)}
+            onGallery={() => {
+              void pickFromGallery().then((picked) => {
+                for (const photo of picked) add(photo);
+              });
+            }}
+          />
+        )}
       </Section>
 
       <Section title={descriptionLabel} icon={PenLine} density="touch">
