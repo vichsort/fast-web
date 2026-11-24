@@ -7,7 +7,7 @@ O que falta no front e no backend. Item feito sai daqui no mesmo commit do códi
 | Fase | Itens | Trava a produção |
 | --- | --- | --- |
 | [1. Decisões em aberto](#1-decisões-em-aberto) | 2 | sim: mudam itens da fase 2 |
-| [2. Código antes do primeiro deploy](#2-código-antes-do-primeiro-deploy) | 6 | sim |
+| [2. Código antes do primeiro deploy](#2-código-antes-do-primeiro-deploy) | 5 | sim |
 | [3. Primeiro deploy](#3-primeiro-deploy) | 7 | sim |
 | [4. Antes de entregar à Fast](#4-antes-de-entregar-à-fast) | 5 | sim |
 | [5. Depois, sem travar](#5-depois-sem-travar) | 8 | não |
@@ -28,7 +28,6 @@ Na ordem de gravidade. Custo do relatório: P = pequeno, M = médio.
 | Convite sem limite (seg. A2) | backend | limite por quem convida e por empresa na Edge Function `invite_member`; a admin API do Auth ignora o rate limit de email (9 convites viraram 9 emails, ~35 ms cada) | P a M |
 | Convite revela perfil e emails (seg. M1) | os dois | conforme a [decisão](#1-decisões-em-aberto); tirar as flags da resposta | P a M |
 | Fotos sem teto (seg. M3, código) | backend | teto de fotos por execução em `request_photo_upload` | P |
-| Sem cabeçalhos de segurança (seg. M4) | front | `public/_headers` com CSP compatível com o service worker, o Supabase, as URLs assinadas do R2 e o ViaCEP; `frame-ancestors 'none'`, `Referrer-Policy`, `X-Content-Type-Options: nosniff`, HSTS | P |
 | Ex-membro continua com conta (seg. B1) | backend | na Edge Function `remove_member`, banir a conta no Auth se ela não tem vínculo ativo em outra empresa; hoje ele loga, renova o token e gasta cota de Edge Function (o RLS já corta os dados) | P |
 | Emails do Auth em inglês (UX 9) | backend | templates pt-BR de convite e de recuperação de senha, com o nome da empresa (hoje comentados no `config.toml`); no hospedado, os mesmos pelo painel | P |
 
@@ -44,7 +43,7 @@ Roteiro: [operations.md](../../fast/docs/operations.md#primeiro-deploy). Abaixo,
 | `npm run deploy` | backend | depois dele, migrations só por acréscimo (hoje se editam no lugar): atualizar a linha "Status" do CLAUDE.md do backend |
 | Empresa e admin | backend | cadastrar a Fast e o platform admin direto no banco; o owner convida o time |
 | Cloudflare Pages | front | ligado ao Supabase de produção; a versão do build vem de `CF_PAGES_COMMIT_SHA` (`vite.config.ts`) |
-| Conferências | os dois | CORS: REST, RPC, Auth e Edge Functions do hospedado aceitam o `x-client-version` (o local aceita; se o hospedado recusar, nada funciona); ip da auditoria (passo 6 do roteiro); `GET /auth/v1/settings` e `signup` respondendo `signup_disabled`; `_headers` com `curl -I`; Realtime sem nenhuma tabela na publicação; bundle só com a URL e a chave anon, sem source map e sem `/dev` |
+| Conferências | os dois | CORS: REST, RPC, Auth e Edge Functions do hospedado aceitam o `x-client-version` (o local aceita; se o hospedado recusar, nada funciona); ip da auditoria (passo 6 do roteiro); `GET /auth/v1/settings` e `signup` respondendo `signup_disabled`; `_headers` com `curl -I` (gerado no build; com domínio próprio no bucket de fotos, `PHOTOS_ORIGIN` no build do Pages); Realtime sem nenhuma tabela na publicação; bundle só com a URL e a chave anon, sem source map e sem `/dev` |
 
 ## 4. Antes de entregar à Fast
 

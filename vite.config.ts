@@ -2,8 +2,9 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath, URL } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv, type Plugin } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { R2_ORIGIN, securityHeaderList, securityHeaders } from './src/lib/security-headers.ts';
 import { buildVersion } from './src/lib/version.ts';
 
 /** O commit do build: o do Cloudflare Pages, senão o do git local; sem nenhum, a versão vai sem ele. */
@@ -17,12 +18,41 @@ function commit(): string | null {
   }
 }
 
-export default defineConfig({
+/**
+ * `_headers` do Cloudflare Pages (src/lib/security-headers.ts) com o Supabase deste build. As fotos vêm do R2;
+ * `PHOTOS_ORIGIN` troca a origem (ex.: um domínio próprio do bucket). Sem Supabase (só dados de exemplo), não gera.
+ */
+function headersFile(): Plugin {
+  let supabaseUrl: string | undefined;
+  return {
+    name: 'fast-security-headers',
+    apply: 'build',
+    configResolved(config) {
+      supabaseUrl = config.env.VITE_SUPABASE_URL;
+    },
+    generateBundle() {
+      if (!supabaseUrl) return this.warn('VITE_SUPABASE_URL ausente: _headers não gerado');
+      const photosOrigin = process.env.PHOTOS_ORIGIN || R2_ORIGIN;
+      this.emitFile({ type: 'asset', fileName: '_headers', source: securityHeaders({ supabaseUrl, photosOrigin }) });
+    },
+  };
+}
+
+function previewHeaders(mode: string): Record<string, string> | undefined {
+  const supabaseUrl = loadEnv(mode, process.cwd(), 'VITE_').VITE_SUPABASE_URL;
+  if (!supabaseUrl) return undefined;
+  const list = securityHeaderList({ supabaseUrl, photosOrigin: process.env.PHOTOS_ORIGIN || R2_ORIGIN });
+  // HSTS num preview em http não faz nada, e o navegador ignora; os outros valem.
+  return Object.fromEntries(list);
+}
+
+export default defineConfig(({ mode }) => ({
   // Versão do app (src/lib/version.ts), a mesma na página e no service worker.
   define: { __APP_VERSION__: JSON.stringify(buildVersion(new Date(), commit())) },
   // Porta do site_url do Auth local (../fast/supabase/config.toml): os links do convite e da senha abrem aqui.
   server: { host: '127.0.0.1', port: 3000, strictPort: true },
-  preview: { host: '127.0.0.1', port: 3000, strictPort: true },
+  // O preview (o dos E2E) serve com os mesmos cabeçalhos do Cloudflare Pages: a CSP quebrada aparece nos testes.
+  preview: { host: '127.0.0.1', port: 3000, strictPort: true, headers: previewHeaders(mode) },
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   // Bibliotecas do pedaço inicial em grupos próprios: o hash delas só muda quando a versão muda, e o técnico não
   // baixa tudo de novo pelo service worker a cada deploy (antes, um pedaço só de ~570 kB com o código do app).
@@ -43,6 +73,7 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    headersFile(),
     // Service worker próprio (injectManifest): a fila offline roda nele com o Background Sync do Android.
     VitePWA({
       strategies: 'injectManifest',
@@ -71,4 +102,4 @@ export default defineConfig({
       devOptions: { enabled: false, type: 'module' },
     }),
   ],
-});
+}));
