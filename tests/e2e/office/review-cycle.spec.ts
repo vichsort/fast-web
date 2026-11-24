@@ -49,10 +49,13 @@ test('rejeitar, o técnico refaz com o motivo à vista, aprovar', async ({
   await submitWithGalleryPhoto(tech, 'Segunda tentativa, com o quadro.');
   await expect(tech.getByText(t('technician.detail.waitingBody'))).toBeVisible();
 
-  // O escritório vê a tentativa nova, com a anterior guardada, e aprova.
+  // O escritório vê a tentativa nova, a rejeição anterior acima da decisão e a tentativa anterior aberta (a prova é a
+  // soma das tentativas), e aprova.
   await page.goto(`/office/review/${order.id}`);
   await expect(page.getByText('Segunda tentativa, com o quadro.')).toBeVisible();
-  await expect(page.getByRole('button', { name: t('office.review.previousAttempts', { count: 1 }) })).toBeVisible();
+  await expect(page.getByText(t('office.review.previousRejection'))).toBeVisible();
+  await expect(page.getByRole('heading', { name: t('office.review.previousAttempts', { count: 1 }) })).toBeVisible();
+  await expect(page.getByText('Primeira tentativa.')).toBeVisible();
   await page.getByRole('button', { name: t('office.review.approve') }).click();
   await page
     .getByRole('alertdialog')
