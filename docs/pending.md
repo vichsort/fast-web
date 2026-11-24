@@ -23,7 +23,6 @@ Relatórios completos: [segurança](reviews/2026-11-24-security.md) e [UI/UX](re
 
 | Item | Repo | O que fazer |
 | --- | --- | --- |
-| Cache vaza no logout (seg. C1, crítico) | front | `queryClient.clear()` em todo logout (menu, "Meu perfil", `signOutAndWipe`) e não persistir o cache do técnico antes de restaurar o do usuário certo |
 | Recusa de quem saiu da dupla sem identificação (UX 1, crítico) | front | número, título e cliente guardados no rascunho e na recusa (versão nova do Dexie); sem "Abrir" quando a O.S. saiu do aparelho; "Mandar ao escritório" antes de "Descartar"; aviso no Reatribuir e no Cancelar com a O.S. em execução; motivo na recusa `order_closed` |
 | Texto livre sem limite (seg. A1) | backend | CHECK de tamanho e `invalid_input` nas RPCs, sem mudar assinatura; não copiar texto grande para o histórico |
 | O.S. enviada sem sinal segue "A fazer" (UX 2) | front | marcar "Enviada · na fila" e tirar da conta; faixa com "N envio(s) no aparelho"; selo de Pendências neutro para fila normal; texto neutro no painel e no aviso até a resposta |

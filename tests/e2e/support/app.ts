@@ -5,6 +5,11 @@ import { PASSWORD } from './backend';
 
 export async function login(page: Page, email: string) {
   await page.goto('/login');
+  await submitLogin(page, email);
+}
+
+/** Entra pela tela de login já aberta, sem recarregar a página (o que fica em memória continua). */
+export async function submitLogin(page: Page, email: string) {
   await page.getByLabel(t('auth.email')).fill(email);
   await page.getByLabel(t('auth.password')).fill(PASSWORD);
   await page.getByRole('button', { name: t('auth.login') }).click();

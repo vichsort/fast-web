@@ -1,18 +1,27 @@
 // Sessão e acesso do usuário logado: consulta ao servidor, cache para abrir sem sinal, logout com limpeza.
 import type { Session } from '@supabase/supabase-js';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { classifyRpcError } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { type Access, type AccessLookup, type Membership, type ResolvedAccess, resolveAccess } from './access';
+import { forgetOnUserChange } from './query-client';
 
-/** Sessão atual do Supabase; `ready` fica falso até a sessão guardada (ou a do link de email) ser lida. */
+/**
+ * Sessão atual do Supabase; `ready` fica falso até a sessão guardada (ou a do link de email) ser lida. Troca de usuário
+ * esquece as leituras em memória antes de a tela ver a sessão nova (query-client.ts).
+ */
 export function useSession(): { session: Session | null; ready: boolean } {
+  const queryClient = useQueryClient();
   const [state, setState] = useState<{ session: Session | null; ready: boolean }>({ session: null, ready: false });
   useEffect(() => {
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => setState({ session, ready: true }));
+    const sessionChanged = forgetOnUserChange(queryClient);
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      sessionChanged(session?.user.id ?? null);
+      setState({ session, ready: true });
+    });
     return () => data.subscription.unsubscribe();
-  }, []);
+  }, [queryClient]);
   return state;
 }
 

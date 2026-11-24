@@ -10,3 +10,16 @@ export function createQueryClient(): QueryClient {
   queryClient.setQueryDefaults(['office'], { staleTime: OFFICE_STALE_TIME });
   return queryClient;
 }
+
+/**
+ * As chaves não levam o usuário: quando o usuário da sessão muda (logout, por qualquer caminho, ou outro login sem
+ * recarregar), as leituras em memória do anterior saem. Sem isso, o próximo via os dados dele (até de outra empresa)
+ * e o cache do técnico os gravava no Dexie do novo (revisão de segurança, C1).
+ */
+export function forgetOnUserChange(queryClient: QueryClient): (userId: string | null) => void {
+  let current: string | null = null;
+  return (userId) => {
+    if (current !== null && current !== userId) queryClient.clear();
+    current = userId;
+  };
+}

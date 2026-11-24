@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Link, Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
 import {
   Building2,
@@ -178,15 +178,13 @@ function Shell({ session }: { session: OfficeSession }) {
   );
 }
 
-/** Rodapé da lateral: quem está logado, Meu perfil e Sair (logout real, que esquece as leituras do escritório). */
+/** Rodapé da lateral: quem está logado, Meu perfil e Sair (logout real; as leituras em memória saem na troca de usuário, session.ts). */
 function UserMenu({ session }: { session: OfficeSession }) {
   const { session: auth } = useAuth();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   async function logout() {
     if (!auth) return;
     await signOutAndWipe(auth.user.id);
-    queryClient.removeQueries({ queryKey: ['office'] });
     await navigate({ to: '/login' });
   }
   return (
