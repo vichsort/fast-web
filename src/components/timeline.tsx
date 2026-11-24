@@ -152,6 +152,7 @@ const eventStyle: Record<string, { icon: LucideIcon; toneClass: string }> = {
   cancelled: { icon: Ban, toneClass: statusVar.cancelled },
   started: { icon: Play, toneClass: statusVar.in_progress },
   submitted: { icon: Send, toneClass: statusVar.pending_approval },
+  submitted_after_cancel: { icon: Send, toneClass: statusVar.cancelled },
   supplement_added: { icon: FilePlus, toneClass: flagVar.lateSupplement },
   approved: { icon: CircleCheck, toneClass: statusVar.approved },
   rejected: { icon: CircleX, toneClass: statusVar.rejected },
@@ -252,6 +253,7 @@ export function orderHistoryEntries(
       case 'created':
       case 'started':
       case 'submitted':
+      case 'submitted_after_cancel':
         return { ...base, title: t(`ui.history.${e.event_type}`) };
       default:
         return { ...base, title: t('ui.history.unknown', { type: e.event_type }) };

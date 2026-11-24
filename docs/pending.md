@@ -23,7 +23,7 @@ Relatórios completos: [segurança](reviews/2026-11-24-security.md) e [UI/UX](re
 
 | Item | Repo | O que fazer |
 | --- | --- | --- |
-| Recusa de quem saiu da dupla sem identificação (UX 1, crítico) | front | número, título e cliente guardados no rascunho e na recusa (versão nova do Dexie); sem "Abrir" quando a O.S. saiu do aparelho; "Mandar ao escritório" antes de "Descartar"; aviso no Reatribuir e no Cancelar com a O.S. em execução; motivo na recusa `order_closed` |
+| Recusa de quem saiu da dupla sem identificação (UX 1, crítico) | front | número, título e cliente guardados no rascunho e na recusa (versão nova do Dexie); sem "Abrir" quando a O.S. saiu do aparelho; "Mandar ao escritório" (Web Share, fotos e resumo) antes de "Descartar"; aviso no Reatribuir e no Cancelar com a O.S. em execução (no Cancelar: o envio fica registrado sem revisão, R19); motivo do cancelamento na recusa `order_closed` de materiais |
 | Texto livre sem limite (seg. A1) | backend | CHECK de tamanho e `invalid_input` nas RPCs, sem mudar assinatura; não copiar texto grande para o histórico |
 | O.S. enviada sem sinal segue "A fazer" (UX 2) | front | marcar "Enviada · na fila" e tirar da conta; faixa com "N envio(s) no aparelho"; selo de Pendências neutro para fila normal; texto neutro no painel e no aviso até a resposta |
 | "A fazer" fora da ordem do prazo (UX 3) | front | atrasadas, prazo, prioridade, sem prazo, número |
@@ -35,7 +35,7 @@ Relatórios completos: [segurança](reviews/2026-11-24-security.md) e [UI/UX](re
 | "Atualizar" sem sinal mostra ✓ (UX 7) | front | aviso pelo resultado ("atualizada às" ou "sem sinal: lista de") |
 | "Aprovadas no mês" abre todas (UX 8) | os dois | filtro por "aprovada em" ou sem link |
 
-**Perguntas ao produto** (UX): aceitar o envio de quem estava atribuído no `client_started_at` e saiu da dupla sem sinal? Registrar sem revisão o envio de O.S. cancelada com o serviço feito? Depois de um retrabalho, a prova é a soma das tentativas?
+**Pergunta ao produto** (UX): depois de um retrabalho, a prova é a soma das tentativas? As outras duas foram decididas em 2026-11-24 ([decisões do 04](decisions.md#04-execução-e-fotos)).
 
 ## Backup (07)
 

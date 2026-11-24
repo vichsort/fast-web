@@ -196,6 +196,7 @@ export const uiTexts = {
     cancelled: 'cancelou a O.S.',
     started: 'iniciou o serviço',
     submitted: 'enviou para aprovação',
+    submitted_after_cancel: 'enviou depois do cancelamento (registrado, sem revisão)',
     supplement_added: 'enviou um complemento',
     supplement_converted: 'enviou (virou complemento)',
     approved: 'aprovou a tentativa',

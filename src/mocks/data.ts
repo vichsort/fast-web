@@ -1134,7 +1134,7 @@ export const pendingItems: PendingItem[] = [
     ...orderRef(37),
     created_at: hoursAgo(26),
     next_attempt_at: null,
-    refusal: 'order_closed',
+    refusal: 'not_assigned',
     error: null,
     photos: { done: 0, total: 3 },
   },
