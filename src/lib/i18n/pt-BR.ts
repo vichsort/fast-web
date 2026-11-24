@@ -27,6 +27,7 @@ export const BACKEND_ERROR_CODES = [
   'reason_required',
   'comment_required',
   'last_owner',
+  'rate_limited',
   'invalid_import',
 ] as const;
 
@@ -55,6 +56,7 @@ const errors = {
   reason_required: 'Informe o motivo.',
   comment_required: 'Informe o motivo da rejeição.',
   last_owner: 'A empresa precisa de ao menos um dono ativo.',
+  rate_limited: 'Muitos convites em pouco tempo. Tente de novo mais tarde.',
   invalid_import: 'O arquivo não tem o formato esperado.',
   storage_full: 'Sem espaço no aparelho. Libere espaço antes de continuar.',
   draft_not_editable: 'Este envio não pode mais ser alterado.',

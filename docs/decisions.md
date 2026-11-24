@@ -258,6 +258,7 @@ Doc: [05-dashboard-audit.md](../../fast/docs/modules/05-dashboard-audit.md).
 
 Doc: [06-members.md](../../fast/docs/modules/06-members.md).
 
+- **2026-11-24** — Limite de convites (R7): 20 por quem convida por hora e 50 por empresa em 24 h, contando toda chamada do owner que passa da validação, com ou sem email; acima, `rate_limited` antes de tocar no Auth. *Por quê:* revisão de segurança (A2): a admin API do Auth ignora o limite de email (9 convites viraram 9 emails em ~35 ms cada), e o SMTP grátis tem 100 a 300 emails por dia, divididos com a recuperação de senha. 20 por hora cobre cadastrar o time de uma vez; contar também as chamadas sem email limita a sondagem de emails (M1).
 - **2026-11-04** — Membros por Edge Function. *Por quê:* convite e criação de usuário exigem a service role, que nunca vai para o front.
 - **2026-11-04** — Remoção fecha as atribuições. *Por quê:* técnico removido não pode continuar contando como responsável pela O.S.
 - **2026-11-06** — Convite repetido devolve o vínculo existente; formatos de entrada e saída. *Por quê:* idempotência, como nas RPCs ([api.md](../../fast/docs/api.md#regras-que-valem-para-todas-as-operações)).
