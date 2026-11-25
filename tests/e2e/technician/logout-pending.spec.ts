@@ -1,4 +1,4 @@
-// P2 (docs/e2e.md): sair com envios na fila apaga a prova (queue.md, Q10), e o aviso com a contagem é a única
+// Sair com envios na fila apaga a prova (queue.md, Q10), e o aviso com a contagem é a única
 // proteção. O aviso conta por O.S. (o início e o envio são um serviço só), e cancelar não apaga nada: o envio chega
 // quando o sinal volta.
 import { expect, test } from '@playwright/test';

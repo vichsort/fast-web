@@ -1,4 +1,4 @@
-// P7 (docs/e2e.md): a dupla envia sem sinal, cada um no seu celular, e os dois voltam ao sinal juntos. O segundo envio
+// A dupla envia sem sinal, cada um no seu celular, e os dois voltam ao sinal juntos. O segundo envio
 // vira complemento do primeiro (04, R4), e nenhuma prova fica presa: nada `blocked` nem `refused`.
 import { devices, expect, type Page, test } from '@playwright/test';
 import { t } from '@/lib/i18n';

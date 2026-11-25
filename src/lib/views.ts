@@ -34,7 +34,7 @@ export interface OrderListItem extends ServiceOrder {
   late_supplements_unseen: number;
 }
 
-/** Linha da lista de O.S. do escritório: só o que a tabela mostra e os filtros usam (docs/e2e.md, D4). */
+/** Linha da lista de O.S. do escritório: só o que a tabela mostra e os filtros usam. */
 export interface OfficeOrderListItem
   extends Pick<
     ServiceOrder,

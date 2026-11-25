@@ -2,7 +2,7 @@
 // É o contrato entre a fila (src/offline/queue) e as fotos (src/photos): docs/queue.md e docs/photos.md.
 // Tudo fica preso ao usuário que criou (userId): a fila de quem saiu não é enviada por outro usuário.
 // Mudou o schema? Nova versão em db.version(n), com teste de upgrade a partir dos dados da anterior; nunca editar uma
-// versão que já foi para produção. A versão 1 junta as de antes do primeiro deploy (docs/e2e.md, P8).
+// versão que já foi para produção. A versão 1 junta as de antes do primeiro deploy.
 import Dexie, { type EntityTable } from 'dexie';
 import type { Database } from '@/lib/database.types';
 

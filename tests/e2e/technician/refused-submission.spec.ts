@@ -1,4 +1,4 @@
-// P5 (docs/e2e.md): o escritório tira o técnico da O.S. enquanto ele trabalha sem sinal. Ao voltar o sinal, o envio é
+// O escritório tira o técnico da O.S. enquanto ele trabalha sem sinal. Ao voltar o sinal, o envio é
 // recusado por regra (`not_assigned`) e o rascunho fica no aparelho, com o motivo, até o técnico apagar
 // (../fast/docs/offline.md, "Recusa definitiva"; queue.md).
 import { expect, test } from '@playwright/test';

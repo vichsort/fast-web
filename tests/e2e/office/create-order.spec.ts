@@ -1,4 +1,4 @@
-// E3 (docs/e2e.md): o cadastro pela tela, que os outros E2E pulam (criam tudo no banco). O escritório cadastra o
+// O cadastro pela tela, que os outros E2E pulam (criam tudo no banco). O escritório cadastra o
 // cliente com endereço (02), abre a O.S. a partir dele com o endereço principal já escolhido e atribui o técnico
 // (03); o técnico vê a O.S. em Minhas O.S., com o cliente e o endereço.
 import { devices, expect, test } from '@playwright/test';

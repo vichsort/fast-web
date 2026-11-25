@@ -1,4 +1,4 @@
-// D4 (docs/e2e.md): passada de `max_rows = 1000` do PostgREST, a lista de O.S. cortava em silêncio as mais antigas, e a
+// Passada de `max_rows = 1000` do PostgREST, a lista de O.S. cortava em silêncio as mais antigas, e a
 // busca não as achava. Empresa própria do teste, com 1001 O.S. gravadas direto no banco.
 import { expect, test } from '@playwright/test';
 import { formatNumber } from '@/lib/format';

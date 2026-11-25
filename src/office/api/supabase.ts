@@ -95,7 +95,7 @@ async function update<R extends Response>(query: PromiseLike<R>): Promise<Data<R
 
 // ---------------------------------------------------------------- O.S.
 
-/** A lista de O.S. pede só o que a linha mostra (docs/e2e.md, D4); detalhe, revisão e dashboard usam ORDER_SELECT. */
+/** A lista de O.S. pede só o que a linha mostra; detalhe, revisão e dashboard usam ORDER_SELECT. */
 const ORDER_LIST_SELECT = `id, order_number, title, status, priority, service_type, due_at, client_id,
   client:clients!service_orders_client_id_fkey(id, name),
   assignments:service_order_assignees(unassigned_at, user:profiles!service_order_assignees_user_id_fkey(${PERSON})),

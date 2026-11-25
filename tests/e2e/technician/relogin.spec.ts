@@ -1,4 +1,4 @@
-// P3, a janela (docs/e2e.md): o técnico saiu da conta em outro aparelho (logout global, S5) com um envio na fila neste.
+// O técnico saiu da conta em outro aparelho (logout global, S5) com um envio na fila neste.
 // O token de acesso ainda vale pelo relógio, então a sessão fica e o app não vai sozinho ao login; a fila para pedindo
 // login. "Entrar de novo" em Pendências leva ao login sem apagar nada, e entrar com a mesma conta manda a fila (Q3).
 import { expect, test } from '@playwright/test';

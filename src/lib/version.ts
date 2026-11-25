@@ -1,4 +1,4 @@
-// Versão do app (docs/e2e.md, Versionamento): a do package.json em semver, com o commit depois do +. O número sobe no
+// Versão do app: a do package.json em semver, com o commit depois do +. O número sobe no
 // lançamento (`npm version`); a mínima do backend (app_settings.min_client_version, 01 R8) é semver sem o commit.
 
 declare const __APP_VERSION__: string | undefined;

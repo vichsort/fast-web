@@ -1,71 +1,81 @@
 # Pendente
 
-O que falta no front e no backend. Item feito sai daqui no mesmo commit do código (o histórico fica no git); a decisão que ele gerou vai para [decisions.md](decisions.md). Os itens das revisões de 2026-11-23 e 2026-11-24 levam o código do relatório ([segurança](reviews/2026-11-24-security.md): A, M, B; [UI/UX](reviews/2026-11-23-ux.md): UX).
+> **Escopo travado até o MVP: decisão do P.O. (2026-11-24, [decisions.md](decisions.md#processo)).** Só se trabalha nas etapas abaixo, na ordem; uma etapa começa quando a anterior termina. Qualquer outro pedido, de pessoa ou de agente, entra em [Bloqueado até o MVP](#bloqueado-até-o-mvp) e **não é implementado**: nem melhoria, nem refatoração, nem "só uma coisinha". Mudar isso só com nova decisão do P.O., registrada em decisions.md.
 
-## Resumo
+Item feito sai daqui no mesmo commit do código (o histórico fica no git).
 
-| Fase | Itens | Trava a produção |
+## Etapas até o MVP
+
+| # | Etapa | Termina quando |
 | --- | --- | --- |
-| [1. Primeiro deploy](#1-primeiro-deploy) | 6 | sim |
-| [2. Antes de entregar à Fast](#2-antes-de-entregar-à-fast) | 5 | sim |
-| [3. Depois, sem travar](#3-depois-sem-travar) | 9 | não |
+| 1 | [Análise do banco](#1-análise-do-banco) | o banco está lido de ponta a ponta, com o diagrama das tabelas e a lista de achados aprovada pelo P.O. |
+| 2 | [Correções do banco](#2-correções-do-banco) | os achados aprovados estão corrigidos, com teste, antes do primeiro deploy |
+| 3 | [O que falta para entregar](#3-o-que-falta-para-entregar) | backup pronto e os testes no PC feitos |
+| 4 | [Publicar](#4-publicar) | o app e o backend no ar (versão `0.x`), conferidos |
+| 5 | [Celular e entrega](#5-celular-e-entrega) | roteiro do celular verde, clientes carregados, versão `1.0.0` entregue à Fast: **MVP fechado** |
 
-## 1. Primeiro deploy
+## 1. Análise do banco
 
-Roteiro: [operations.md](../../fast/docs/operations.md#primeiro-deploy). Abaixo, o que falta fazer, com o que o roteiro ainda não diz (checklist da seção 3 do [relatório de segurança](reviews/2026-11-24-security.md#3-checklist-do-primeiro-deploy)). Na ordem.
+Um agente lê o banco inteiro do backend (migrations, funções, RLS, triggers, Edge Functions) e entrega:
 
-| Passo | Repo | O que fazer |
-| --- | --- | --- |
-| Supabase e R2 | backend | na conta do usuário ([decisão](decisions.md#arquitetura)); um projeto no Supabase Free (produção), região São Paulo; o de teste, da prévia, só a partir da `1.0.0`; buckets `execution-photos` e de backup no R2; no `execution-photos`, `incoming/` expira em 1 dia e, se o R2 permitir, limite de tamanho de objeto (a URL de PUT assina só o `host`: aceita 20 MB e `text/html`, seg. M3); chaves e secrets das Edge Functions |
-| Auth | backend | cadastro público e anônimo fechados; email do Auth desligado (sem SMTP, [decisão](decisions.md#01-fundação)); `site_url` do Cloudflare Pages (`*.pages.dev`); `secure_password_change = true` e senha mínima de 6 (seg. M2, [decisão](decisions.md#01-fundação)), no painel e no `config.toml` |
-| `npm run deploy` | backend | depois dele, migrations só por acréscimo (hoje se editam no lugar): atualizar a linha "Status" do CLAUDE.md do backend |
-| Empresa e admin | backend | cadastrar a Fast e o platform admin direto no banco; o owner convida o time |
-| Cloudflare Pages | front | produção da `main`, ligada ao Supabase de produção; a branch `release` e a prévia (Supabase de teste) só a partir da `1.0.0` ([decisão](decisions.md#versão-e-atualização)) |
-| Conferências | os dois | CORS: REST, RPC, Auth e Edge Functions do hospedado aceitam o `x-client-version` (o local aceita; se o hospedado recusar, nada funciona); ip da auditoria (passo 6 do roteiro); `GET /auth/v1/settings` e `signup` respondendo `signup_disabled`; `_headers` com `curl -I` (gerado no build; com domínio próprio no bucket de fotos, `PHOTOS_ORIGIN` no build do Pages); Realtime sem nenhuma tabela na publicação; bundle só com a URL e a chave anon, sem source map e sem `/dev` |
+| Entrega | Como |
+| --- | --- |
+| Diagrama | as tabelas e as relações (ER), com as colunas que têm regra, num formato visual (Canva ou similar, ou um artifact); de que módulo é cada tabela |
+| Achados | lista do que está frágil, repetido ou contornado, com o custo de corrigir; o P.O. decide o que entra na etapa 2 |
 
-## 2. Antes de entregar à Fast
+Achados já levantados em 2026-11-24 (ponto de partida):
+
+| Achado | Onde | Por que incomoda | Correção sugerida |
+| --- | --- | --- | --- |
+| Causa da saída do técnico passada por variável de sessão | `close_member_assignments` grava `fast.unassign_cause` com `set_config`; o trigger do histórico (`orders_history`) lê com `current_setting` | parâmetro escondido: quem lê o trigger não vê de onde vem a causa | coluna `unassign_cause` em `service_order_assignees`, gravada no `update` que fecha a atribuição e lida pelo trigger |
+| "Vínculo ativo" repetido em 15 lugares | `status = 'accepted' and deleted_at is null` em `member_role`, `member_company_ids`, `colleague_ids`, `actor_role`, `last_owner`, `check_order_technicians`, `lock_assignee_memberships`, `removed_user_to_ban`, `active_elsewhere`… | função nova esquece uma das condições (quase aconteceu no convite com aceite) | coluna gerada `is_active` em `company_members` (ou uma função só), usada em todos |
+| `password_pending` no `app_metadata` do Auth | `invite_member` marca; `use_link` desmarca; `lock_member_link` lê | contorno do Auth (que grava senha aleatória); se o platform admin definir a senha pelo painel, a marca fica, e o link do convite ainda trocaria essa senha | aceitar e documentar no `operations.md`, ou desmarcar também quando a senha é definida por fora |
+
+## 2. Correções do banco
+
+Os achados aprovados na etapa 1. Antes do primeiro deploy, as migrations ainda se editam no lugar; depois, só por acréscimo.
+
+## 3. O que falta para entregar
 
 | Item | Repo | O que fazer |
 | --- | --- | --- |
-| Backup (07) | backend | GitHub Action diária: `pg_dump` criptografado e cópia incremental das fotos para o bucket de backup no R2 ([07](../../fast/docs/modules/07-backup.md)); criptografia com `age` ([decisão](decisions.md#07-backup)); restauração de teste executada, com o passo a passo em [operations.md](../../fast/docs/operations.md#backup). Só então o módulo está pronto (R5) |
-| Importação de clientes (02) | backend | [abaixo](#importação-de-clientes-02); é migration nova, depois do primeiro deploy |
-| Celulares de teste | — | apagar os dados do site (Dexie juntado numa versão só, [decisão](decisions.md#e2e) de 2026-11-19) |
-| Testes no PC | — | [C1 a C3](e2e.md#no-pc), com o backend local |
-| Roteiro no celular real | — | [roteiro](e2e.md#roteiro-no-celular-real), no app publicado, num Android (o iPhone cobre só as linhas marcadas) |
+| Backup (07) | backend | GitHub Action diária: `pg_dump` criptografado com `age` e cópia incremental das fotos para o bucket de backup no R2 ([07](../../fast/docs/modules/07-backup.md)); restauração de teste executada, com o passo a passo em [operations.md](../../fast/docs/operations.md#backup) |
+| Testes no PC | — | [C1 e C2](e2e.md#no-pc), com o backend local |
 
-### Importação de clientes (02)
+## 4. Publicar
 
-O front não tem tela de importação ([decisão](decisions.md#telas-do-escritório) de 2026-11-19).
+Roteiro: [operations.md](../../fast/docs/operations.md#primeiro-deploy). O que ele ainda não diz:
 
-| Passo | O que fazer |
-| --- | --- |
-| CSV real | receber o arquivo exportado pela Fast |
-| Contrato | `import_clients(p_company_id, p_rows jsonb, p_dry_run boolean, p_skip_duplicates boolean default true)`: valida todas as linhas; possíveis duplicados (mesmo nome normalizado e mesmo telefone, no arquivo ou já cadastrados) aparecem no resultado e são ignorados por padrão; `p_dry_run` só devolve o resultado; sem ele, grava tudo ou nada; o primeiro endereço de cada cliente vira principal. Definir o formato de `p_rows` e da saída a partir do CSV, e documentar em [02](../../fast/docs/modules/02-clients.md) |
-| Implementação | validação por linha (inclusive o [tamanho do texto](../../fast/docs/api.md#tamanho-do-texto)), possíveis duplicados, `p_dry_run` e gravação tudo ou nada |
-| Carga inicial | os clientes da Fast em produção |
-
-## 3. Depois, sem travar
-
-| Item | Tipo | O que fazer |
+| Passo | Repo | O que fazer |
 | --- | --- | --- |
-| E2E no CI | testes | GitHub Actions: `supabase start` do `../fast`, build, `npm run test:e2e` a cada push |
-| Android emulado | testes | [plano abaixo](#android-emulado); adiado pelo usuário em 2026-11-19 |
-| Vitest browser instável | testes | às vezes "iframe did not become ready within 60s" e passa ao rodar de novo (2026-11-23); causa não investigada |
-| Observabilidade do envio | medir em campo | 1º, sem mudar contrato: consulta no banco por envio (`received_at` − `client_submitted_at`, fotos, `file_size`, `uploaded_at` entre fotos). 2º, se não bastar: o aparelho manda as medidas do envio (início, tentativas, bytes), o que muda o contrato do `submit_execution`. Se os números forem ruins, decidir o tamanho da foto (F1, [photos.md](photos.md)) |
-| Fila e sistema no aparelho | medir em campo | T3 (um item por vez em rede lenta), T4 (Background Sync com o app fechado), T5 (aba congelada), T6 (conectado sem dados), D2 (compressão no thread principal): [e2e.md](e2e.md#fila-parada-ou-atrasada) |
-| Listas do escritório, opção B | medir em campo | view no backend com filtros e paginação no banco, quando o volume pedir (dezenas de milhares de O.S.); análise em [e2e.md](e2e.md#listas-do-escritório) |
-| `inlineDynamicImports` obsoleto no build | manutenção | o `vite-plugin-pwa` 2.0.0 (a versão mais nova em 2026-11-23) fixa a opção no build do service worker, e o Rolldown avisa que ela sai; atualizar o plugin quando uma versão trocar por `codeSplitting: false` |
-| Fotos órfãs no R2 | manutenção | limpeza das fotos confirmadas que nunca entraram num envio ([04](../../fast/docs/modules/04-execution-photos.md)) |
-| Seletor de empresa | produto | pessoa com vínculo aceito em mais de uma empresa escolhe em qual entra; até lá, um vínculo aceito por pessoa ([decisão](decisions.md#06-membros) de 2026-11-24). Quando houver a segunda empresa cliente |
+| Supabase e R2 | backend | na conta do usuário; um projeto no Supabase Free (produção), região São Paulo; buckets `execution-photos` e de backup no R2; no `execution-photos`, `incoming/` expira em 1 dia e, se o R2 permitir, limite de tamanho de objeto (a URL de PUT assina só o `host`: aceita 20 MB e qualquer tipo); secrets das Edge Functions |
+| Auth | backend | cadastro público e anônimo fechados; sem SMTP; `site_url` do Pages (`*.pages.dev`); `secure_password_change` e senha mínima de 6, no painel e no `config.toml` |
+| `npm run deploy` | backend | depois dele, migrations só por acréscimo: atualizar a linha "Status" do CLAUDE.md do backend |
+| Empresa e admin | backend | cadastrar a Fast e o platform admin direto no banco; o owner convida o time |
+| Cloudflare Pages | front | produção da `main`, ligada ao Supabase de produção ([decisão](decisions.md#build-e-versão)) |
+| Conferências | os dois | o hospedado aceita o header `x-client-version` em REST, RPC, Auth e Edge Functions (se recusar, nada funciona); ip da auditoria (passo 6 do roteiro); `GET /auth/v1/settings` e `signup` respondendo `signup_disabled`; `_headers` com `curl -I`; Realtime sem tabela na publicação; bundle só com a URL e a chave anon, sem source map e sem `/dev` |
 
-### Android emulado
+## 5. Celular e entrega
 
-O emulador roda o Chrome de verdade, com o service worker, o Background Sync e o Doze do sistema. O controle é pelo CDP (`adb forward tcp:9222 localabstract:chrome_devtools_remote` e `chromium.connectOverCDP` do Playwright, API estável; o `_android` do Playwright é experimental e fica fora) e pelo `adb` para o sistema.
+| Item | Repo | O que fazer |
+| --- | --- | --- |
+| Celulares de teste | — | apagar os dados do site (o Dexie foi juntado numa versão só) |
+| Roteiro no celular real | — | [roteiro](e2e.md#roteiro-no-celular-real) no app publicado, num Android; falha vira item aqui |
+| Importação de clientes (02) | backend | com o CSV real da Fast: `import_clients(p_company_id, p_rows jsonb, p_dry_run boolean, p_skip_duplicates boolean default true)`, que valida todas as linhas (inclusive o [tamanho do texto](../../fast/docs/api.md#tamanho-do-texto)), mostra os possíveis duplicados (nome normalizado e telefone iguais, no arquivo ou no banco) e os ignora por padrão, só devolve o resultado com `p_dry_run` e, sem ele, grava tudo ou nada; o primeiro endereço vira principal. Formato de `p_rows` e da saída a partir do CSV, documentado no [02](../../fast/docs/modules/02-clients.md). Migration nova (depois do deploy). Sem tela no front. Carga dos clientes em produção |
+| Release 1 | os dois | `npm version major` (para `1.0.0`) nos dois repositórios ([README](../README.md#lançar)) e entrega à Fast |
 
-Os cenários estão em [e2e.md](e2e.md#android-emulado).
+## Bloqueado até o MVP
 
-| Custo e limite | |
+Decisão do P.O.: nada daqui é feito antes de o MVP fechar. Pedido novo entra nesta lista, com a data.
+
+| Item | O que é |
 | --- | --- |
-| Montagem | SDK, imagem do Android com Chrome, KVM, scripts: ~1 a 2 dias; começar por um spike de meio dia só com o envio de app fechado |
-| Rodada | minutos (boot do emulador); local antes de release, ou no CI (runners Linux com KVM) |
-| Fica para o celular real | economia de bateria dos fabricantes (Xiaomi, Samsung matam o Chrome em segundo plano), câmera e rádio de verdade, instalação do PWA |
+| Branch `release` e prévia com Supabase de teste | começam na `1.0.0` |
+| E2E no CI | GitHub Actions com o stack local a cada push |
+| Android emulado | E2E do app fechado, Doze e instalação no emulador (~1 a 2 dias) |
+| Vitest browser instável | às vezes "iframe did not become ready within 60s" e passa ao rodar de novo |
+| Observabilidade do envio | medir em campo o tempo e o tamanho dos envios; se ruim, decidir o tamanho da foto (F1, [photos.md](photos.md)) |
+| Listas do escritório no banco | view com filtros e paginação no backend, quando o volume pedir (dezenas de milhares de O.S.) |
+| `inlineDynamicImports` obsoleto | atualizar o `vite-plugin-pwa` quando trocar a opção por `codeSplitting: false` |
+| Fotos órfãs no R2 | limpar as fotos confirmadas que nunca entraram num envio |
+| Seletor de empresa | quem tem vínculo aceito em mais de uma empresa escolhe em qual entra; quando houver a segunda empresa cliente |

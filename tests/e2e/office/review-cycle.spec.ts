@@ -1,4 +1,4 @@
-// E1 (docs/e2e.md): o ciclo de revisão entre as duas interfaces (04). O escritório rejeita com o motivo, o técnico vê
+// O ciclo de revisão entre as duas interfaces (04). O escritório rejeita com o motivo, o técnico vê
 // o motivo e envia de novo, o escritório aprova, e o técnico vê a O.S. aprovada.
 import { devices, expect, test } from '@playwright/test';
 import { formatOrderNumber } from '@/lib/format';
@@ -24,7 +24,7 @@ test('rejeitar, o técnico refaz com o motivo à vista, aprovar', async ({
   await tech.getByText(order.title).click();
   await tech.getByRole('button', { name: t('technician.detail.start') }).click();
   await submitWithGalleryPhoto(tech, 'Primeira tentativa.');
-  // Com sinal, o aviso é de envio em andamento (e2e.md, T7).
+  // Com sinal, o aviso é de envio em andamento.
   await expect(
     tech.getByRole('region', { name: /Notifications/ }).getByText(t('technician.execution.storedToast')),
   ).toBeVisible();

@@ -2,12 +2,14 @@
 
 Regras de trabalho neste repositório. O backend (Supabase) fica no repositório irmão `../fast`, e os docs dele são a fonte da verdade do sistema: [spec](../fast/docs/spec.md), [api](../fast/docs/api.md), [errors](../fast/docs/errors.md), [offline](../fast/docs/offline.md) e os [módulos](../fast/docs/modules/). Como rodar: [README.md](README.md).
 
+> **Escopo travado até o MVP: decisão do P.O. (2026-11-24).** Só se trabalha nas etapas de [docs/pending.md](docs/pending.md), na ordem. Pedido fora delas, inclusive de um agente para si mesmo (melhoria, refatoração, teste a mais, doc a mais), vai para "Bloqueado até o MVP" no pending e **não é implementado**. Na dúvida se algo está dentro, pare e pergunte ao P.O.
+
 ## Documentação
 
 - **Contrato no backend, tela aqui.** Regra de negócio, payload, código de erro e comportamento offline estão nos docs do backend; aqui só se documenta o que é do aparelho: telas, navegação, a fila, as fotos. Nada é copiado de lá: aponte com link.
 - **A doc manda.** Antes de implementar, leia o doc daqui e os do backend que ele cita. Se a implementação mostrar que a doc está errada ou incompleta, pare e pergunte. A correção vai no mesmo commit do código. Erro no contrato do backend é corrigido lá.
-- **Docs daqui:** [docs/screens.md](docs/screens.md) (telas por papel), [docs/queue.md](docs/queue.md) (fila offline), [docs/photos.md](docs/photos.md) (fotos), [docs/components.md](docs/components.md) (componentes, tema e dados de exemplo), [docs/e2e.md](docs/e2e.md) (pontos críticos e plano de E2E), [docs/pending.md](docs/pending.md) (o que falta, front e backend), [docs/decisions.md](docs/decisions.md) (decisões, front e backend).
-- **Sem bloat.** Tabela em vez de texto corrido, sem introdução.
+- **Docs daqui:** [docs/screens.md](docs/screens.md) (telas por papel), [docs/queue.md](docs/queue.md) (fila offline), [docs/photos.md](docs/photos.md) (fotos), [docs/components.md](docs/components.md) (convenções dos componentes, tema e dados de exemplo), [docs/e2e.md](docs/e2e.md) (como rodam os E2E, riscos abertos e roteiros manuais), [docs/pending.md](docs/pending.md) (as etapas até o MVP e o que está bloqueado, front e backend), [docs/decisions.md](docs/decisions.md) (decisões vigentes, front e backend).
+- **Sem bloat.** Tabela em vez de texto corrido, sem introdução. Decisão em uma ou duas linhas, só a vigente (o histórico fica no git); o que o código ou o cabeçalho de um teste já diz não se repete em doc.
 - **Decisões e pendências dos dois repositórios ficam só aqui.** Decisão nova (do front ou do backend, inclusive de arquitetura) entra em [docs/decisions.md](docs/decisions.md), na seção do assunto, com data e o porquê. O que falta fazer fica em [docs/pending.md](docs/pending.md); item feito sai de lá no mesmo commit do comportamento. Os outros docs, aqui e no backend, não têm seção de decisões, pendências nem roadmap.
 - **Memória do Claude é por máquina** (o usuário alterna entre dois PCs). Nada que importe ao projeto fica só na memória.
 
@@ -24,7 +26,7 @@ Regras de trabalho neste repositório. O backend (Supabase) fica no repositório
 
 - **Vitest, projeto `unit` (Node):** lógica sem DOM: fila, classificação de erros, alertas, limpeza do aparelho. IndexedDB pelo `fake-indexeddb` (já carregado no setup). Arquivos `*.test.ts`.
 - **Vitest, projeto `browser` (Chromium):** o que precisa de canvas, `Blob` de imagem ou APIs do navegador (compressão de foto). Arquivos `*.browser.test.ts`.
-- **Playwright (`tests/e2e`, `npm run test:e2e`, plano em [docs/e2e.md](docs/e2e.md)):** poucos fluxos críticos de ponta a ponta contra o stack local do backend (`npm run db:start` em `../fast`), com o seed dele, e o app do build (`vite preview` na 4173). Projeto `office` (desktop) e `technician` (celular emulado, `context.setOffline` no offline); preparo e conferência direto no banco por [`tests/e2e/support/backend.ts`](tests/e2e/support/backend.ts). Fora do `npm run check`: roda antes de commitar o que mexe no fluxo coberto.
+- **Playwright (`tests/e2e`, `npm run test:e2e`, como rodam em [docs/e2e.md](docs/e2e.md); o que cada teste prova, no cabeçalho dele):** poucos fluxos críticos de ponta a ponta contra o stack local do backend (`npm run db:start` em `../fast`), com o seed dele, e o app do build (`vite preview` na 4173). Projeto `office` (desktop) e `technician` (celular emulado, `context.setOffline` no offline); preparo e conferência direto no banco por [`tests/e2e/support/backend.ts`](tests/e2e/support/backend.ts). Fora do `npm run check`: roda antes de commitar o que mexe no fluxo coberto.
 - Tela simples, sem regra própria, não tem teste de componente.
 - Cada regra é testada num lugar só.
 - O teste dos textos confere as chaves de erro contra o catálogo do backend, lendo `../fast/docs/errors.md`: código novo lá quebra o teste aqui até ganhar texto.

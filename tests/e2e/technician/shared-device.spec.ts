@@ -1,4 +1,4 @@
-// S4 (docs/e2e.md): o mesmo celular passa de um técnico para outro. O técnico 1 sai (o logout apaga os dados dele,
+// O mesmo celular passa de um técnico para outro. O técnico 1 sai (o logout apaga os dados dele,
 // queue.md, Q10), o técnico 2 entra sem recarregar a página e não vê nada do 1: nem O.S. (nem da memória, com a leitura
 // sem resposta), nem rascunho, nem cache. Técnicos próprios do teste: o logout encerra as sessões do usuário em todos
 // os aparelhos, e derrubaria as dos outros testes.

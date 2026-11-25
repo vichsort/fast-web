@@ -1,4 +1,4 @@
-// P3 (docs/e2e.md): a sessão guardada no aparelho estraga (renovação recusada, token de acesso vencido) com envios na
+// A sessão guardada no aparelho estraga (renovação recusada, token de acesso vencido) com envios na
 // fila. O auth-js apaga a sessão, a guarda da rota leva ao login, e entrar de novo com o mesmo usuário manda a fila
 // (queue.md, Q3), sem passar pelo logout, que apagaria a prova (Q10).
 import { expect, test } from '@playwright/test';

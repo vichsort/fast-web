@@ -1,4 +1,4 @@
-// E4 (docs/e2e.md): o navegador num fuso que está em outro dia do calendário da empresa. O prazo é o fim do dia no fuso
+// O navegador num fuso que está em outro dia do calendário da empresa. O prazo é o fim do dia no fuso
 // da empresa (03, R5), e a tela mostra o mesmo prazo ("hoje", "ontem", a data) e o mesmo "atrasada" que no fuso dela.
 import { expect, test } from '@playwright/test';
 import { calendarDay, formatDate, formatDue } from '@/lib/format';

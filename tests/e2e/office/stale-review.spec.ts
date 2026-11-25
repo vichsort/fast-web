@@ -1,4 +1,4 @@
-// E2 (docs/e2e.md): um complemento chega entre abrir a revisão e aprovar. O backend recusa com `stale_review`
+// Um complemento chega entre abrir a revisão e aprovar. O backend recusa com `stale_review`
 // (04, R10), a tela avisa e só deixa decidir depois de recarregar, já com o complemento à vista.
 import { devices, expect, test } from '@playwright/test';
 import { formatOrderNumber } from '@/lib/format';

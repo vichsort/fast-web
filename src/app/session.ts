@@ -151,7 +151,7 @@ export async function wipeUser(userId: string): Promise<void> {
 }
 
 /**
- * "Entrar de novo" com a fila parada pedindo login (e2e.md, P3): encerra só a sessão deste aparelho e não apaga nada.
+ * "Entrar de novo" com a fila parada pedindo login: encerra só a sessão deste aparelho e não apaga nada.
  * Entrando com a mesma conta, a fila sai (queue.md, Q3); com outra, os dados ficam no aparelho, fora da vista.
  */
 export async function signOutKeepingData(): Promise<void> {

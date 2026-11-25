@@ -1,4 +1,4 @@
-// Versão mínima do app (01, R8 do backend; docs/e2e.md, Versionamento): abaixo dela, a guarda das interfaces mostra
+// Versão mínima do app (01, R8 do backend): abaixo dela, a guarda das interfaces mostra
 // "Atualize o app" no lugar da interface, e a fila da página para; os itens ficam no banco local.
 import { useQuery } from '@tanstack/react-query';
 import { usingMocks } from '@/lib/data-source';

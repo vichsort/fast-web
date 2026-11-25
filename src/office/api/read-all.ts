@@ -1,5 +1,5 @@
 // Leitura de uma lista inteira em blocos (`range`), para nunca bater no corte de `max_rows = 1000` do PostgREST, que
-// devolve as primeiras 1000 linhas em silêncio (docs/e2e.md, D4 a D6). Quem chama dá a ordem fixa: sem ela, os
+// devolve as primeiras 1000 linhas em silêncio. Quem chama dá a ordem fixa: sem ela, os
 // blocos podem repetir ou pular linhas.
 
 /** O `max_rows` do PostgREST (../fast/supabase/config.toml). */

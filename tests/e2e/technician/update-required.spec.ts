@@ -1,4 +1,4 @@
-// Versão mínima (docs/e2e.md, Versionamento; 01, R8 do backend): abaixo dela, o app atualiza sozinho uma vez e não
+// Versão mínima (01, R8 do backend): abaixo dela, o app atualiza sozinho uma vez e não
 // manda nada, sem apagar a fila; se continua abaixo (a versão nova ainda não chegou), mostra o botão. A leitura de app_settings é trocada só nesta página: mudar a linha do banco
 // bloquearia os outros testes, que rodam em paralelo.
 import { expect, test } from '@playwright/test';

@@ -1,4 +1,4 @@
-// D3 (docs/e2e.md): quantas vezes e quanto o cache das leituras do técnico grava no aparelho num fluxo típico, e o
+// Quantas vezes e quanto o cache das leituras do técnico grava no aparelho num fluxo típico, e o
 // peso de cada consulta no JSON. Fora da suíte: `MEASURE=1 npx playwright test --project measure`.
 import { expect, test } from '@playwright/test';
 import { t } from '@/lib/i18n';

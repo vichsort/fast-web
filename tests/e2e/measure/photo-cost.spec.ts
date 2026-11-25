@@ -1,4 +1,4 @@
-// D1 (docs/e2e.md): quanto custa cada foto do envio em rede de celular. Mede, por perfil de rede emulado no Chromium
+// Quanto custa cada foto do envio em rede de celular. Mede, por perfil de rede emulado no Chromium
 // (CDP), cada passo de cada foto (pedir a URL, PUT, confirmar) e o envio inteiro, separando o custo fixo das idas e
 // voltas do tempo do arquivo. Fora da suíte: `MEASURE=1 npx playwright test --project measure`.
 import { expect, type Page, test } from '@playwright/test';

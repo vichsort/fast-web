@@ -38,7 +38,7 @@ npm run check                     # lint, tipos e Vitest
 
 ## Lançar
 
-Versão semântica no `package.json`: começa em `0.0.0`, e a `1.0.0` é a primeira entregue à Fast. Major quebra o contrato (a versão mínima sobe junto), minor é funcionalidade nova, patch é correção ([decisões](docs/decisions.md#versão-e-atualização)).
+Versão semântica no `package.json`: começa em `0.0.0`, e a `1.0.0` é a primeira entregue à Fast. Major quebra o contrato (a versão mínima sobe junto), minor é funcionalidade nova, patch é correção ([decisões](docs/decisions.md#build-e-versão)).
 
 1. O backend vai ao ar antes, se a versão nova depende dele ([operations.md](../fast/docs/operations.md#lançar)).
 2. Com a árvore limpa e o `npm run check` e o `npm run test:e2e` verdes: `npm version patch|minor|major -m "chore: release v%s"` (sobe o número, commita e cria a tag `vX.Y.Z`).

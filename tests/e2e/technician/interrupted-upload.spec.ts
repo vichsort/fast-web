@@ -1,4 +1,4 @@
-// P6 (docs/e2e.md): o upload cai no meio do envio, no PUT da 2ª foto. A retomada manda só o que faltou: uma execução,
+// O upload cai no meio do envio, no PUT da 2ª foto. A retomada manda só o que faltou: uma execução,
 // duas fotos, e a 1ª foto não sobe de novo (queue.md, Q4). O worker fica bloqueado para o page.route ver os PUTs.
 import { expect, test } from '@playwright/test';
 import { t } from '@/lib/i18n';

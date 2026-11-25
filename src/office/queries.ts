@@ -34,7 +34,7 @@ export function useOrders(filters: OrderFilters = {}) {
   return useQuery({ queryKey: ['office', 'orders', query], queryFn: () => officeListOrders(query), select });
 }
 
-/** Aguardando aprovação, com as tentativas: a lista acima é enxuta (docs/e2e.md, D4). */
+/** Aguardando aprovação, com as tentativas: a lista acima é enxuta. */
 export const usePendingOrders = () =>
   useQuery({ queryKey: ['office', 'pending-orders'], queryFn: () => officePendingOrders() });
 

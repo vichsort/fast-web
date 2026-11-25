@@ -1,4 +1,4 @@
-// E5 (docs/e2e.md): o técnico muda os materiais enquanto o escritório edita a O.S. A edição sai numa chamada só
+// O técnico muda os materiais enquanto o escritório edita a O.S. A edição sai numa chamada só
 // (03, `update_order`): o `conflict` dos materiais (R11) desfaz tudo, a tela mostra os dois textos e só salva depois
 // da escolha, nunca por cima do texto do técnico sem mostrá-lo.
 import { expect, test } from '@playwright/test';

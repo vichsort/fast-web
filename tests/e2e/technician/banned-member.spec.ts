@@ -1,4 +1,4 @@
-// P4 com o token vencido (docs/e2e.md): o técnico removido de todas as empresas tem a conta banida
+// O técnico removido de todas as empresas tem a conta banida
 // (../fast/docs/modules/06-members.md, R8), e a renovação da sessão é recusada com `user_banned`. Sem token, o app não
 // confere o vínculo: a recusa da renovação faz o mesmo que a remoção detectada, apagar os dados dele e ir ao login com o
 // aviso (../fast/docs/offline.md, proteção dos dados no aparelho).

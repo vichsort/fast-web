@@ -1,4 +1,4 @@
-// P5, O.S. cancelada (docs/e2e.md; 04, R19): o escritório cancela a O.S. enquanto o técnico trabalha sem sinal. Ao
+// O escritório cancela a O.S. enquanto o técnico trabalha sem sinal. Ao
 // voltar o sinal, o envio não é recusado: fica registrado sem revisão (tentativa `voided`, com as fotos), a O.S. continua
 // cancelada e nada fica em Pendências.
 import { expect, test } from '@playwright/test';

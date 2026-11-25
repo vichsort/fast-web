@@ -1,4 +1,4 @@
-// S1 (docs/e2e.md): o começo do dia em campo. Com o login e a lista feitos com sinal, o app abre sem sinal direto
+// O começo do dia em campo. Com o login e a lista feitos com sinal, o app abre sem sinal direto
 // numa O.S.: o worker serve o app do precache, o acesso vem do aparelho e a O.S. do cache (offline.md; queue.md).
 // O prazo padrão (5 s) é parte da prova: o acesso guardado não pode esperar repetições da consulta ao servidor.
 import { expect, type Page, test } from '@playwright/test';

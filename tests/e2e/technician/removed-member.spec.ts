@@ -1,4 +1,4 @@
-// P4 (docs/e2e.md): o técnico é removido enquanto está sem sinal, com um envio na fila. Ao abrir com sinal, o
+// O técnico é removido enquanto está sem sinal, com um envio na fila. Ao abrir com sinal, o
 // aparelho apaga os dados dele (inclusive o envio) e vai ao login com o aviso (../fast/docs/offline.md, proteção dos
 // dados no aparelho; queue.md, Q10). Técnico próprio do teste, para não remover um usuário do seed.
 import { expect, test } from '@playwright/test';
