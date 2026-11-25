@@ -5,6 +5,7 @@ import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useAuth } from '@/app/auth-context';
+import { ChangePasswordButton } from '@/app/change-password-dialog';
 import { signOutAndWipe } from '@/app/session';
 import { AppVersion } from '@/components/app-version';
 import { RoleBadge } from '@/components/badges';
@@ -149,6 +150,8 @@ function Profile({ data }: { data: NonNullable<ReturnType<typeof useTechSession>
           </div>
         </Section>
       )}
+
+      {session?.user.email && <ChangePasswordButton email={session.user.email} className="h-12 text-base" />}
 
       <Button variant="destructive" className="h-12 text-base" onClick={() => setLogout(true)}>
         <LogOut className="size-5" />

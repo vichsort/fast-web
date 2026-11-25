@@ -20,9 +20,9 @@ export const users = {
 
 type Client = SupabaseClient<Database>;
 
-export async function signIn(email: string): Promise<{ client: Client; userId: string }> {
+export async function signIn(email: string, password = PASSWORD): Promise<{ client: Client; userId: string }> {
   const client = createClient<Database>(supabaseUrl, anonKey, { auth: { persistSession: false } });
-  const { data, error } = await client.auth.signInWithPassword({ email, password: PASSWORD });
+  const { data, error } = await client.auth.signInWithPassword({ email, password });
   if (error) throw new Error(`login de ${email} no stack local falhou: ${error.message}`);
   return { client, userId: data.user.id };
 }

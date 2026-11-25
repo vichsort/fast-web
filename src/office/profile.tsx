@@ -1,10 +1,12 @@
-// Meu perfil (01: update direto de profiles, nome e telefone) e sair (logout real, apaga os dados do navegador).
+// Meu perfil (01: update direto de profiles, nome e telefone), trocar a senha e sair (logout real, apaga os dados do
+// navegador).
 // React Hook Form + Zod: só o nome é obrigatório.
 import { zodResolver } from '@hookform/resolvers/zod';
 import type * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useAuth } from '@/app/auth-context';
+import { ChangePasswordButton } from '@/app/change-password-dialog';
 import { LogoutButton } from '@/app/logout-button';
 import { AppVersion } from '@/components/app-version';
 import { RoleBadge } from '@/components/badges';
@@ -104,7 +106,8 @@ export function ProfilePage() {
           <DetailItem label={t('office.profile.company')}>{company.name}</DetailItem>
         </DetailList>
         {session && (
-          <div>
+          <div className="flex flex-wrap gap-2">
+            {email && <ChangePasswordButton email={email} />}
             <LogoutButton userId={session.user.id} />
           </div>
         )}

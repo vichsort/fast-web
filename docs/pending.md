@@ -6,7 +6,7 @@ O que falta no front e no backend. Item feito sai daqui no mesmo commit do códi
 
 | Fase | Itens | Trava a produção |
 | --- | --- | --- |
-| [1. Código antes do primeiro deploy](#1-código-antes-do-primeiro-deploy) | 2 | sim |
+| [1. Código antes do primeiro deploy](#1-código-antes-do-primeiro-deploy) | 1 | sim |
 | [2. Primeiro deploy](#2-primeiro-deploy) | 6 | sim |
 | [3. Antes de entregar à Fast](#3-antes-de-entregar-à-fast) | 5 | sim |
 | [4. Depois, sem travar](#4-depois-sem-travar) | 9 | não |
@@ -17,16 +17,7 @@ Na ordem de gravidade. Custo do relatório: P = pequeno, M = médio.
 
 | Item | Repo | O que fazer | Custo |
 | --- | --- | --- | --- |
-| Sem email | os dois | [abaixo](#sem-email) | M |
 | Versão e atualização automática | os dois | [abaixo](#versão-e-atualização-automática) | M |
-
-### Sem email
-
-Decisões de 2026-11-24 em [01 Fundação](decisions.md#01-fundação). Contrato em [01](../../fast/docs/modules/01-foundation.md) e [06](../../fast/docs/modules/06-members.md), e o roteiro de deploy em [operations.md](../../fast/docs/operations.md#primeiro-deploy) sem SMTP, no mesmo commit do código.
-
-| Parte | Repo | O que fazer |
-| --- | --- | --- |
-| Trocar a senha | front | pede a senha atual e entra de novo com ela antes de trocar |
 
 ### Versão e atualização automática
 
