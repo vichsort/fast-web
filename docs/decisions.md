@@ -5,6 +5,7 @@ Só as vigentes, com o porquê curto, por assunto; o histórico (inclusive o que
 ## Processo
 
 - **2026-11-24** — **Escopo travado até o MVP, por decisão do P.O.:** só se trabalha no que está em [pending.md](pending.md), na ordem das etapas. Pedido novo fora delas vai para "Bloqueado até o MVP" e não é implementado, nem por agente, nem "só uma coisinha". *Por quê:* os repositórios estão crescendo mais rápido que o produto; fechar o MVP vem antes de qualquer melhoria.
+- **2026-11-25** — **Etapas até o MVP refeitas pelo P.O.:** a análise do banco também procura melhoria de schema, e o diagrama vira o fechamento da etapa 2, sobre o banco já corrigido; entra a etapa dos casos de borda antes do deploy; celular e entrega viram etapas separadas. *Por quê:* entender e discutir o banco antes de desenhá-lo, e achar bug de banco enquanto as migrations ainda se editam no lugar.
 - **2026-11-24** — Docs enxutos: decisão vigente em uma ou duas linhas, sem histórico; o que o código ou o cabeçalho de um teste já diz não se repete em doc. *Por quê:* cada comportamento chegava a mexer em seis docs, e o mesmo fato vivia em três lugares.
 
 ## Front

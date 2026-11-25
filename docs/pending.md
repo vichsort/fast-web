@@ -8,20 +8,24 @@ Item feito sai daqui no mesmo commit do código (o histórico fica no git).
 
 | # | Etapa | Termina quando |
 | --- | --- | --- |
-| 1 | [Análise do banco](#1-análise-do-banco) | o banco está lido de ponta a ponta, com o diagrama das tabelas e a lista de achados aprovada pelo P.O. |
-| 2 | [Correções do banco](#2-correções-do-banco) | os achados aprovados estão corrigidos, com teste, antes do primeiro deploy |
-| 3 | [O que falta para entregar](#3-o-que-falta-para-entregar) | backup pronto e os testes no PC feitos |
-| 4 | [Publicar](#4-publicar) | o app e o backend no ar (versão `0.x`), conferidos |
-| 5 | [Celular e entrega](#5-celular-e-entrega) | roteiro do celular verde, clientes carregados, versão `1.0.0` entregue à Fast: **MVP fechado** |
+| 1 | [Análise do banco](#1-análise-do-banco) | o P.O. leu o tour e os achados, discutiu e aprovou a lista |
+| 2 | [Correções do banco](#2-correções-do-banco) | os achados aprovados estão corrigidos, com teste, e o fechamento do banco está publicado |
+| 3 | [Casos de borda](#3-casos-de-borda) | `docs/edges.md` entregue e lido pelo P.O.; o que ele marcou como bug está corrigido |
+| 4 | [O que falta para entregar](#4-o-que-falta-para-entregar) | backup pronto e os testes no PC feitos |
+| 5 | [Publicar](#5-publicar) | o app e o backend no ar (versão `0.x`), conferidos |
+| 6 | [Roteiro no celular](#6-roteiro-no-celular) | roteiro verde num Android real, com o app publicado |
+| 7 | [Entrega](#7-entrega) | clientes carregados, versão `1.0.0` entregue à Fast: **MVP fechado** |
 
 ## 1. Análise do banco
 
-Um agente lê o banco inteiro do backend (migrations, funções, RLS, triggers, Edge Functions) e entrega:
+Um agente lê o banco inteiro do backend (migrations, funções, RLS, triggers, Edge Functions) e as consultas do front, e um segundo agente tenta derrubar cada achado no código. Entregam, em markdown na conversa:
 
 | Entrega | Como |
 | --- | --- |
-| Diagrama | as tabelas e as relações (ER), com as colunas que têm regra, num formato visual (Canva ou similar, ou um artifact); de que módulo é cada tabela |
-| Achados | lista do que está frágil, repetido ou contornado, com o custo de corrigir; o P.O. decide o que entra na etapa 2 |
+| Tour | por módulo: o que cada tabela guarda, como se ligam e que regra mora onde |
+| Achados | erro, repetição, contorno, melhoria de schema (manter, consultar, relacionar, índices) e mecanismo escondido; cada um com local, cenário, correção, custo agora × depois do deploy (lado do front incluso) e destino sugerido |
+
+Destino: etapa 2 se é erro ou fica bem mais caro depois do deploy (forma do schema, constraint, relação); senão, Bloqueado até o MVP. O P.O. decide; achado reprovado é descartado.
 
 Achados já levantados em 2026-11-24 (ponto de partida):
 
@@ -35,14 +39,20 @@ Achados já levantados em 2026-11-24 (ponto de partida):
 
 Os achados aprovados na etapa 1. Antes do primeiro deploy, as migrations ainda se editam no lugar; depois, só por acréscimo.
 
-## 3. O que falta para entregar
+Por último, o fechamento: um agente lê o banco corrigido e publica num artifact o diagrama (ER, de que módulo é cada tabela, as colunas com regra) e as regras de cada tabela.
+
+## 3. Casos de borda
+
+Um agente lê o sistema (banco, Edge Functions, telas e fila) e entrega `docs/edges.md`, enxuto: o que pode parecer bug e é regra, e o que parece regra e pode ser bug. O que o P.O. marcar como bug vira item aqui e é corrigido antes do deploy.
+
+## 4. O que falta para entregar
 
 | Item | Repo | O que fazer |
 | --- | --- | --- |
 | Backup (07) | backend | GitHub Action diária: `pg_dump` criptografado com `age` e cópia incremental das fotos para o bucket de backup no R2 ([07](../../fast/docs/modules/07-backup.md)); restauração de teste executada, com o passo a passo em [operations.md](../../fast/docs/operations.md#backup) |
 | Testes no PC | — | [C1 e C2](e2e.md#no-pc), com o backend local |
 
-## 4. Publicar
+## 5. Publicar
 
 Roteiro: [operations.md](../../fast/docs/operations.md#primeiro-deploy). O que ele ainda não diz:
 
@@ -55,12 +65,17 @@ Roteiro: [operations.md](../../fast/docs/operations.md#primeiro-deploy). O que e
 | Cloudflare Pages | front | produção da `main`, ligada ao Supabase de produção ([decisão](decisions.md#build-e-versão)) |
 | Conferências | os dois | o hospedado aceita o header `x-client-version` em REST, RPC, Auth e Edge Functions (se recusar, nada funciona); ip da auditoria (passo 6 do roteiro); `GET /auth/v1/settings` e `signup` respondendo `signup_disabled`; `_headers` com `curl -I`; Realtime sem tabela na publicação; bundle só com a URL e a chave anon, sem source map e sem `/dev` |
 
-## 5. Celular e entrega
+## 6. Roteiro no celular
 
 | Item | Repo | O que fazer |
 | --- | --- | --- |
 | Celulares de teste | — | apagar os dados do site (o Dexie foi juntado numa versão só) |
 | Roteiro no celular real | — | [roteiro](e2e.md#roteiro-no-celular-real) no app publicado, num Android; falha vira item aqui |
+
+## 7. Entrega
+
+| Item | Repo | O que fazer |
+| --- | --- | --- |
 | Importação de clientes (02) | backend | com o CSV real da Fast: `import_clients(p_company_id, p_rows jsonb, p_dry_run boolean, p_skip_duplicates boolean default true)`, que valida todas as linhas (inclusive o [tamanho do texto](../../fast/docs/api.md#tamanho-do-texto)), mostra os possíveis duplicados (nome normalizado e telefone iguais, no arquivo ou no banco) e os ignora por padrão, só devolve o resultado com `p_dry_run` e, sem ele, grava tudo ou nada; o primeiro endereço vira principal. Formato de `p_rows` e da saída a partir do CSV, documentado no [02](../../fast/docs/modules/02-clients.md). Migration nova (depois do deploy). Sem tela no front. Carga dos clientes em produção |
 | Release 1 | os dois | `npm version major` (para `1.0.0`) nos dois repositórios ([README](../README.md#lançar)) e entrega à Fast |
 
