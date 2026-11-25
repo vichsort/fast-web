@@ -17,7 +17,7 @@ Item feito sai daqui no mesmo commit do código (o histórico fica no git).
 
 ## 2. Correções do banco
 
-Achados da análise do banco aprovados pelo P.O. em 2026-11-25 (os reprovados foram descartados; os adiados estão em Bloqueado). Antes do primeiro deploy, as migrations ainda se editam no lugar; depois, só por acréscimo. Primeiro passo: `npm run db:reset` no backend (o banco local está atrás das migrations editadas no lugar; apaga os dados locais).
+Achados da análise do banco aprovados pelo P.O. em 2026-11-25 (os reprovados foram descartados; os adiados estão em Bloqueado). Antes do primeiro deploy, as migrations ainda se editam no lugar; depois, só por acréscimo.
 
 Por último, o fechamento: um agente lê o banco corrigido e publica num artifact o diagrama (ER, de que módulo é cada tabela, as colunas com regra) e as regras de cada tabela.
 
@@ -27,12 +27,18 @@ Um agente lê o sistema (banco, Edge Functions, telas e fila) e entrega `docs/ed
 
 Ponto de partida, da análise do banco: corrigir o endereço no cadastro do cliente não chega às O.S. abertas (03 R3); o "iniciar" offline do parceiro que chega depois da rejeição leva a O.S. de retrabalho para em andamento (04 R2 cobre só início → envio).
 
+| Item | Repo | O que fazer |
+| --- | --- | --- |
+| Observações do cliente no técnico | front | o detalhe da O.S. do técnico mostra `clients.notes` ([decisão](decisions.md#02-clientes)); hoje chegam ao aparelho, mas nenhuma tela mostra ([screens.md](screens.md)) |
+
 ## 4. O que falta para entregar
 
 | Item | Repo | O que fazer |
 | --- | --- | --- |
 | Backup (07) | backend | GitHub Action diária: `pg_dump` criptografado com `age` e cópia incremental das fotos para o bucket de backup no R2 ([07](../../fast/docs/modules/07-backup.md)); restauração de teste executada, com o passo a passo em [operations.md](../../fast/docs/operations.md#backup) |
 | Testes no PC | — | [C1 e C2](e2e.md#no-pc), com o backend local |
+| Versões fixas | os dois | todas as dependências na versão exata (sem `^`/`~`), na mais recente que passa nos testes; o CLI do Supabase entra como dependência do backend (hoje é global: a 2.117 gera o `database.types.ts` em outro formato que a 3.x usada no outro PC) |
+| E2E instáveis | front | `office/member-links.spec.ts`: o `login()` segue para `/office/members` sem esperar o `/office`, e o POST do login é abortado; `technician/auto-update.spec.ts`: espera o envio da fila por 30 s, mas o runner acorda pelo timer, até 1 min |
 
 ## 5. Publicar
 

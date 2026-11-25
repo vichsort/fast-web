@@ -116,6 +116,7 @@ Só as vigentes, com o porquê curto, por assunto; o histórico (inclusive o que
 
 ### 04 Execução e fotos
 
+- **2026-11-25** — `submit_execution` devolve a execução ao autor mesmo quando o RLS já a esconde dele (repetição depois de sair da O.S., complemento a O.S. encerrada há mais de 7 dias). *Por quê:* o dado é do próprio técnico, e a fila precisa da resposta.
 - **2026-11-04** — A execução nasce no envio; segundo envio da dupla vira complemento; complemento depois da revisão é aceito sem contar como aprovado; lock na O.S. antes de validar status. *Por quê:* início e envio chegam juntos offline; nenhuma prova fica presa; dois envios simultâneos criariam duas tentativas.
 - **2026-11-06** — Upload em três passos (URL na hora do envio, PUT no staging, confirmação copia para o final); a URL assina só o host, e tipo e tamanho são conferidos na confirmação. *Por quê:* o banco não enxerga o R2; a URL expira em minutos; URL por query não prende tipo nem tamanho; o staging impede trocar a foto depois da confirmação.
 - **2026-11-13** — `received_at` e `reviewed_at` com `clock_timestamp()` depois do lock. *Por quê:* `now()` é o início da transação e daria hora anterior à revisão.
