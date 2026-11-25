@@ -102,6 +102,7 @@ Só as vigentes, com o porquê curto, por assunto; o histórico (inclusive o que
 
 - **2026-11-06** — `p_id` gerado no front em toda criação; repetição com outro dono é `forbidden`. *Por quê:* resposta perdida com retry não duplica; não é a mesma chamada.
 - **2026-11-04** — Vários endereços por cliente, opcionais na criação; excluir o principal não promove outro. *Por quê:* confirmado pela Fast; cadastro rápido; escolher o novo principal é do escritório.
+- **2026-11-25** — O técnico lê as observações do cliente (`clients.notes`). *Por quê:* elas servem ao campo (acesso, interfone, cuidados).
 - **2026-11-06** — `import_clients` depois do primeiro deploy, com o formato do CSV real da Fast. *Por quê:* o CSV ainda não chegou.
 
 ### 03 Ordens de serviço

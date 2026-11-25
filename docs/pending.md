@@ -8,7 +8,6 @@ Item feito sai daqui no mesmo commit do código (o histórico fica no git).
 
 | # | Etapa | Termina quando |
 | --- | --- | --- |
-| 1 | [Análise do banco](#1-análise-do-banco) | o P.O. leu o tour e os achados, discutiu e aprovou a lista |
 | 2 | [Correções do banco](#2-correções-do-banco) | os achados aprovados estão corrigidos, com teste, e o fechamento do banco está publicado |
 | 3 | [Casos de borda](#3-casos-de-borda) | `docs/edges.md` entregue e lido pelo P.O.; o que ele marcou como bug está corrigido |
 | 4 | [O que falta para entregar](#4-o-que-falta-para-entregar) | backup pronto e os testes no PC feitos |
@@ -16,34 +15,28 @@ Item feito sai daqui no mesmo commit do código (o histórico fica no git).
 | 6 | [Roteiro no celular](#6-roteiro-no-celular) | roteiro verde num Android real, com o app publicado |
 | 7 | [Entrega](#7-entrega) | clientes carregados, versão `1.0.0` entregue à Fast: **MVP fechado** |
 
-## 1. Análise do banco
-
-Um agente lê o banco inteiro do backend (migrations, funções, RLS, triggers, Edge Functions) e as consultas do front, e um segundo agente tenta derrubar cada achado no código. Entregam, em markdown na conversa:
-
-| Entrega | Como |
-| --- | --- |
-| Tour | por módulo: o que cada tabela guarda, como se ligam e que regra mora onde |
-| Achados | erro, repetição, contorno, melhoria de schema (manter, consultar, relacionar, índices) e mecanismo escondido; cada um com local, cenário, correção, custo agora × depois do deploy (lado do front incluso) e destino sugerido |
-
-Destino: etapa 2 se é erro ou fica bem mais caro depois do deploy (forma do schema, constraint, relação); senão, Bloqueado até o MVP. O P.O. decide; achado reprovado é descartado.
-
-Achados já levantados em 2026-11-24 (ponto de partida):
-
-| Achado | Onde | Por que incomoda | Correção sugerida |
-| --- | --- | --- | --- |
-| Causa da saída do técnico passada por variável de sessão | `close_member_assignments` grava `fast.unassign_cause` com `set_config`; o trigger do histórico (`orders_history`) lê com `current_setting` | parâmetro escondido: quem lê o trigger não vê de onde vem a causa | coluna `unassign_cause` em `service_order_assignees`, gravada no `update` que fecha a atribuição e lida pelo trigger |
-| "Vínculo ativo" repetido em 15 lugares | `status = 'accepted' and deleted_at is null` em `member_role`, `member_company_ids`, `colleague_ids`, `actor_role`, `last_owner`, `check_order_technicians`, `lock_assignee_memberships`, `removed_user_to_ban`, `active_elsewhere`… | função nova esquece uma das condições (quase aconteceu no convite com aceite) | coluna gerada `is_active` em `company_members` (ou uma função só), usada em todos |
-| `password_pending` no `app_metadata` do Auth | `invite_member` marca; `use_link` desmarca; `lock_member_link` lê | contorno do Auth (que grava senha aleatória); se o platform admin definir a senha pelo painel, a marca fica, e o link do convite ainda trocaria essa senha | aceitar e documentar no `operations.md`, ou desmarcar também quando a senha é definida por fora |
-
 ## 2. Correções do banco
 
-Os achados aprovados na etapa 1. Antes do primeiro deploy, as migrations ainda se editam no lugar; depois, só por acréscimo.
+Achados da análise do banco aprovados pelo P.O. em 2026-11-25 (os reprovados foram descartados; os adiados estão em Bloqueado). Antes do primeiro deploy, as migrations ainda se editam no lugar; depois, só por acréscimo. Primeiro passo: `npm run db:reset` no backend (o banco local está atrás das migrations editadas no lugar; apaga os dados locais).
+
+| Item | Gravidade | Repo | O que fazer |
+| --- | --- | --- | --- |
+| Link de senha só no vínculo de quem não está em outro lugar | alta | backend | `save_password_link` e a releitura de recuperação em `lock_member_link` (`members_links`) devolvem `not_found` se o alvo é platform admin ou tem vínculo aceito em outra empresa (`active_elsewhere`); hoje o owner entraria na conta e agiria lá. pgTAP 44; 06 R14 |
+| FKs compostas | alta | os dois | UNIQUE (`id`, `company_id`) em `clients`, (`id`, `client_id`) em `client_addresses`, (`id`, `service_order_id`) em `service_order_executions`; FKs `(client_id, company_id)`, `(client_address_id, client_id)` e `(supplements_execution_id, service_order_id)`, que hoje só as RPCs conferem. Manter os nomes `service_orders_client_id_fkey` e `service_orders_client_address_id_fkey` (o front embute por eles); regerar `database.types.ts` |
+| Service role sem apagar nem reescrever | alta | os dois | revogar da `service_role` `update, delete, truncate` em `service_order_history` e `delete, truncate` em `service_orders`, `service_order_assignees`, `service_order_executions`, `service_order_photos`, `photo_uploads`, `companies`, `company_members`, `clients`, `client_addresses` e `member_invites`, como já é em `audit_logs` (`member_invite_attempts` fica: o E2E limpa). O `remove()` de `tests/e2e/support/backend.ts` passa a rodar como `postgres` |
+| Foto do envio confirmada no R2 | média | backend | FK `service_order_photos.id → photo_uploads.id` (hoje a R13 só em `submit_execution`); os pgTAP 22, 23 e 24 criam o upload antes (`tests.upload_photo`) |
+| Prazo não anda com a troca de fuso | média | backend | em `update_order`, manter o `due_at` quando `p_due_date` é a data do `due_at` atual no fuso da empresa; hoje trocar `companies.timezone` desloca o prazo na próxima edição |
+| Técnico guarda só as colunas usadas | média | front | o select do técnico (`ORDER_SELECT`, `lib/orders-query.ts`) sem `*` nem `clients(*)`: só as colunas que as telas usam, como diz o offline.md (`clients.notes` fica: é para o técnico) |
+| Saída fecha também as atribuições encerradas | média | backend | `close_member_assignments` (`members_update_role`) fecha também as atribuições de O.S. `approved`/`cancelled`, na remoção e na troca de papel; hoje o técnico convidado de novo volta a ler todas as antigas. pgTAP 33 e 34 |
+| Senha definida pelo painel | baixa | backend | linha no `operations.md`: ao definir a senha de alguém pelo painel do Supabase, gravar também `password_pending: false` no `app_metadata` |
 
 Por último, o fechamento: um agente lê o banco corrigido e publica num artifact o diagrama (ER, de que módulo é cada tabela, as colunas com regra) e as regras de cada tabela.
 
 ## 3. Casos de borda
 
 Um agente lê o sistema (banco, Edge Functions, telas e fila) e entrega `docs/edges.md`, enxuto: o que pode parecer bug e é regra, e o que parece regra e pode ser bug. O que o P.O. marcar como bug vira item aqui e é corrigido antes do deploy.
+
+Ponto de partida, da análise do banco: corrigir o endereço no cadastro do cliente não chega às O.S. abertas (03 R3); o "iniciar" offline do parceiro que chega depois da rejeição leva a O.S. de retrabalho para em andamento (04 R2 cobre só início → envio).
 
 ## 4. O que falta para entregar
 
@@ -93,4 +86,10 @@ Decisão do P.O.: nada daqui é feito antes de o MVP fechar. Pedido novo entra n
 | Listas do escritório no banco | view com filtros e paginação no backend, quando o volume pedir (dezenas de milhares de O.S.) |
 | `inlineDynamicImports` obsoleto | atualizar o `vite-plugin-pwa` quando trocar a opção por `codeSplitting: false` |
 | Fotos órfãs no R2 | limpar as fotos confirmadas que nunca entraram num envio |
+| Causa da saída do técnico numa coluna | `service_order_assignees.unassign_cause` no lugar do `set_config`/`current_setting` entre `close_member_assignments` e o trigger do histórico; depois do deploy, coluna anulável preenchida pelo `metadata.cause` do histórico |
+| "Vínculo ativo" numa coluna | coluna gerada `is_active` em `company_members` nos 10 lugares que repetem `status = 'accepted' and deleted_at is null` (não no trigger BEFORE `ensure_company_has_owner`) |
+| `password_pending` fora do `app_metadata` | `lock_member_link` decide `set_password` por `kind = 'recovery' or last_sign_in_at is null`, sem marcar o Auth |
+| `accepted_at` sem default | hoje `default now()` até no vínculo pendente; um trigger preenche só quando `accepted` |
+| Dashboard pelo índice parcial | `and o.status not in ('approved', 'cancelled')` no `get_dashboard`, que hoje lê todas as O.S. da empresa |
+| Motivo obrigatório numa função | `require_reason(p_reason)` no lugar das 4 cópias (endereço, cliente, O.S., membro) |
 | Seletor de empresa | quem tem vínculo aceito em mais de uma empresa escolhe em qual entra; quando houver a segunda empresa cliente |
