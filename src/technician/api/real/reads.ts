@@ -4,7 +4,7 @@ import * as React from 'react';
 import { invokeFunction } from '@/lib/edge-functions';
 import { ApiError, classifyRpcError } from '@/lib/errors';
 import { type OrderRow, toOrderDetail } from '@/lib/order-detail';
-import { HISTORY_SELECT, ORDER_SELECT, photoUrls } from '@/lib/orders-query';
+import { photoUrls } from '@/lib/orders-query';
 import { supabase } from '@/lib/supabase';
 import type { OrderDetail, PendingItem, SyncState } from '@/lib/views';
 import { db } from '@/offline/db';
@@ -22,6 +22,7 @@ import type { Draft, MyOrder, Read, TechOrder, TechSession } from '../types';
 import { current } from './context';
 import { parseDraftKey, photoData, seenPhotoUrl, useLocal } from './local';
 import { markOnline, useRunner } from './runner';
+import { TECHNICIAN_ORDER_SELECT } from './select';
 
 /** Leitura que marca o sinal: deu certo, há sinal; falhou por rede, não há (Q7). */
 async function track<T>(read: () => Promise<T>): Promise<T> {
@@ -38,7 +39,7 @@ async function track<T>(read: () => Promise<T>): Promise<T> {
 async function fetchOrders(): Promise<OrderDetail[]> {
   const { data, error, status } = await supabase
     .from('service_orders')
-    .select(ORDER_SELECT)
+    .select(TECHNICIAN_ORDER_SELECT)
     // Encerradas só nos últimos 7 dias (inTechnicianList); a lista e o cache não crescem sem fim.
     .or(`status.in.(open,in_progress,pending_approval,rejected),updated_at.gte.${closedCutoff(Date.now())}`)
     .order('order_number', { ascending: false });
@@ -64,7 +65,7 @@ async function download(url: string): Promise<Blob> {
 async function fetchOrder(id: string): Promise<OrderDetail | null> {
   const { data, error, status } = await supabase
     .from('service_orders')
-    .select(`${ORDER_SELECT}, ${HISTORY_SELECT}`)
+    .select(TECHNICIAN_ORDER_SELECT)
     .eq('id', id)
     .maybeSingle();
   if (error) throw classifyRpcError(error, status);

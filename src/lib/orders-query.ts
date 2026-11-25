@@ -1,12 +1,13 @@
 import { useQueryClient } from '@tanstack/react-query';
 import * as React from 'react';
 
-// O que as telas embutem numa O.S. (escritório e técnico), no formato de `OrderRow` (src/lib/order-detail.ts), e as URLs
-// das fotos (get_photo_urls, 04). As duas áreas leem a mesma forma, para a montagem ser uma só.
+// O que as telas embutem numa O.S., no formato de `OrderRow` (src/lib/order-detail.ts), e as URLs das fotos
+// (get_photo_urls, 04). As duas áreas leem a mesma forma, para a montagem ser uma só; o técnico pede só as colunas que
+// usa (src/technician/api/real/select.ts).
 
 export const PERSON = 'id, full_name';
 
-/** O que as telas embutem numa O.S. (src/lib/order-detail.ts, OrderRow). */
+/** O que as telas do escritório embutem numa O.S. (src/lib/order-detail.ts, OrderRow). */
 export const ORDER_SELECT = `*,
   client:clients!service_orders_client_id_fkey(*),
   client_address:client_addresses!service_orders_client_address_id_fkey(id, company_id, client_id, label, street, number, complement, district, city, state, zip_code, reference, is_primary, created_at, deleted_at, deleted_by, delete_reason),
