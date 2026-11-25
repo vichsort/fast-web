@@ -1,11 +1,12 @@
 import { Navigate, useNavigate } from '@tanstack/react-router';
-import { type ReactNode, useEffect, useRef } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { t } from '@/lib/i18n';
+import { APP_VERSION } from '@/lib/version';
 import type { Access } from '../access';
 import { useAuth } from '../auth-context';
-import { updateApp, useUpdateRequired } from '../min-version';
+import { autoUpdateOnce, updateApp, useUpdateRequired } from '../min-version';
 import { signOutAndWipe, useAccess } from '../session';
 import { InvitePage } from './invite';
 
@@ -92,14 +93,29 @@ export function RequireAccess({
   return children(access.data);
 }
 
-/** Abaixo da versão mínima (min-version.ts): só atualizar. A interface, e com ela a fila da página, não abre. */
+/**
+ * Abaixo da versão mínima (min-version.ts): a interface, e com ela a fila da página, não abre. O app atualiza sozinho
+ * uma vez; o botão só aparece se, depois disso, continuar abaixo.
+ */
 function UpdateRequired() {
+  const [auto] = useState(() => autoUpdateOnce(sessionStorageOrNull(), APP_VERSION));
+  useEffect(() => {
+    if (auto) void updateApp();
+  }, [auto]);
   return (
     <main className="flex min-h-svh flex-col items-center justify-center gap-4 p-4 text-center">
       <h1 className="font-heading text-xl font-semibold">{t('update.title')}</h1>
-      <p className="max-w-sm text-muted-foreground">{t('update.description')}</p>
-      <Button onClick={() => void updateApp()}>{t('update.now')}</Button>
+      <p className="max-w-sm text-muted-foreground">{t(auto ? 'update.updating' : 'update.description')}</p>
+      {!auto && <Button onClick={() => void updateApp()}>{t('update.now')}</Button>}
       <p className="max-w-sm text-xs text-muted-foreground">{t('update.stillHere')}</p>
     </main>
   );
+}
+
+function sessionStorageOrNull(): Storage | null {
+  try {
+    return window.sessionStorage;
+  } catch {
+    return null;
+  }
 }

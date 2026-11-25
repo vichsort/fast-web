@@ -2,6 +2,7 @@
 // Cada alteração vai direto para o rascunho do aparelho (offline.md: "gravado a cada alteração").
 import { Camera, PenLine, Users } from 'lucide-react';
 import * as React from 'react';
+import { updateGate, useHoldUpdate } from '@/app/app-update';
 import { ToneBadge } from '@/components/badges';
 import { AddPhoto, PhotoGrid } from '@/components/photos';
 import { Section } from '@/components/section';
@@ -45,6 +46,8 @@ export function SubmissionForm({
 }) {
   const TZ = useTimeZone();
   const [camera, setCamera] = React.useState(false);
+  // A versão nova do app não entra com a câmera aberta (app-update.ts).
+  useHoldUpdate(camera);
   const descriptionId = React.useId();
   // Texto e participantes ficam na tela (o rascunho salvo chega depois, pela leitura do aparelho); as gravações vão
   // em fila, na ordem dos toques, para fotos seguidas não criarem dois rascunhos.
@@ -54,8 +57,10 @@ export function SubmissionForm({
   });
   const latest = React.useRef(fields);
   const chain = React.useRef<Promise<unknown>>(Promise.resolve());
+  // Gravação pendente (foto em processamento, texto) segura a atualização do app: a recarga não a perde.
   const write = (work: () => Promise<unknown>) => {
-    chain.current = chain.current.then(() => act(work()));
+    const release = updateGate.hold();
+    chain.current = chain.current.then(() => act(work())).finally(release);
   };
   const change = (patch: Partial<DraftFields>) => {
     latest.current = { ...latest.current, ...patch };
@@ -105,9 +110,13 @@ export function SubmissionForm({
           <AddPhoto
             onCamera={() => setCamera(true)}
             onGallery={() => {
-              void pickFromGallery().then((picked) => {
-                for (const photo of picked) add(photo);
-              });
+              // Com o seletor aberto, a página fica escondida esperando as fotos: a atualização espera também.
+              const release = updateGate.hold();
+              void pickFromGallery()
+                .then((picked) => {
+                  for (const photo of picked) add(photo);
+                })
+                .finally(release);
             }}
           />
         )}

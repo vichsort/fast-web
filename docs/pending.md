@@ -25,9 +25,8 @@ Decisões de 2026-11-24 em [Versão e atualização](decisions.md#versão-e-atua
 
 | Parte | Repo | O que fazer |
 | --- | --- | --- |
-| Técnico | front | o aviso "Versão nova" sai: o worker novo entra ao abrir o app e na troca de tela, fora da câmera e do seletor da galeria; procura versão nova de tempos em tempos e ao voltar à aba (hoje só ao abrir). "Atualize o app" (abaixo da mínima) atualiza sozinho; o botão fica só se falhar |
 | Escritório | front | procura versão nova (arquivo de versão do build, de tempos em tempos e ao voltar à aba) e recarrega na troca de tela; tela que falha ao carregar recarrega uma vez |
-| Testes | front | unit da comparação e da escolha do momento; E2E da atualização sozinha com envio na fila |
+| Testes | front | E2E da atualização do escritório (o técnico já tem: `auto-update`, `update-required`) |
 
 ## 2. Primeiro deploy
 

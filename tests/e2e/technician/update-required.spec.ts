@@ -1,5 +1,5 @@
-// Versão mínima (docs/e2e.md, Versionamento; 01, R8 do backend): abaixo dela, o app pede para atualizar e não
-// manda nada, sem apagar a fila. A leitura de app_settings é trocada só nesta página: mudar a linha do banco
+// Versão mínima (docs/e2e.md, Versionamento; 01, R8 do backend): abaixo dela, o app atualiza sozinho uma vez e não
+// manda nada, sem apagar a fila; se continua abaixo (a versão nova ainda não chegou), mostra o botão. A leitura de app_settings é trocada só nesta página: mudar a linha do banco
 // bloquearia os outros testes, que rodam em paralelo.
 import { expect, test } from '@playwright/test';
 import { t } from '@/lib/i18n';
@@ -8,7 +8,7 @@ import { createOrder, serverOrder, users } from '../support/backend';
 
 const APP_SETTINGS = '**/rest/v1/app_settings?*';
 
-test('abaixo da versão mínima: pede para atualizar, guarda a fila e manda depois de atualizar', async ({
+test('abaixo da versão mínima: atualiza sozinho uma vez, guarda a fila e manda depois de atualizar', async ({
   page,
   context,
 }) => {
@@ -30,6 +30,10 @@ test('abaixo da versão mínima: pede para atualizar, guarda a fila e manda depo
 
   // O backend sobe a versão mínima acima deste build. Daqui até atualizar, a fila não pode mandar nada.
   const app = await context.newPage();
+  let loads = 0;
+  app.on('load', () => {
+    loads += 1;
+  });
   let starts = 0;
   app.on('request', (request) => {
     if (request.url().includes('/rpc/start_execution')) starts += 1;
@@ -37,6 +41,9 @@ test('abaixo da versão mínima: pede para atualizar, guarda a fila e manda depo
   await app.route(APP_SETTINGS, (route) => route.fulfill({ json: [{ min_client_version: '999.0.0' }] }));
   await context.setOffline(false);
   await app.goto(execution);
+  // Tentou sozinho (recarregou uma vez) e, ainda abaixo, deixou o botão.
+  await expect(app.getByRole('button', { name: t('update.now') })).toBeVisible();
+  expect(loads).toBe(2);
   await expect(app.getByRole('heading', { name: t('update.title') })).toBeVisible();
   expect((await readStore<{ type: string }>(app, 'queue')).map((i) => i.type)).toEqual(['start']);
   expect(starts).toBe(0);

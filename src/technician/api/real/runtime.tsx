@@ -4,12 +4,12 @@
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { useQueryClient } from '@tanstack/react-query';
 import * as React from 'react';
-import { toast } from 'sonner';
 import type { Access } from '@/app/access';
+import { updateGate } from '@/app/app-update';
 import { useAuth } from '@/app/auth-context';
+import { activateWaitingWorker } from '@/app/min-version';
 import { LoadingDetail } from '@/components/states';
 import { usingMocks } from '@/lib/data-source';
-import { t } from '@/lib/i18n';
 import { onSupabaseResponse } from '@/lib/supabase';
 import { bindTechnician } from './context';
 import { stopLocal, watchLocal } from './local';
@@ -90,23 +90,37 @@ function RealRuntime({
   return children;
 }
 
+/** De quanto em quanto tempo o worker procura versão nova, além de ao voltar à aba. */
+const UPDATE_CHECK_MS = 10 * 60_000;
+
 /**
- * Registra o worker (precache e fila no Background Sync), que é do técnico: o escritório trabalha online. Versão
- * nova só entra quando o técnico toca em "Atualizar", nunca no meio da câmera ou de um rascunho.
+ * Registra o worker (precache e fila no Background Sync), que é do técnico: o escritório trabalha online. A versão nova
+ * entra sozinha (app-update.ts): na abertura, se o worker novo já esperava; senão, na próxima troca de tela, fora da
+ * câmera, do seletor da galeria e das gravações do rascunho. Recarregar não perde nada: rascunhos, fotos e fila estão
+ * no Dexie.
  */
 function useAppUpdate() {
   const {
     needRefresh: [needRefresh],
     updateServiceWorker,
-  } = useRegisterSW();
+  } = useRegisterSW({
+    onRegisteredSW(_url, registration) {
+      if (!registration) return;
+      if (registration.waiting) return void activateWaitingWorker(registration.waiting);
+      const check = () => void registration.update().catch(() => undefined);
+      setInterval(check, UPDATE_CHECK_MS);
+      document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && check());
+    },
+  });
 
   React.useEffect(() => {
     if (!needRefresh) return;
-    toast(t('technician.update.available'), {
-      id: 'app-update',
-      description: t('technician.update.availableHint'),
-      duration: Number.POSITIVE_INFINITY,
-      action: { label: t('technician.update.reload'), onClick: () => void updateServiceWorker(true) },
+    updateGate.ready(async () => {
+      // Página controlada: o worker novo assume e ela recarrega (`controlling`). Na primeira visita, ainda sem
+      // controle, o worker novo nunca assume esta página: recarrega direto.
+      if (navigator.serviceWorker.controller) return updateServiceWorker(true);
+      await updateServiceWorker(false);
+      window.location.reload();
     });
   }, [needRefresh, updateServiceWorker]);
 }

@@ -3,6 +3,7 @@
 import { createRoute, createRouter } from '@tanstack/react-router';
 import { officeRouteTree } from '@/office/routes';
 import { technicianRouteTree } from '@/technician/routes';
+import { updateGate } from './app-update';
 import { ForgotPasswordPage } from './pages/forgot-password';
 import { Gate } from './pages/gate';
 import { LinkPage } from './pages/link';
@@ -44,6 +45,11 @@ const routeTree = rootRoute.addChildren([
 ]);
 
 export const router = createRouter({ routeTree, defaultPreload: 'intent' });
+
+// Troca de tela: o momento em que a versão nova do app entra, se houver (app-update.ts).
+router.subscribe('onResolved', ({ fromLocation, toLocation }) => {
+  if (fromLocation && fromLocation.pathname !== toLocation.pathname) updateGate.screenChanged();
+});
 
 declare module '@tanstack/react-router' {
   interface Register {

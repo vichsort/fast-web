@@ -24,18 +24,33 @@ export function useUpdateRequired(enabled: boolean): boolean {
   return data ? isBelowMinimum(APP_VERSION, data) : false;
 }
 
-/**
- * "Atualizar agora": busca o worker novo e o ativa (o mesmo `SKIP_WAITING` do aviso de versão nova, queue.md); sem
- * worker novo, recarrega. O banco local não é tocado.
- */
+/** Ativa o worker novo que espera (`SKIP_WAITING`, src/sw.ts) e recarrega quando ele assume. O banco local fica. */
+export function activateWaitingWorker(waiting: ServiceWorker): void {
+  navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload(), { once: true });
+  waiting.postMessage({ type: 'SKIP_WAITING' });
+}
+
+/** Busca o worker novo e o ativa; sem worker novo (ou sem worker, no escritório), recarrega. */
 export async function updateApp(): Promise<void> {
   const registration = await navigator.serviceWorker?.getRegistration().catch(() => undefined);
   await registration?.update().catch(() => undefined);
   const waiting = registration?.waiting;
-  if (!waiting) {
-    window.location.reload();
-    return;
+  if (waiting) return activateWaitingWorker(waiting);
+  window.location.reload();
+}
+
+const AUTO_UPDATE_KEY = 'fast.autoUpdate';
+
+/**
+ * Abaixo da mínima, o app atualiza sozinho uma vez por versão e por sessão; se continuar abaixo depois disso (a versão
+ * nova ainda não chegou ao servidor), mostra o botão, em vez de recarregar sem parar.
+ */
+export function autoUpdateOnce(storage: Pick<Storage, 'getItem' | 'setItem'> | null, version: string): boolean {
+  try {
+    if (!storage || storage.getItem(AUTO_UPDATE_KEY) === version) return false;
+    storage.setItem(AUTO_UPDATE_KEY, version);
+    return true;
+  } catch {
+    return false;
   }
-  navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload(), { once: true });
-  waiting.postMessage({ type: 'SKIP_WAITING' });
 }

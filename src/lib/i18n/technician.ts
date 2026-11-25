@@ -218,10 +218,4 @@ export const technicianTexts = {
     scratchOffline: 'Simular sem sinal',
     scratchOfflineHint: 'Mostra como as telas ficam sem conexão: os envios vão para a fila.',
   },
-
-  update: {
-    available: 'Versão nova do app',
-    availableHint: 'Nada se perde: rascunhos, fotos e envios ficam no aparelho.',
-    reload: 'Atualizar',
-  },
 } as const;
