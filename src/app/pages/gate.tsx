@@ -3,7 +3,6 @@ import { type ReactNode, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { t } from '@/lib/i18n';
-import { pendingAuthLink } from '@/lib/supabase';
 import type { Access } from '../access';
 import { useAuth } from '../auth-context';
 import { updateApp, useUpdateRequired } from '../min-version';
@@ -28,7 +27,7 @@ function Message({ text, children }: { text: string; children?: ReactNode }) {
   );
 }
 
-/** Raiz: sem sessão vai ao login; com o link de email, a definir senha; senão, à interface do papel (access.ts). */
+/** Raiz: sem sessão vai ao login; senão, à interface do papel (access.ts) ou ao convite. */
 export function Gate() {
   const { session, ready } = useAuth();
   const navigate = useNavigate();
@@ -43,7 +42,6 @@ export function Gate() {
 
   if (!ready) return <Loading />;
   if (!session) return <Navigate to="/login" />;
-  if (pendingAuthLink()) return <Navigate to="/set-password" />;
   if (!access.data) return <Loading />;
 
   switch (access.data.kind) {

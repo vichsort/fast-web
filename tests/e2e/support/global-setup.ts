@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
-import { supabaseUrl } from './backend';
+import { forgetInviteAttempts, supabaseUrl } from './backend';
 
 /**
  * Sem o stack local do backend, nada aqui faz sentido: avisa antes de rodar o primeiro teste. A chave de serviço do
@@ -12,6 +12,7 @@ export default async function globalSetup() {
     const res = await fetch(`${supabaseUrl}/auth/v1/health`);
     if (res.ok) {
       process.env.E2E_SERVICE_ROLE_KEY ??= serviceRoleKey();
+      await forgetInviteAttempts();
       return;
     }
   } catch {

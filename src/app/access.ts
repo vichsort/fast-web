@@ -54,14 +54,3 @@ export function resolveAccess(lookup: AccessLookup, cached: Access | null): Reso
 export function cacheableAccess(access: Access): boolean {
   return access.kind !== 'invited';
 }
-
-/** Tipo do link de email do Auth (convite ou recuperação de senha), lido do hash da URL antes de o supabase-js limpá-lo. */
-export function authLinkType(hash: string): 'invite' | 'recovery' | null {
-  const type = new URLSearchParams(hash.replace(/^#/, '')).get('type');
-  return type === 'invite' || type === 'recovery' ? type : null;
-}
-
-/** O Auth devolveu o link de email com erro (expirado ou já usado): `#error=...&error_code=...`. */
-export function authLinkError(hash: string): boolean {
-  return new URLSearchParams(hash.replace(/^#/, '')).has('error_code');
-}

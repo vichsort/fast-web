@@ -1,4 +1,4 @@
-import { accessFrom, authLinkError, authLinkType, cacheableAccess, resolveAccess } from './access';
+import { accessFrom, cacheableAccess, resolveAccess } from './access';
 
 const technician = { companyId: 'c1', role: 'technician' as const };
 const manager = { companyId: 'c1', role: 'manager' as const };
@@ -49,20 +49,5 @@ describe('access', () => {
     ).toMatchObject({
       kind: 'office',
     });
-  });
-
-  it('reads the type of an Auth email link from the URL hash', () => {
-    expect(authLinkType('#access_token=x&refresh_token=y&type=invite')).toBe('invite');
-    expect(authLinkType('#access_token=x&type=recovery')).toBe('recovery');
-    expect(authLinkType('#type=signup')).toBeNull();
-    expect(authLinkType('')).toBeNull();
-  });
-
-  it('tells an expired or already used Auth email link apart from a normal opening', () => {
-    expect(authLinkError('#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid')).toBe(
-      true,
-    );
-    expect(authLinkError('#access_token=x&type=recovery')).toBe(false);
-    expect(authLinkError('')).toBe(false);
   });
 });

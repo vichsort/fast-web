@@ -5,8 +5,8 @@ import { officeRouteTree } from '@/office/routes';
 import { technicianRouteTree } from '@/technician/routes';
 import { ForgotPasswordPage } from './pages/forgot-password';
 import { Gate } from './pages/gate';
+import { LinkPage } from './pages/link';
 import { LoginPage } from './pages/login';
-import { SetPasswordPage } from './pages/set-password';
 import { rootRoute } from './root-route';
 
 const gateRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: Gate });
@@ -15,9 +15,11 @@ const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/login',
   component: LoginPage,
-  validateSearch: (search: Record<string, unknown>): { removed?: true; declined?: true } => ({
+  validateSearch: (search: Record<string, unknown>): { removed?: true; declined?: true; email?: string } => ({
     ...(search.removed === true || search.removed === 'true' ? { removed: true as const } : {}),
     ...(search.declined === true || search.declined === 'true' ? { declined: true as const } : {}),
+    // A página do link (convite de conta existente) manda o email já preenchido.
+    ...(typeof search.email === 'string' ? { email: search.email } : {}),
   }),
 });
 
@@ -27,17 +29,14 @@ const forgotPasswordRoute = createRoute({
   component: ForgotPasswordPage,
 });
 
-const setPasswordRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/set-password',
-  component: SetPasswordPage,
-});
+// O link do convite e o de "definir senha" (06 do backend, R12 a R14), com o token no hash.
+const linkRoute = createRoute({ getParentRoute: () => rootRoute, path: '/link', component: LinkPage });
 
 const routeTree = rootRoute.addChildren([
   gateRoute,
   loginRoute,
   forgotPasswordRoute,
-  setPasswordRoute,
+  linkRoute,
   technicianRouteTree,
   officeRouteTree,
   // A vitrine só no dev, por import dinâmico: o build de produção nem gera o pedaço dela.

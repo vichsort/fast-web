@@ -129,6 +129,15 @@ function adminClient(): Client {
   return createClient<Database>(supabaseUrl, serviceKey, { auth: { persistSession: false } });
 }
 
+/**
+ * Os testes convidam sempre como o owner do seed, e o limite de convites (06, R7: 20 por hora) pararia a segunda ou a
+ * terceira rodada seguida. O globalSetup apaga as tentativas contadas antes de cada rodada.
+ */
+export async function forgetInviteAttempts() {
+  const { error } = await adminClient().from('member_invite_attempts').delete().gte('created_at', '-infinity');
+  if (error) throw error;
+}
+
 /** Técnico próprio do teste: conta com senha, convidado pelo owner (`invite_member`) e com o convite aceito. */
 export async function createTechnician(): Promise<{ email: string; userId: string; memberId: string }> {
   const admin = adminClient();

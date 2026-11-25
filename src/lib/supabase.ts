@@ -1,6 +1,5 @@
 // Cliente único do Supabase na página. A sessão fica no IndexedDB (auth-storage), onde o service worker a lê.
 import { createClient } from '@supabase/supabase-js';
-import { authLinkError, authLinkType } from '@/app/access';
 import { createAuthStorage } from './auth-storage';
 import type { Database } from './database.types';
 import { authTimeoutFetch, bannedFetch, signalingFetch } from './supabase-fetch';
@@ -9,18 +8,6 @@ import { VERSION_HEADERS } from './version';
 const url = import.meta.env.VITE_SUPABASE_URL;
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 if (!url || !anonKey) throw new Error('VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY ausentes (veja .env.example)');
-
-// Link de email do Auth com que o app abriu, lido antes de o supabase-js limpar o hash.
-let pendingLink = authLinkType(window.location.hash);
-
-/** Convite ou recuperação ainda sem senha salva: a raiz manda para "definir senha" até `clearAuthLink`. */
-export const pendingAuthLink = () => pendingLink;
-export const clearAuthLink = () => {
-  pendingLink = null;
-};
-
-/** O app abriu por um link de email expirado ou já usado: o login avisa. */
-export const authLinkFailed = authLinkError(window.location.hash);
 
 const responseListeners = new Set<() => void>();
 
@@ -51,7 +38,8 @@ async function rememberBannedUser(): Promise<void> {
 }
 
 export const supabase = createClient<Database>(url, anonKey, {
-  auth: { storage: authStorage, storageKey, persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+  // Sem links do Auth (o sistema não manda email): o hash de /link é o token do convite, não uma sessão.
+  auth: { storage: authStorage, storageKey, persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
   global: {
     headers: VERSION_HEADERS,
     fetch: signalingFetch(

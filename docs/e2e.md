@@ -14,7 +14,7 @@ O que mais custa se falhar, onde está no código, o que já é testado e como t
 | Quando | fora do `npm run check`; antes de commitar o que mexe num fluxo coberto |
 | Medições | projeto `measure` (`tests/e2e/measure`), fora da suíte: `MEASURE=1 npx playwright test --project measure --workers 1`; rede de celular emulada pelo CDP do Chromium |
 | Banco local | cresce a cada rodada: os testes criam O.S., clientes e usuários e não apagam (só o `order-volume` limpa as 1001 O.S. dele). Com o banco inchado (~7 mil O.S. em 2026-11-19), os testes do técnico falharam ao acaso, com avisos que não apareciam em 5 s. Suíte instável sem motivo no código: `npm run db:reset` em `../fast` e rodar de novo |
-| Estado global | nenhum teste muda o que vale para todos no banco (`app_settings`, o seed), porque os testes rodam em paralelo: troca-se a resposta só na página, com `page.route` (ver `update-required`). Usuário que sai da conta ou é removido é criado só para o teste (`createTechnician`) |
+| Estado global | nenhum teste muda o que vale para todos no banco (`app_settings`, o seed), porque os testes rodam em paralelo: troca-se a resposta só na página, com `page.route` (ver `update-required`). Usuário que sai da conta ou é removido é criado só para o teste (`createTechnician`). Exceção: o `globalSetup` apaga as tentativas de convite contadas no limite ([06](../../fast/docs/modules/06-members.md), R7), porque todo convite dos testes sai do owner do seed |
 | Chamadas do worker | no Chromium, `context.on('request')` vê também as requisições do service worker (`page.on`, não) |
 
 ## Cobertos
@@ -22,6 +22,7 @@ O que mais custa se falhar, onde está no código, o que já é testado e como t
 | Teste | Prova |
 | --- | --- |
 | [`office/login`](../tests/e2e/office/login.spec.ts) | o gerente entra e cai no dashboard |
+| [`office/member-links`](../tests/e2e/office/member-links.spec.ts) | links sem email ([06](../../fast/docs/modules/06-members.md), R12 a R14). Convite: o owner convida pela tela e o link aparece no diálogo; o pendente mostra o email do convite e não aparece no seletor de técnicos; no celular, o link sai da URL, a senha nova aceita e entra em Minhas O.S.; o link não vale de novo; o membro fica ativo e atribuível. Recuperação: o owner gera o link de um técnico próprio do teste; a senha nova entra, e a antiga deixa de valer |
 | [`office/review-cycle`](../tests/e2e/office/review-cycle.spec.ts) | E1: com o celular do técnico ao lado (contexto Pixel 7), o escritório rejeita com o motivo; o técnico vê o motivo e envia de novo; o escritório vê a tentativa nova com a anterior guardada e aprova; o técnico vê a O.S. aprovada. No banco: 2 tentativas (rejeitada com o comentário, aprovada) |
 | [`technician/login`](../tests/e2e/technician/login.spec.ts) | o técnico entra e cai em Minhas O.S. |
 | [`technician/offline-execution`](../tests/e2e/technician/offline-execution.spec.ts) | início e envio sem sinal, com foto da câmera e da galeria. Depois de uma espera longa, o sinal volta e o envio chega em até 5 s: uma execução, 2 fotos, nada repetido ao reabrir. Toda chamada à API do Supabase, da página e do worker, leva o `x-client-version` |

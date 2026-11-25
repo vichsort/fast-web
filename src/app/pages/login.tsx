@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { t } from '@/lib/i18n';
-import { authLinkFailed, supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { authErrorText } from '../auth-errors';
 import { AuthCard } from './auth-card';
 
@@ -19,11 +19,11 @@ const schema = z.object({
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const { removed, declined } = useSearch({ from: '/login' });
+  const { removed, declined, email: invitedEmail } = useSearch({ from: '/login' });
   const [error, setError] = useState<string | null>(null);
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
-    defaultValues: { email: '', password: '' },
+    defaultValues: { email: invitedEmail ?? '', password: '' },
   });
 
   const onSubmit = form.handleSubmit(async ({ email, password }) => {
@@ -37,11 +37,6 @@ export function LoginPage() {
     <AuthCard title={t('auth.loginTitle')}>
       <form onSubmit={onSubmit} noValidate>
         <FieldGroup>
-          {authLinkFailed && (
-            <Alert>
-              <AlertDescription>{t('auth.linkExpired')}</AlertDescription>
-            </Alert>
-          )}
           {removed && (
             <Alert>
               <AlertDescription>{t('auth.removed')}</AlertDescription>

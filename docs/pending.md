@@ -6,7 +6,7 @@ O que falta no front e no backend. Item feito sai daqui no mesmo commit do códi
 
 | Fase | Itens | Trava a produção |
 | --- | --- | --- |
-| [1. Código antes do primeiro deploy](#1-código-antes-do-primeiro-deploy) | 3 | sim |
+| [1. Código antes do primeiro deploy](#1-código-antes-do-primeiro-deploy) | 2 | sim |
 | [2. Primeiro deploy](#2-primeiro-deploy) | 6 | sim |
 | [3. Antes de entregar à Fast](#3-antes-de-entregar-à-fast) | 5 | sim |
 | [4. Depois, sem travar](#4-depois-sem-travar) | 9 | não |
@@ -17,17 +17,8 @@ Na ordem de gravidade. Custo do relatório: P = pequeno, M = médio.
 
 | Item | Repo | O que fazer | Custo |
 | --- | --- | --- | --- |
-| Convite com aceite (seg. M1) | os dois | [abaixo](#convite-com-aceite-seg-m1) | M |
 | Sem email | os dois | [abaixo](#sem-email) | M |
 | Versão e atualização automática | os dois | [abaixo](#versão-e-atualização-automática) | M |
-
-### Convite com aceite (seg. M1)
-
-Decisões de 2026-11-24 em [06 Membros](decisions.md#06-membros). Contrato em [01](../../fast/docs/modules/01-foundation.md), [03](../../fast/docs/modules/03-service-orders.md) e [06](../../fast/docs/modules/06-members.md), no mesmo commit do código.
-
-| Parte | Repo | O que fazer |
-| --- | --- | --- |
-| Convite no app | front | "definir senha" pelo link do convite aceita (a tela "A empresa X convidou você", com aceitar e recusar, já está feita) |
 
 ### Sem email
 
@@ -35,7 +26,6 @@ Decisões de 2026-11-24 em [01 Fundação](decisions.md#01-fundação). Contrato
 
 | Parte | Repo | O que fazer |
 | --- | --- | --- |
-| Link do convite e de recuperação | front | a página `/link#<token>` abre "definir senha" (conta nova e recuperação) ou "entre com sua senha para aceitar" (conta existente); a tela "esqueci a senha" vira "peça o link ao responsável". O backend (`open_link`, `use_link`) e a tela de membros já estão feitos |
 | Trocar a senha | front | pede a senha atual e entra de novo com ela antes de trocar |
 
 ### Versão e atualização automática
