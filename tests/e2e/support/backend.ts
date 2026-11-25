@@ -1,5 +1,6 @@
 // Acesso direto ao stack local do backend para preparar e conferir os testes, com os usuários do seed
 // (../fast/supabase/seed.sql). Nada aqui passa pelo app.
+import { execFileSync } from 'node:child_process';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { loadEnv } from 'vite';
 import type { Database } from '../../../src/lib/database.types';
@@ -217,11 +218,22 @@ export async function signOutEverywhere(email: string) {
   if (error) throw error;
 }
 
+/** SQL como `postgres`, no container do banco do stack local: a chave de serviço não apaga nada (api.md do backend). */
+function psqlAsPostgres(sql: string) {
+  execFileSync(
+    'docker',
+    ['exec', '-i', 'supabase_db_fast', 'psql', '-U', 'postgres', '-X', '-q', '-v', 'ON_ERROR_STOP=1'],
+    {
+      input: sql,
+    },
+  );
+}
+
 /**
  * Empresa própria do teste, com um owner novo e `count` O.S. de um cliente, gravadas direto pela chave de serviço
  * (sem as RPCs, para caber no tempo do teste). A O.S. nº 1, a mais antiga, tem título próprio. Isolada do seed: as
- * outras empresas e os outros testes não a veem. `remove` apaga as O.S. e o cliente no fim, para o banco local não
- * crescer a cada rodada e atrasar os outros testes.
+ * outras empresas e os outros testes não a veem. `remove` apaga as O.S. e o cliente no fim, como `postgres`, para o
+ * banco local não crescer a cada rodada e atrasar os outros testes.
  */
 export async function createCompanyWithOrders(count: number) {
   const admin = adminClient();
@@ -266,10 +278,11 @@ export async function createCompanyWithOrders(count: number) {
   if (inserted.error) throw inserted.error;
 
   const remove = async () => {
-    for (const table of ['service_order_history', 'service_orders', 'clients'] as const) {
-      const { error } = await admin.from(table).delete().eq('company_id', companyId);
-      if (error) throw error;
-    }
+    psqlAsPostgres(
+      ['service_order_history', 'service_orders', 'clients']
+        .map((table) => `delete from public.${table} where company_id = '${companyId}';`)
+        .join('\n'),
+    );
   };
   return { email, oldestTitle, remove };
 }

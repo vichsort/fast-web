@@ -21,7 +21,6 @@ Achados da análise do banco aprovados pelo P.O. em 2026-11-25 (os reprovados fo
 
 | Item | Gravidade | Repo | O que fazer |
 | --- | --- | --- | --- |
-| Service role sem apagar nem reescrever | alta | os dois | revogar da `service_role` `update, delete, truncate` em `service_order_history` e `delete, truncate` em `service_orders`, `service_order_assignees`, `service_order_executions`, `service_order_photos`, `photo_uploads`, `companies`, `company_members`, `clients`, `client_addresses` e `member_invites`, como já é em `audit_logs` (`member_invite_attempts` fica: o E2E limpa). O `remove()` de `tests/e2e/support/backend.ts` passa a rodar como `postgres` |
 | Foto do envio confirmada no R2 | média | backend | FK `service_order_photos.id → photo_uploads.id` (hoje a R13 só em `submit_execution`); os pgTAP 22, 23 e 24 criam o upload antes (`tests.upload_photo`) |
 | Prazo não anda com a troca de fuso | média | backend | em `update_order`, manter o `due_at` quando `p_due_date` é a data do `due_at` atual no fuso da empresa; hoje trocar `companies.timezone` desloca o prazo na próxima edição |
 | Técnico guarda só as colunas usadas | média | front | o select do técnico (`ORDER_SELECT`, `lib/orders-query.ts`) sem `*` nem `clients(*)`: só as colunas que as telas usam, como diz o offline.md (`clients.notes` fica: é para o técnico) |
