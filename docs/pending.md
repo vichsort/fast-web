@@ -27,7 +27,7 @@ Decisões de 2026-11-24 em [06 Membros](decisions.md#06-membros). Contrato em [0
 
 | Parte | Repo | O que fazer |
 | --- | --- | --- |
-| Convite no app | front | sem vínculo ativo e com convite pendente: tela "A empresa X convidou você" (aceitar, recusar) no lugar do aviso de removido; "definir senha" pelo link do convite aceita |
+| Convite no app | front | "definir senha" pelo link do convite aceita (a tela "A empresa X convidou você", com aceitar e recusar, já está feita) |
 
 ### Sem email
 

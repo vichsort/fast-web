@@ -155,6 +155,19 @@ export async function createTechnician(): Promise<{ email: string; userId: strin
   return { email, userId: created.data.user.id, memberId: invited.data.member_id };
 }
 
+/** O owner convida (06, `invite_member`) e devolve o token do link do convite. */
+export async function inviteMember(
+  email: string,
+  fullName = 'Convidado E2E',
+): Promise<{ memberId: string; token: string }> {
+  const { client, userId: ownerId } = await signIn(users.owner);
+  const invited = await client.functions.invoke<{ member_id: string; token: string | null }>('invite_member', {
+    body: { company_id: await companyOf(client, ownerId), email, full_name: fullName, role: 'technician' },
+  });
+  if (invited.error || !invited.data?.token) throw invited.error ?? new Error('invite_member sem link');
+  return { memberId: invited.data.member_id, token: invited.data.token };
+}
+
 /** O owner remove o membro (06, `remove_member`). */
 export async function removeMember(memberId: string) {
   const { client } = await signIn(users.owner);

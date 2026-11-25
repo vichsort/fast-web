@@ -107,9 +107,17 @@ export const ptBR = {
     offline: 'Sem conexão. Conecte-se à internet para entrar.',
     failed: 'Não foi possível concluir. Tente de novo.',
     removed: 'Seu acesso foi removido. Os dados deste aparelho foram apagados.',
+    declined: 'Você recusou o convite. Se mudar de ideia, peça um convite novo ao responsável da empresa.',
     linkExpired: 'O link expirou ou já foi usado. Peça um novo em "Esqueci minha senha" ou ao escritório.',
   },
   access: {
+    invite: {
+      title: 'Convite',
+      description: 'Aceite para entrar na empresa. Os dados de outra empresa neste aparelho foram apagados.',
+      from: 'A empresa {company} convidou você.',
+      accept: 'Aceitar',
+      decline: 'Recusar',
+    },
     platformAdmin: 'Sua conta é de administração da plataforma, que ainda não tem tela. Use o painel do Supabase.',
     offlineFirstAccess: 'Sem conexão. O primeiro acesso neste aparelho precisa de internet.',
     retry: 'Tentar de novo',

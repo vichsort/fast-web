@@ -4,7 +4,15 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { classifyRpcError } from '@/lib/errors';
 import { accountBanned, supabase } from '@/lib/supabase';
-import { type Access, type AccessLookup, type Membership, type ResolvedAccess, resolveAccess } from './access';
+import {
+  type Access,
+  type AccessLookup,
+  cacheableAccess,
+  type Invite,
+  type Membership,
+  type ResolvedAccess,
+  resolveAccess,
+} from './access';
 import { forgetOnUserChange } from './query-client';
 
 /**
@@ -34,8 +42,9 @@ export function useSession(): { session: Session | null; ready: boolean } {
 }
 
 /**
- * Vínculos ativos (mais antigo primeiro) e a flag de platform admin. O RLS esconde os vínculos de quem foi removido.
- * Sem as repetições do postgrest-js (1 + 2 + 4 s em falha de rede): sem resposta, o acesso guardado decide na hora.
+ * Vínculos ativos e aceitos (mais antigo primeiro), a flag de platform admin e, sem vínculo, os convites pendentes
+ * (06, R10). O RLS esconde os vínculos de quem foi removido. Sem as repetições do postgrest-js (1 + 2 + 4 s em falha de
+ * rede): sem resposta, o acesso guardado decide na hora.
  */
 async function lookupAccess(userId: string): Promise<AccessLookup> {
   const [members, profile] = await Promise.all([
@@ -43,6 +52,7 @@ async function lookupAccess(userId: string): Promise<AccessLookup> {
       .from('company_members')
       .select('company_id, role')
       .eq('user_id', userId)
+      .eq('status', 'accepted')
       .is('deleted_at', null)
       .order('created_at')
       .retry(false),
@@ -51,7 +61,13 @@ async function lookupAccess(userId: string): Promise<AccessLookup> {
   if (members.error) return { ok: false, errorClass: classifyRpcError(members.error, members.status).errorClass };
   if (profile.error) return { ok: false, errorClass: classifyRpcError(profile.error, profile.status).errorClass };
   const memberships: Membership[] = members.data.map((m) => ({ companyId: m.company_id, role: m.role }));
-  return { ok: true, memberships, isPlatformAdmin: profile.data?.is_platform_admin ?? false };
+  let invites: Invite[] = [];
+  if (memberships.length === 0) {
+    const pending = await supabase.rpc('my_invites').retry(false);
+    if (pending.error) return { ok: false, errorClass: classifyRpcError(pending.error, pending.status).errorClass };
+    invites = pending.data.map((i) => ({ memberId: i.member_id, companyName: i.company_name, role: i.role }));
+  }
+  return { ok: true, memberships, isPlatformAdmin: profile.data?.is_platform_admin ?? false, invites };
 }
 
 const cacheKey = (userId: string) => `fast.access.${userId}`;
@@ -85,7 +101,7 @@ export function useAccess(userId: string | undefined) {
       const id = userId as string;
       const lookup = await lookupAccess(id);
       const access = resolveAccess(lookup, readCachedAccess(id));
-      if (lookup.ok && access.kind !== 'offline_first_access') writeCachedAccess(id, access);
+      if (lookup.ok && access.kind !== 'offline_first_access' && cacheableAccess(access)) writeCachedAccess(id, access);
       return access;
     },
   });
@@ -108,8 +124,23 @@ export async function signOutAndWipe(userId: string): Promise<void> {
   await wipeUser(userId);
 }
 
-/** Apaga do aparelho os dados do usuário: rascunhos, fotos, fila, cache e o acesso guardado (Q10). */
-async function wipeUser(userId: string): Promise<void> {
+/** Aceita o próprio convite pendente (06, R10); a falha vira `ApiError` classificada. */
+export async function acceptInvite(memberId: string): Promise<void> {
+  const { error, status } = await supabase.rpc('accept_invite', { p_member_id: memberId });
+  if (error) throw classifyRpcError(error, status);
+}
+
+/** Recusa o próprio convite pendente (06, R11). */
+export async function declineInvite(memberId: string): Promise<void> {
+  const { error, status } = await supabase.rpc('decline_invite', { p_member_id: memberId });
+  if (error) throw classifyRpcError(error, status);
+}
+
+/**
+ * Apaga do aparelho os dados do usuário: rascunhos, fotos, fila, cache e o acesso guardado (Q10). Também sem sair da
+ * conta, quando ele perde o vínculo mas tem convite pendente: os dados da empresa antiga não ficam para a nova.
+ */
+export async function wipeUser(userId: string): Promise<void> {
   const [{ clearUser }, { db }] = await Promise.all([import('@/offline/queue'), import('@/offline/db')]);
   await clearUser(db, userId);
   try {

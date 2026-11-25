@@ -15,8 +15,10 @@ const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/login',
   component: LoginPage,
-  validateSearch: (search: Record<string, unknown>): { removed?: true } =>
-    search.removed === true || search.removed === 'true' ? { removed: true } : {},
+  validateSearch: (search: Record<string, unknown>): { removed?: true; declined?: true } => ({
+    ...(search.removed === true || search.removed === 'true' ? { removed: true as const } : {}),
+    ...(search.declined === true || search.declined === 'true' ? { declined: true as const } : {}),
+  }),
 });
 
 const forgotPasswordRoute = createRoute({

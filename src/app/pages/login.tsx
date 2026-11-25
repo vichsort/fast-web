@@ -19,7 +19,7 @@ const schema = z.object({
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const { removed } = useSearch({ from: '/login' });
+  const { removed, declined } = useSearch({ from: '/login' });
   const [error, setError] = useState<string | null>(null);
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -45,6 +45,11 @@ export function LoginPage() {
           {removed && (
             <Alert>
               <AlertDescription>{t('auth.removed')}</AlertDescription>
+            </Alert>
+          )}
+          {declined && (
+            <Alert>
+              <AlertDescription>{t('auth.declined')}</AlertDescription>
             </Alert>
           )}
           <Field data-invalid={Boolean(form.formState.errors.email)}>

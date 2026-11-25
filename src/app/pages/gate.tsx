@@ -8,6 +8,7 @@ import type { Access } from '../access';
 import { useAuth } from '../auth-context';
 import { updateApp, useUpdateRequired } from '../min-version';
 import { signOutAndWipe, useAccess } from '../session';
+import { InvitePage } from './invite';
 
 function Loading() {
   return (
@@ -52,6 +53,8 @@ export function Gate() {
       return <Navigate to="/office" />;
     case 'no_access':
       return <Loading />;
+    case 'invited':
+      return <InvitePage userId={session.user.id} invites={access.data.invites} />;
     case 'platform_admin':
       return (
         <Message text={t('access.platformAdmin')}>
