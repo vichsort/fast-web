@@ -4,8 +4,12 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv, type Plugin } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import packageJson from './package.json' with { type: 'json' };
 import { R2_ORIGIN, securityHeaderList, securityHeaders } from './src/lib/security-headers.ts';
 import { buildVersion } from './src/lib/version.ts';
+
+/** A versão semântica do app (`npm version` sobe no lançamento). */
+const packageVersion = packageJson.version;
 
 /** O commit do build: o do Cloudflare Pages, senão o do git local; sem nenhum, a versão vai sem ele. */
 function commit(): string | null {
@@ -48,7 +52,7 @@ function previewHeaders(mode: string): Record<string, string> | undefined {
 
 export default defineConfig(({ mode }) => ({
   // Versão do app (src/lib/version.ts), a mesma na página e no service worker.
-  define: { __APP_VERSION__: JSON.stringify(buildVersion(new Date(), commit())) },
+  define: { __APP_VERSION__: JSON.stringify(buildVersion(packageVersion, commit())) },
   // Porta do site_url do Auth local (../fast/supabase/config.toml): os links do convite e da senha abrem aqui.
   server: { host: '127.0.0.1', port: 3000, strictPort: true },
   // O preview (o dos E2E) serve com os mesmos cabeçalhos do Cloudflare Pages: a CSP quebrada aparece nos testes.

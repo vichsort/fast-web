@@ -36,6 +36,15 @@ npm run check                     # lint, tipos e Vitest
 | `npm run types`           | gera `src/lib/database.types.ts` do banco local do backend |
 | `npm run check`           | lint, tipos e Vitest                                       |
 
+## Lançar
+
+Versão semântica no `package.json`: começa em `0.0.0`, e a `1.0.0` é a primeira entregue à Fast. Major quebra o contrato (a versão mínima sobe junto), minor é funcionalidade nova, patch é correção ([decisões](docs/decisions.md#versão-e-atualização)).
+
+1. O backend vai ao ar antes, se a versão nova depende dele ([operations.md](../fast/docs/operations.md#lançar)).
+2. Com a árvore limpa e o `npm run check` e o `npm run test:e2e` verdes: `npm version patch|minor|major -m "chore: release v%s"` (sobe o número, commita e cria a tag `vX.Y.Z`).
+3. `git push --follow-tags`: o Cloudflare Pages publica a `main`. Até a `1.0.0`, sem branch `release` nem prévia.
+4. Os aparelhos atualizam sozinhos na próxima abertura ou troca de tela ([screens.md](docs/screens.md#comum)).
+
 ## Stack
 
 TypeScript, React, Vite; shadcn/ui e Tailwind CSS; TanStack Router e Query; React Hook Form e Zod; `vite-plugin-pwa` (service worker próprio, `injectManifest`); Dexie; `browser-image-compression` e `exifr`; Vitest e Playwright; Biome. Hospedagem no Cloudflare Pages.

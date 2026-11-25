@@ -34,7 +34,7 @@ test('abaixo da versão mínima: pede para atualizar, guarda a fila e manda depo
   app.on('request', (request) => {
     if (request.url().includes('/rpc/start_execution')) starts += 1;
   });
-  await app.route(APP_SETTINGS, (route) => route.fulfill({ json: [{ min_client_version: '9999.12.31.2359' }] }));
+  await app.route(APP_SETTINGS, (route) => route.fulfill({ json: [{ min_client_version: '999.0.0' }] }));
   await context.setOffline(false);
   await app.goto(execution);
   await expect(app.getByRole('heading', { name: t('update.title') })).toBeVisible();

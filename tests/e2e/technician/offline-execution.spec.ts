@@ -91,5 +91,5 @@ test('execução sem sinal com fotos chega ao servidor sem duplicar', async ({ p
 
   // A versão do app foi em todas, inclusive nas Edge Functions de foto, que a liberam no CORS (api.md do backend).
   expect(calls.some((c) => c.url.includes('/functions/v1/confirm_photo_upload'))).toBe(true);
-  expect(calls.filter((c) => !/^\d{4}\.\d{2}\.\d{2}\.\d{4}(\+[0-9a-f]+)?$/.test(c.version ?? ''))).toEqual([]);
+  expect(calls.filter((c) => !/^\d+\.\d+\.\d+(\+[0-9a-f]+)?$/.test(c.version ?? ''))).toEqual([]);
 });
