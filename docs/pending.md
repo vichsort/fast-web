@@ -8,18 +8,11 @@ Item feito sai daqui no mesmo commit do código (o histórico fica no git).
 
 | # | Etapa | Termina quando |
 | --- | --- | --- |
-| 2 | [Correções do banco](#2-correções-do-banco) | os achados aprovados estão corrigidos, com teste, e o fechamento do banco está publicado |
 | 3 | [Casos de borda](#3-casos-de-borda) | `docs/edges.md` entregue e lido pelo P.O.; o que ele marcou como bug está corrigido |
 | 4 | [O que falta para entregar](#4-o-que-falta-para-entregar) | backup pronto e os testes no PC feitos |
 | 5 | [Publicar](#5-publicar) | o app e o backend no ar (versão `0.x`), conferidos |
 | 6 | [Roteiro no celular](#6-roteiro-no-celular) | roteiro verde num Android real, com o app publicado |
 | 7 | [Entrega](#7-entrega) | clientes carregados, versão `1.0.0` entregue à Fast: **MVP fechado** |
-
-## 2. Correções do banco
-
-Achados da análise do banco aprovados pelo P.O. em 2026-11-25 (os reprovados foram descartados; os adiados estão em Bloqueado). Antes do primeiro deploy, as migrations ainda se editam no lugar; depois, só por acréscimo.
-
-Por último, o fechamento: um agente lê o banco corrigido e publica num artifact o diagrama (ER, de que módulo é cada tabela, as colunas com regra) e as regras de cada tabela.
 
 ## 3. Casos de borda
 
