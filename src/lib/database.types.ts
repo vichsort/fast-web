@@ -436,6 +436,12 @@ isOneToOne: false
       referencedRelation: "service_order_executions"
       referencedColumns: ["id"]
     },{
+      foreignKeyName: "service_order_photos_id_fkey"
+      columns: ["id"]
+isOneToOne: true
+      referencedRelation: "photo_uploads"
+      referencedColumns: ["id"]
+    },{
       foreignKeyName: "service_order_photos_service_order_id_fkey"
       columns: ["service_order_id"]
 isOneToOne: false
