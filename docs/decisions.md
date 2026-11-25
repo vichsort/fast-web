@@ -107,6 +107,7 @@ Só as vigentes, com o porquê curto, por assunto; o histórico (inclusive o que
 
 ### 03 Ordens de serviço
 
+- **2026-11-25** — O técnico lê a O.S. encerrada (aprovada ou cancelada) só até 7 dias depois da última alteração, também pela API; a atribuição dela não fecha na remoção nem na troca de papel. *Por quê:* o convidado de novo não relê as antigas, e a O.S. concluída continua mostrando quem a fez.
 - **2026-11-04** — `address` é cópia; O.S. pode nascer sem técnico; atribuições nunca são apagadas; `materials_notes` é texto único com `p_expected`; `pending_approval` não trava a O.S. *Por quê:* registra onde foi feito; o escritório cria antes de decidir a dupla; fica quem esteve e quando; a Fast não controla estoque; o gestor corrige enquanto revisa.
 - **2026-11-06** — Obrigatórios só título e tipo; `update_order` substitui todos os campos e, desde 2026-11-23, muda materiais (com `p_update_materials`) e técnicos na mesma transação. *Por quê:* criação rápida; `null` tem um significado só; três RPCs sem transação salvavam pela metade.
 - **2026-11-06** — `approved` → `invalid_status`; `cancelled` → `order_closed`; técnico sem atribuição → `not_assigned`. *Por quê:* o técnico precisa saber que saiu da O.S., não que ela sumiu.
