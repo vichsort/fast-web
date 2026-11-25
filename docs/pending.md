@@ -19,10 +19,6 @@ Item feito sai daqui no mesmo commit do código (o histórico fica no git).
 
 Achados da análise do banco aprovados pelo P.O. em 2026-11-25 (os reprovados foram descartados; os adiados estão em Bloqueado). Antes do primeiro deploy, as migrations ainda se editam no lugar; depois, só por acréscimo. Primeiro passo: `npm run db:reset` no backend (o banco local está atrás das migrations editadas no lugar; apaga os dados locais).
 
-| Item | Gravidade | Repo | O que fazer |
-| --- | --- | --- | --- |
-| Senha definida pelo painel | baixa | backend | linha no `operations.md`: ao definir a senha de alguém pelo painel do Supabase, gravar também `password_pending: false` no `app_metadata` |
-
 Por último, o fechamento: um agente lê o banco corrigido e publica num artifact o diagrama (ER, de que módulo é cada tabela, as colunas com regra) e as regras de cada tabela.
 
 ## 3. Casos de borda
