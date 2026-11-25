@@ -17,6 +17,7 @@ import type { Access } from '@/app/access';
 import { useAuth } from '@/app/auth-context';
 import { RequireAccess } from '@/app/pages/gate';
 import { signOutAndWipe } from '@/app/session';
+import { useVersionCheck } from '@/app/version-check';
 import { OfficeShell } from '@/components/app-shell';
 import type { NavItem } from '@/components/nav';
 import { PhotoErrorProvider } from '@/components/photos';
@@ -44,6 +45,7 @@ export function OfficeLayout() {
 
 function OfficeFrame({ access }: { access: Access }) {
   const { session: auth } = useAuth();
+  useVersionCheck();
   const role = 'role' in access && access.role === 'owner' ? 'owner' : 'manager';
   if (auth && 'companyId' in access) bindSession({ userId: auth.user.id, companyId: access.companyId });
   const user = useQuery({ queryKey: ['office', 'session', role], queryFn: () => officeSessionUser(role) });

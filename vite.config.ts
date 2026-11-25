@@ -26,6 +26,20 @@ function commit(): string | null {
  * `_headers` do Cloudflare Pages (src/lib/security-headers.ts) com o Supabase deste build. As fotos vêm do R2;
  * `PHOTOS_ORIGIN` troca a origem (ex.: um domínio próprio do bucket). Sem Supabase (só dados de exemplo), não gera.
  */
+/** A versão deste build, a mesma na página, no worker e no version.json. */
+const appVersion = buildVersion(packageVersion, commit());
+
+/** `version.json`: o escritório, sem service worker, compara com a própria versão para saber que saiu outra. */
+function versionFile(): Plugin {
+  return {
+    name: 'fast-version-file',
+    apply: 'build',
+    generateBundle() {
+      this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ version: appVersion }) });
+    },
+  };
+}
+
 function headersFile(): Plugin {
   let supabaseUrl: string | undefined;
   return {
@@ -52,7 +66,7 @@ function previewHeaders(mode: string): Record<string, string> | undefined {
 
 export default defineConfig(({ mode }) => ({
   // Versão do app (src/lib/version.ts), a mesma na página e no service worker.
-  define: { __APP_VERSION__: JSON.stringify(buildVersion(packageVersion, commit())) },
+  define: { __APP_VERSION__: JSON.stringify(appVersion) },
   // Porta do site_url do Auth local (../fast/supabase/config.toml): os links do convite e da senha abrem aqui.
   server: { host: '127.0.0.1', port: 3000, strictPort: true },
   // O preview (o dos E2E) serve com os mesmos cabeçalhos do Cloudflare Pages: a CSP quebrada aparece nos testes.
@@ -78,6 +92,7 @@ export default defineConfig(({ mode }) => ({
     react(),
     tailwindcss(),
     headersFile(),
+    versionFile(),
     // Service worker próprio (injectManifest): a fila offline roda nele com o Background Sync do Android.
     VitePWA({
       strategies: 'injectManifest',

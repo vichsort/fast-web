@@ -6,29 +6,11 @@ O que falta no front e no backend. Item feito sai daqui no mesmo commit do códi
 
 | Fase | Itens | Trava a produção |
 | --- | --- | --- |
-| [1. Código antes do primeiro deploy](#1-código-antes-do-primeiro-deploy) | 1 | sim |
-| [2. Primeiro deploy](#2-primeiro-deploy) | 6 | sim |
-| [3. Antes de entregar à Fast](#3-antes-de-entregar-à-fast) | 5 | sim |
-| [4. Depois, sem travar](#4-depois-sem-travar) | 9 | não |
+| [1. Primeiro deploy](#1-primeiro-deploy) | 6 | sim |
+| [2. Antes de entregar à Fast](#2-antes-de-entregar-à-fast) | 5 | sim |
+| [3. Depois, sem travar](#3-depois-sem-travar) | 9 | não |
 
-## 1. Código antes do primeiro deploy
-
-Na ordem de gravidade. Custo do relatório: P = pequeno, M = médio.
-
-| Item | Repo | O que fazer | Custo |
-| --- | --- | --- | --- |
-| Versão e atualização automática | os dois | [abaixo](#versão-e-atualização-automática) | M |
-
-### Versão e atualização automática
-
-Decisões de 2026-11-24 em [Versão e atualização](decisions.md#versão-e-atualização). [Versionamento](e2e.md#versionamento), [queue.md](queue.md#service-worker), [screens.md](screens.md) e o 01 do backend mudam no mesmo commit do código.
-
-| Parte | Repo | O que fazer |
-| --- | --- | --- |
-| Escritório | front | procura versão nova (arquivo de versão do build, de tempos em tempos e ao voltar à aba) e recarrega na troca de tela; tela que falha ao carregar recarrega uma vez |
-| Testes | front | E2E da atualização do escritório (o técnico já tem: `auto-update`, `update-required`) |
-
-## 2. Primeiro deploy
+## 1. Primeiro deploy
 
 Roteiro: [operations.md](../../fast/docs/operations.md#primeiro-deploy). Abaixo, o que falta fazer, com o que o roteiro ainda não diz (checklist da seção 3 do [relatório de segurança](reviews/2026-11-24-security.md#3-checklist-do-primeiro-deploy)). Na ordem.
 
@@ -41,7 +23,7 @@ Roteiro: [operations.md](../../fast/docs/operations.md#primeiro-deploy). Abaixo,
 | Cloudflare Pages | front | produção da `main`, ligada ao Supabase de produção; a branch `release` e a prévia (Supabase de teste) só a partir da `1.0.0` ([decisão](decisions.md#versão-e-atualização)) |
 | Conferências | os dois | CORS: REST, RPC, Auth e Edge Functions do hospedado aceitam o `x-client-version` (o local aceita; se o hospedado recusar, nada funciona); ip da auditoria (passo 6 do roteiro); `GET /auth/v1/settings` e `signup` respondendo `signup_disabled`; `_headers` com `curl -I` (gerado no build; com domínio próprio no bucket de fotos, `PHOTOS_ORIGIN` no build do Pages); Realtime sem nenhuma tabela na publicação; bundle só com a URL e a chave anon, sem source map e sem `/dev` |
 
-## 3. Antes de entregar à Fast
+## 2. Antes de entregar à Fast
 
 | Item | Repo | O que fazer |
 | --- | --- | --- |
@@ -62,7 +44,7 @@ O front não tem tela de importação ([decisão](decisions.md#telas-do-escritó
 | Implementação | validação por linha (inclusive o [tamanho do texto](../../fast/docs/api.md#tamanho-do-texto)), possíveis duplicados, `p_dry_run` e gravação tudo ou nada |
 | Carga inicial | os clientes da Fast em produção |
 
-## 4. Depois, sem travar
+## 3. Depois, sem travar
 
 | Item | Tipo | O que fazer |
 | --- | --- | --- |

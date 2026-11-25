@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { usingMocks } from '@/lib/data-source';
 import { supabase } from '@/lib/supabase';
 import { APP_VERSION, isBelowMinimum } from '@/lib/version';
+import { onceInSession } from './version-check';
 
 async function minimumVersion(): Promise<string | null> {
   const { data, error } = await supabase.from('app_settings').select('min_client_version').limit(1).retry(false);
@@ -39,18 +40,10 @@ export async function updateApp(): Promise<void> {
   window.location.reload();
 }
 
-const AUTO_UPDATE_KEY = 'fast.autoUpdate';
-
 /**
  * Abaixo da mínima, o app atualiza sozinho uma vez por versão e por sessão; se continuar abaixo depois disso (a versão
  * nova ainda não chegou ao servidor), mostra o botão, em vez de recarregar sem parar.
  */
 export function autoUpdateOnce(storage: Pick<Storage, 'getItem' | 'setItem'> | null, version: string): boolean {
-  try {
-    if (!storage || storage.getItem(AUTO_UPDATE_KEY) === version) return false;
-    storage.setItem(AUTO_UPDATE_KEY, version);
-    return true;
-  } catch {
-    return false;
-  }
+  return onceInSession(storage, 'fast.autoUpdate', version);
 }

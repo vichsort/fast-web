@@ -8,6 +8,7 @@ import type { Access } from '../access';
 import { useAuth } from '../auth-context';
 import { autoUpdateOnce, updateApp, useUpdateRequired } from '../min-version';
 import { signOutAndWipe, useAccess } from '../session';
+import { sessionStorageOrNull } from '../version-check';
 import { InvitePage } from './invite';
 
 function Loading() {
@@ -110,12 +111,4 @@ function UpdateRequired() {
       <p className="max-w-sm text-xs text-muted-foreground">{t('update.stillHere')}</p>
     </main>
   );
-}
-
-function sessionStorageOrNull(): Storage | null {
-  try {
-    return window.sessionStorage;
-  } catch {
-    return null;
-  }
 }

@@ -23,6 +23,7 @@ O que mais custa se falhar, onde está no código, o que já é testado e como t
 | --- | --- |
 | [`office/login`](../tests/e2e/office/login.spec.ts) | o gerente entra e cai no dashboard |
 | [`office/member-links`](../tests/e2e/office/member-links.spec.ts) | links sem email ([06](../../fast/docs/modules/06-members.md), R12 a R14). Convite: o owner convida pela tela e o link aparece no diálogo; o pendente mostra o email do convite e não aparece no seletor de técnicos; no celular, o link sai da URL, a senha nova aceita e entra em Minhas O.S.; o link não vale de novo; o membro fica ativo e atribuível. Recuperação: o owner gera o link de um técnico próprio do teste; a senha nova entra, e a antiga deixa de valer |
+| [`office/auto-update`](../tests/e2e/office/auto-update.spec.ts) | atualização do escritório: com outro `version.json` (trocado só na página), a tela não recarrega; na troca de tela, recarrega uma vez, e não de novo com o servidor ainda na mesma versão. Pedaço de telas que dá 404 no login recarrega a página uma vez e o escritório abre (o `lazyRouteComponent` do TanStack Router faz; o teste guarda o comportamento) |
 | [`office/review-cycle`](../tests/e2e/office/review-cycle.spec.ts) | E1: com o celular do técnico ao lado (contexto Pixel 7), o escritório rejeita com o motivo; o técnico vê o motivo e envia de novo; o escritório vê a tentativa nova com a anterior guardada e aprova; o técnico vê a O.S. aprovada. No banco: 2 tentativas (rejeitada com o comentário, aprovada) |
 | [`technician/login`](../tests/e2e/technician/login.spec.ts) | o técnico entra e cai em Minhas O.S. |
 | [`technician/offline-execution`](../tests/e2e/technician/offline-execution.spec.ts) | início e envio sem sinal, com foto da câmera e da galeria. Depois de uma espera longa, o sinal volta e o envio chega em até 5 s: uma execução, 2 fotos, nada repetido ao reabrir. Toda chamada à API do Supabase, da página e do worker, leva o `x-client-version` |
@@ -118,7 +119,7 @@ Como app e backend evoluem cada um no seu ritmo, com celulares que ficam até 3 
 | Mudança de RPC ou Edge Function usada pela fila | regra na spec do backend (P9); sem ela, `PGRST202` deixaria o item `blocked` | P9: mudança só aditiva; mudança que quebra vira função nova (`_v2`) e a antiga fica pelo prazo offline (3 dias) mais o ciclo de atualização; aí sobe a versão mínima |
 | Formato dos itens da fila e do Dexie | feito em 2026-11-19: `format` em todo item; build mais velho não toca no item mais novo ([queue.md](queue.md), Q13); formato novo = versão nova do Dexie com `upgrade()` testado | unit |
 | No celular | feito em 2026-11-19: Perfil com a versão; "Atualize o app" abaixo da mínima, que atualiza sozinho desde 2026-11-24 | — |
-| Versão nova | desde 2026-11-24, entra sozinha na abertura ou na troca de tela, fora da câmera, do seletor da galeria e das gravações do rascunho ([`app-update.ts`](../src/app/app-update.ts)) | unit; E2E `auto-update` |
+| Versão nova | desde 2026-11-24, entra sozinha na abertura ou na troca de tela, fora da câmera, do seletor da galeria e das gravações do rascunho ([`app-update.ts`](../src/app/app-update.ts)); no escritório, pelo `version.json` do build ([`version-check.ts`](../src/app/version-check.ts)) | unit; E2E `technician/auto-update` e `office/auto-update` |
 
 ## Listas do escritório
 
