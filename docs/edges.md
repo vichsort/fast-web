@@ -52,3 +52,27 @@ O P.O. lê isto antes de testar: o que vai parecer bug e é regra, e o que preci
 | Membros e acesso | Trocar técnico de papel, ou removê-lo | as atribuições dele em O.S. abertas fecham, e elas viram "sem técnico"; nas encerradas a atribuição fica | 06 R4; decisions 2026-11-25 |
 | Membros e acesso | Removido sem outra empresa | a conta é banida; o celular só percebe ao abrir com sinal ou ao renovar a sessão | 06 R8; offline.md |
 | Membros e acesso | "Esqueci a senha" | o app não manda email: pede o link ao owner; o owner sozinho que esqueceu depende do platform admin | 06 R14; operations.md |
+
+O mapa de casos de borda está pronto: [docs/edges.md](docs/edges.md). Commitei junto a entrada dele na lista de docs do CLAUDE.md (`3ac9f8c`), para você ler pelo IDE ou do outro PC. O agente classificou 41 situações: 2 prováveis bugs, 8 dúvidas e 31 regras. As 31 regras não pedem nada de você, só servem para não estranhar durante os testes.
+
+Conferi o primeiro bug no código e ele existe: com qualquer falha de rede, a tela de Minhas O.S. troca a lista guardada pelo erro ([orders-page.tsx:119](src/technician/orders-page.tsx#L119)). Como o aparelho só grava leituras que deram certo, a lista também some da cópia local ([persist.ts:36](src/technician/api/real/persist.ts#L36)).
+
+## As 10 decisões
+
+| # | Situação | Tipo | Recomendo |
+| --- | --- | --- | --- |
+| 1 | Celular "conectado" mas sem internet de verdade: a lista guardada some e, sem sinal, o app abre vazio | bug, S | **corrigir**: mostrar o erro só quando não há lista guardada e manter a última leitura boa |
+| 2 | O técnico tirou fotos e não enviou; o parceiro envia, ou a O.S. é aprovada ou cancelada. O rascunho com as fotos fica preso no celular, sem tela para enviar | bug, S–M | **corrigir**: deixar enviar o rascunho e o servidor decide. Ele vira complemento ou fica registrado; se o técnico não está mais na O.S., cai em Pendências com "mandar ao escritório", que já existe |
+| 3 | Técnico vira gestor com envio na fila: a prova fica no celular sem tela | dúvida | **aceitar** e pôr no `operations.md`: "troque o papel só depois de o técnico sincronizar". É raro, e a opção (b) seria tela nova |
+| 4 | "Iniciar" atrasado do parceiro tira a O.S. do retrabalho | dúvida | **aceitar**: a opção (b) compara a hora do celular com a da rejeição, e o relógio do celular não é confiável (é a linha "Relógio do celular errado" das regras) |
+| 5 | Corrigir o endereço no cadastro do cliente não chega às O.S. abertas | dúvida | **(a) avisar** na edição do endereço que as O.S. abertas mantêm o endereço antigo. S, só texto; a (b) é funcionalidade nova |
+| 6 | A cópia no celular vence em 3 dias, mas o doc fala em 7 | dúvida | **(b) cerca de 10 dias** (os 7 da janela mais 3 sem sinal). Muda uma constante e alinha código e doc |
+| 7 | Duas pessoas do escritório editam a mesma O.S.: o último a salvar vence | dúvida | **aceitar**: o escritório é pequeno, e o histórico mostra a volta |
+| 8 | Ex-técnico convidado de novo que esqueceu a senha: só o platform admin resolve | dúvida | **aceitar** e pôr no `operations.md`. A (b) reabriria o risco que fechamos no A1 |
+| 9 | Materiais recusados: o texto do técnico some, e "Dispensar" apaga | dúvida | **(b) mostrar o texto recusado** no cartão de Pendências, com copiar. S, e evita perder o que ele escreveu |
+| 10 | Fotos da galeria do parceiro que não tocou "Iniciar" passam sem o alerta "tirada antes do início" | dúvida | **aceitar**: já é a regra F7 |
+
+Se seguir as recomendações, a etapa 3 ganha 5 itens de código: os bugs 1 e 2, o aviso do endereço (5), a validade de 10 dias (6) e o texto dos materiais recusados (9). Ganha também 2 linhas no `operations.md` (3 e 8), além das observações do cliente na tela do técnico, que já estavam na etapa. Os 2 pontos de partida que estavam no pending (as dúvidas 4 e 5) saem de lá, porque agora estão no `edges.md`.
+
+Segue as recomendações ou quer mudar alguma?
+
