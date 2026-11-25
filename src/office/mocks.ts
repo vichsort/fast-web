@@ -6,6 +6,7 @@ import { ACTIVE_ORDER_STATUSES, type MemberRole } from '@/lib/enums';
 import { ApiError } from '@/lib/errors';
 import { calendarDay } from '@/lib/format';
 import { blankToNull, phoneDigitsOrNull } from '@/lib/input';
+import { memberLink } from '@/lib/member-link';
 import { isOverdue } from '@/lib/order-detail';
 import type {
   AuditView,
@@ -39,7 +40,7 @@ import {
 import { emails } from '@/mocks/data';
 import type { AddressInput, OrderEdit, OrderInput } from './api/types';
 import type { ZipLookup } from './api/viacep';
-import { addressText, orderMatches, seenUntil } from './derive';
+import { addressText, memberIdentity, orderMatches, seenUntil } from './derive';
 
 const LATENCY = 150;
 const wait = <T>(value: T): Promise<T> =>
@@ -275,13 +276,13 @@ export async function officeListMembers(filters: { includeRemoved?: boolean } = 
   return wait(s.members.filter((m) => filters.includeRemoved || m.deleted_at === null));
 }
 
-/** Técnicos ativos (para atribuir e filtrar). */
+/** Técnicos ativos, com o convite aceito (para atribuir e filtrar). */
 export async function officeTechnicians(): Promise<PersonRef[]> {
   const s = await store();
   return wait(
     s.members
-      .filter((m) => m.role === 'technician' && m.deleted_at === null)
-      .map((m) => ({ id: m.user_id, full_name: m.profile.full_name }))
+      .filter((m) => isTechnician(s, m.user_id))
+      .map((m) => ({ id: m.user_id, full_name: memberIdentity(m).name }))
       .sort((a, b) => a.full_name.localeCompare(b.full_name, 'pt-BR')),
   );
 }
@@ -290,7 +291,7 @@ export async function officeTechnicians(): Promise<PersonRef[]> {
 export async function officePeople(): Promise<PersonRef[]> {
   const s = await store();
   const people = new Map<string, PersonRef>();
-  for (const p of [...s.members.map((m) => m.profile), ...profiles.values()]) people.set(p.id, ref(p));
+  for (const p of [...s.members.flatMap((m) => m.profile ?? []), ...profiles.values()]) people.set(p.id, ref(p));
   return wait([...people.values()]);
 }
 
@@ -425,8 +426,9 @@ export async function updateOrder(id: string, edit: OrderEdit, actor: PersonRef)
   return void (await wait(null));
 }
 
-const isTechnician = (s: Store, userId: string) =>
-  s.members.some((m) => m.user_id === userId && m.role === 'technician' && m.deleted_at === null);
+const activeTechnician = (s: Store, userId: string) =>
+  s.members.find((m) => m.user_id === userId && m.role === 'technician' && m.status === 'accepted' && !m.deleted_at);
+const isTechnician = (s: Store, userId: string) => activeTechnician(s, userId) !== undefined;
 
 function applyAssignees(s: Store, o: OrderDetail, ids: string[], actor: PersonRef, cause: string) {
   const at = now();
@@ -440,15 +442,13 @@ function applyAssignees(s: Store, o: OrderDetail, ids: string[], actor: PersonRe
   }
   for (const userId of wanted) {
     if (o.assignments.some((a) => a.user_id === userId && a.unassigned_at === null)) continue;
-    const member =
-      s.members.find((m) => m.user_id === userId && m.role === 'technician' && m.deleted_at === null) ??
-      fail('invalid_input');
+    const member = activeTechnician(s, userId) ?? fail('invalid_input');
     o.assignments.push({
       id: crypto.randomUUID(),
       company_id: s.company.id,
       service_order_id: o.id,
       user_id: userId,
-      user: { id: userId, full_name: member.profile.full_name },
+      user: { id: userId, full_name: memberIdentity(member).name },
       assigned_by: actor.id,
       assigned_at: at,
       created_at: at,
@@ -769,57 +769,76 @@ function closeAssignments(
   return closed;
 }
 
+const isActive = (m: MemberView) => m.status === 'accepted' && m.deleted_at === null;
 const isLastOwner = (s: Store, m: MemberView) =>
-  m.role === 'owner' && s.members.filter((x) => x.role === 'owner' && x.deleted_at === null).length === 1;
+  m.role === 'owner' && isActive(m) && s.members.filter((x) => x.role === 'owner' && isActive(x)).length === 1;
 
-/** Edge Function invite_member: membro ativo devolve o vínculo sem mudar nada; removido é reativado. */
+/** Um link de exemplo: no real, o token vem do backend (06, R12). */
+const sampleLink = () => memberLink(window.location.origin, crypto.randomUUID().replaceAll('-', ''));
+
+/**
+ * Edge Function invite_member: vínculo pendente com o nome e o email digitados e o link do convite (06, R2 e R12);
+ * membro aceito devolve o vínculo sem link.
+ */
 export async function inviteMember(input: { email: string; full_name: string; role: MemberRole }, actor: PersonRef) {
   const s = await store();
   const email = input.email.trim().toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !input.full_name.trim()) fail('invalid_input');
-  const existing = s.members.find((m) => memberEmails.get(m.user_id)?.toLowerCase() === email);
-  if (existing && existing.deleted_at === null) return wait({ member: existing, reactivated: false, already: true });
+  const full_name = input.full_name.trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !full_name) fail('invalid_input');
+  const existing = s.members.find((m) => (memberEmails.get(m.user_id) ?? m.invite?.email)?.toLowerCase() === email);
+  if (existing && isActive(existing)) return wait({ member: existing, link: null });
+  const invite = { full_name, email, invited_at: now() };
   if (existing) {
-    Object.assign(existing, { deleted_at: null, deleted_by: null, delete_reason: null, role: input.role });
+    const reactivated = existing.deleted_at !== null;
+    Object.assign(existing, {
+      status: 'pending',
+      role: input.role,
+      deleted_at: null,
+      deleted_by: null,
+      delete_reason: null,
+      invite,
+    });
     audit(
       s,
       actor,
       'member_invited',
-      { type: 'company_member', id: existing.id, name: existing.profile.full_name },
-      { user_id: existing.user_id, role: input.role, reactivated: true },
+      { type: 'company_member', id: existing.id, name: full_name },
+      { user_id: existing.user_id, role: input.role, reactivated },
     );
-    return wait({ member: existing, reactivated: true, already: false });
+    return wait({ member: existing, link: sampleLink() });
   }
   const userId = crypto.randomUUID();
-  const at = now();
   const member: MemberView = {
     id: crypto.randomUUID(),
     company_id: s.company.id,
     user_id: userId,
     role: input.role,
-    created_at: at,
+    status: 'pending',
+    accepted_at: null,
+    created_at: now(),
     deleted_at: null,
     deleted_by: null,
     delete_reason: null,
-    profile: {
-      id: userId,
-      full_name: input.full_name.trim(),
-      phone: null,
-      is_platform_admin: false,
-      created_at: at,
-      updated_at: at,
-    },
+    profile: null,
+    invite,
   };
   s.members.push(member);
-  memberEmails.set(userId, email);
   audit(
     s,
     actor,
     'member_invited',
-    { type: 'company_member', id: member.id, name: member.profile.full_name },
+    { type: 'company_member', id: member.id, name: full_name },
     { user_id: userId, role: input.role, reactivated: false },
   );
-  return wait({ member, reactivated: false, already: false });
+  return wait({ member, link: sampleLink() });
+}
+
+/** Edge Function create_password_link: só de membro aceito e ativo (06, R14). */
+export async function createPasswordLink(memberId: string, actor: PersonRef) {
+  const s = await store();
+  const m = s.members.find((x) => x.id === memberId && isActive(x)) ?? fail('not_found');
+  audit(s, actor, 'password_link_created', { type: 'company_member', id: m.id, name: memberIdentity(m).name }, {});
+  return wait({ link: sampleLink() });
 }
 
 /** Edge Function update_member_role. */
@@ -833,7 +852,7 @@ export async function updateMemberRole(memberId: string, role: MemberRole, actor
     s,
     actor,
     'member_role_changed',
-    { type: 'company_member', id: m.id, name: m.profile.full_name },
+    { type: 'company_member', id: m.id, name: memberIdentity(m).name },
     { from: m.role, to: role, closed_assignments: closed },
   );
   m.role = role;
@@ -852,7 +871,7 @@ export async function removeMember(memberId: string, reason: string, actor: Pers
     s,
     actor,
     'member_removed',
-    { type: 'company_member', id: m.id, name: m.profile.full_name },
+    { type: 'company_member', id: m.id, name: memberIdentity(m).name },
     { reason: reason.trim(), closed_assignments: closed },
   );
   return wait({ closed_assignments: closed });

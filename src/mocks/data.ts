@@ -12,6 +12,7 @@ import type {
   CompanyMember,
   Execution,
   HistoryEvent,
+  MemberInvite,
   PendingItem,
   Photo,
   Profile,
@@ -92,16 +93,46 @@ const memberRole: Record<PersonKey, CompanyMember['role']> = {
   andre: 'technician',
 };
 
-export const members: CompanyMember[] = (Object.keys(personSeed) as PersonKey[]).map((key) => ({
-  id: uid('a2', personSeed[key].n),
+export const members: CompanyMember[] = (Object.keys(personSeed) as PersonKey[]).map((key) => {
+  const created_at = key === 'lucas' ? daysAgo(20) : daysAgo(380 - personSeed[key].n * 20);
+  return {
+    id: uid('a2', personSeed[key].n),
+    company_id: company.id,
+    user_id: pid(key),
+    role: memberRole[key],
+    status: 'accepted' as const,
+    accepted_at: created_at,
+    created_at,
+    deleted_at: key === 'andre' ? daysAgo(6) : null,
+    deleted_by: key === 'andre' ? pid('ricardo') : null,
+    delete_reason: key === 'andre' ? 'Saiu da empresa.' : null,
+  };
+});
+
+// Um convite ainda sem aceite (06): o perfil fica escondido, e a lista mostra o nome e o email digitados.
+const pendingInvite: CompanyMember = {
+  id: uid('a2', 8),
   company_id: company.id,
-  user_id: pid(key),
-  role: memberRole[key],
-  created_at: key === 'lucas' ? daysAgo(20) : daysAgo(380 - personSeed[key].n * 20),
-  deleted_at: key === 'andre' ? daysAgo(6) : null,
-  deleted_by: key === 'andre' ? pid('ricardo') : null,
-  delete_reason: key === 'andre' ? 'Saiu da empresa.' : null,
-}));
+  user_id: uid('a1', 8),
+  role: 'technician',
+  status: 'pending',
+  accepted_at: null,
+  created_at: daysAgo(2),
+  deleted_at: null,
+  deleted_by: null,
+  delete_reason: null,
+};
+members.push(pendingInvite);
+
+/** O nome e o email digitados no convite, por vínculo (só o owner lê). */
+export const memberInvites: Record<string, MemberInvite> = {
+  [pendingInvite.id]: { full_name: 'Rafael Martins', email: 'rafael.martins@gmail.com', invited_at: daysAgo(2) },
+  [uid('a2', personSeed.lucas.n)]: {
+    full_name: 'Lucas Oliveira',
+    email: personSeed.lucas.email,
+    invited_at: daysAgo(20),
+  },
+};
 
 /** Usuários de exemplo por papel, para as telas simularem a sessão. */
 export const sessionUsers = {

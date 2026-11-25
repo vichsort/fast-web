@@ -4,6 +4,8 @@ import {
   directWriteError,
   leavingWhileWorking,
   mayHaveOfflineWork,
+  memberIdentity,
+  memberState,
   type OrderListRow,
   splitOrderFilters,
   toClientListItem,
@@ -219,5 +221,40 @@ describe('offline work warnings (UX review 1)', () => {
     expect(leavingWhileWorking(working, [bia.id, boss.id])).toEqual([ana]);
     expect(leavingWhileWorking(working, [ana.id, bia.id])).toEqual([]);
     expect(leavingWhileWorking({ ...working, status: 'open' }, [])).toEqual([]);
+  });
+});
+
+describe('members (06, R9)', () => {
+  const profile = {
+    id: 'u-1',
+    full_name: 'Nome do perfil',
+    phone: null,
+    is_platform_admin: false,
+    created_at: '',
+    updated_at: '',
+  };
+  const invite = { full_name: 'Nome digitado', email: 'digitado@fast.test', invited_at: '2026-11-24T10:00:00Z' };
+
+  it('shows the name and email typed in the invite until it is accepted, then the profile', () => {
+    expect(memberIdentity({ status: 'pending', profile: null, invite })).toEqual({
+      name: 'Nome digitado',
+      email: 'digitado@fast.test',
+    });
+    expect(memberIdentity({ status: 'declined', profile: null, invite }).name).toBe('Nome digitado');
+    // Removido e convidado de novo: o perfil continua visível, mas o convite novo manda até o aceite.
+    expect(memberIdentity({ status: 'pending', profile, invite }).name).toBe('Nome digitado');
+    expect(memberIdentity({ status: 'accepted', profile, invite })).toEqual({ name: 'Nome do perfil', email: null });
+  });
+
+  it('falls back to what it has: a member written directly in the database has no invite', () => {
+    expect(memberIdentity({ status: 'accepted', profile, invite: null }).name).toBe('Nome do perfil');
+    expect(memberIdentity({ status: 'pending', profile: null, invite: null }).name).toBe('—');
+  });
+
+  it('a removal outranks the invite state', () => {
+    expect(memberState({ status: 'accepted', deleted_at: null })).toBe('active');
+    expect(memberState({ status: 'pending', deleted_at: null })).toBe('pending');
+    expect(memberState({ status: 'declined', deleted_at: null })).toBe('declined');
+    expect(memberState({ status: 'pending', deleted_at: '2026-11-24T10:00:00Z' })).toBe('removed');
   });
 });

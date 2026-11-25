@@ -72,7 +72,7 @@ export interface OfficeApi {
   officeClientNames(): Promise<ClientName[]>;
   officeGetClient(id: string): Promise<(ClientDetail & { open_orders: number }) | null>;
   officeListMembers(filters?: { includeRemoved?: boolean }): Promise<MemberView[]>;
-  /** Técnicos ativos (para atribuir e filtrar). */
+  /** Técnicos ativos, com o convite aceito (para atribuir e filtrar, 03 R7). */
   officeTechnicians(): Promise<PersonRef[]>;
   /** Pessoas que o usuário enxerga, inclusive removidas, para mostrar nomes por id. */
   officePeople(): Promise<PersonRef[]>;
@@ -125,10 +125,13 @@ export interface OfficeApi {
     input: Pick<Company, 'name' | 'document' | 'phone' | 'email' | 'timezone'>,
     actor: PersonRef,
   ): Promise<Company>;
+  /** Convite (06): o vínculo pendente e o link do convite para o owner mandar; `link` nulo se a pessoa já é membro. */
   inviteMember(
     input: { email: string; full_name: string; role: MemberRole },
     actor: PersonRef,
-  ): Promise<{ member: MemberView; reactivated: boolean; already: boolean }>;
+  ): Promise<{ member: MemberView; link: string | null }>;
+  /** Link de "definir senha" de um membro aceito, para o owner mandar (06, R14). */
+  createPasswordLink(memberId: string, actor: PersonRef): Promise<{ link: string }>;
   updateMemberRole(memberId: string, role: MemberRole, actor: PersonRef): Promise<{ closed_assignments: number }>;
   removeMember(memberId: string, reason: string, actor: PersonRef): Promise<{ closed_assignments: number }>;
   updateProfile(id: string, input: { full_name: string; phone: string | null }): Promise<Profile>;

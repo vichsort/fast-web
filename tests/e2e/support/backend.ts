@@ -129,6 +129,7 @@ function adminClient(): Client {
   return createClient<Database>(supabaseUrl, serviceKey, { auth: { persistSession: false } });
 }
 
+/** Técnico próprio do teste: conta com senha, convidado pelo owner (`invite_member`) e com o convite aceito. */
 export async function createTechnician(): Promise<{ email: string; userId: string; memberId: string }> {
   const admin = adminClient();
   const tag = crypto.randomUUID().slice(0, 8);
@@ -143,11 +144,15 @@ export async function createTechnician(): Promise<{ email: string; userId: strin
   if (created.error) throw created.error;
 
   const { client, userId: ownerId } = await signIn(users.owner);
-  const invited = await client.functions.invoke<{ member_id: string; user_id: string }>('invite_member', {
+  const invited = await client.functions.invoke<{ member_id: string; token: string | null }>('invite_member', {
     body: { company_id: await companyOf(client, ownerId), email, full_name: fullName, role: 'technician' },
   });
   if (invited.error || !invited.data) throw invited.error ?? new Error('invite_member sem resposta');
-  return { email, userId: invited.data.user_id, memberId: invited.data.member_id };
+  // O convite fica pendente até o aceite do convidado (06, R10): a conta já tem senha, então aceita pela RPC.
+  const technician = await signIn(email);
+  const accepted = await technician.client.rpc('accept_invite', { p_member_id: invited.data.member_id });
+  if (accepted.error) throw accepted.error;
+  return { email, userId: created.data.user.id, memberId: invited.data.member_id };
 }
 
 /** O owner remove o membro (06, `remove_member`). */

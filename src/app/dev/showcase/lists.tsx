@@ -225,8 +225,8 @@ const memberColumns: DataTableColumn<MemberView>[] = [
     id: 'name',
     header: t('ui.showcase.demo.memberColumns.name'),
     label: t('ui.showcase.demo.memberColumns.name'),
-    sortValue: (m) => m.profile.full_name,
-    cell: (m) => <UserChip name={m.profile.full_name} seed={m.user_id} size="sm" />,
+    sortValue: (m) => m.profile?.full_name ?? m.invite?.full_name ?? '—',
+    cell: (m) => <UserChip name={m.profile?.full_name ?? m.invite?.full_name ?? '—'} seed={m.user_id} size="sm" />,
   },
   {
     id: 'role',

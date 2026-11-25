@@ -121,7 +121,7 @@ Linhas tipadas por `database.types.ts` em `data.ts` (datas relativas ao carregam
 | Conjunto | Conteúdo |
 | --- | --- |
 | Empresa | Fast Monitoramento, `America/Sao_Paulo` |
-| Membros | dono (Ricardo), gestora (Juliana), 4 técnicos (Marcos, Diego, Paulo, Lucas) e 1 removido com motivo (André) |
+| Membros | dono (Ricardo), gestora (Juliana), 4 técnicos (Marcos, Diego, Paulo, Lucas), 1 removido com motivo (André) e 1 convite pendente (Rafael, só com o nome e o email do convite) |
 | Clientes | 10, com 0 a 3 endereços (principal, sem endereço do cadastro rápido, endereço excluído) e 1 cliente excluído com O.S. antiga |
 | O.S. | 15 (#0031–#0045): todos os status, prioridades e tipos; sem técnico, atrasadas (aberta, em execução, rejeitada), sem prazo, vencendo hoje, cancelada com tentativa anulada, uma com técnico tirado por remoção do membro |
 | Execuções | pendente com complemento convertido e complemento com foto da galeria sem EXIF; rejeitada com motivo e nova tentativa enviada antes da rejeição (com foto da galeria anterior ao início); entregue com atraso; aprovada com comentário; complemento tardio visto e não visto |
@@ -138,7 +138,7 @@ Linhas tipadas por `database.types.ts` em `data.ts` (datas relativas ao carregam
 | `getDashboard()` | `get_dashboard` |
 | `listPendingApproval()`, `listOverdue()`, `listLateSupplements()` | listas do dashboard |
 | `listClients({search, includeDeleted})`, `getClient(id)` | clientes com endereço principal e O.S. em andamento; detalhe com endereços e O.S. |
-| `listMembers({includeRemoved})`, `listTechnicians()`, `listAudit()` | membros com perfil e email; técnicos ativos; auditoria com autor e alvo |
+| `listMembers({includeRemoved})`, `listTechnicians()`, `listAudit()` | membros com perfil (nulo no convite pendente) e o convite; técnicos ativos e aceitos; auditoria com autor e alvo |
 | `listPendingItems()`, `getSyncState()` | fila e indicador do aparelho |
 | `getSessionUser(papel)`, `getCompany()`, `getPerson(id)` | sessão simulada, empresa, nomes |
 | `MOCK_USER_IDS`, `MOCK_TIME_ZONE`, `setMockLatency(ms)`, `samplePhotoUrl(cena, semente)` | ids por papel, fuso, latência simulada (250 ms), foto de exemplo |

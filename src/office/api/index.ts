@@ -39,6 +39,7 @@ export const {
   deleteClient,
   updateCompany,
   inviteMember,
+  createPasswordLink,
   updateMemberRole,
   removeMember,
   updateProfile,

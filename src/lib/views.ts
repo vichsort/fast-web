@@ -126,8 +126,13 @@ export interface ClientDetail extends Client {
   orders: OfficeOrderListItem[];
 }
 
+/** O nome e o email que o owner digitou no último convite (`member_invites`, 06 R9); só o owner lê. */
+export type MemberInvite = Pick<Tables<'member_invites'>, 'full_name' | 'email' | 'invited_at'>;
+
 export interface MemberView extends CompanyMember {
-  profile: Profile;
+  /** `null` para quem nunca aceitou o convite: o RLS esconde o perfil (01, R9). */
+  profile: Profile | null;
+  invite: MemberInvite | null;
 }
 
 export interface AuditView extends AuditLog {

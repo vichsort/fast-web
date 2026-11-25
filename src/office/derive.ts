@@ -12,6 +12,7 @@ import type {
   ClientAddress,
   ClientListItem,
   ExecutionView,
+  MemberView,
   OfficeOrderListItem,
   OrderFilters,
   OrderQuery,
@@ -152,4 +153,27 @@ export function leavingWhileWorking(
   ids: string[],
 ): PersonRef[] {
   return mayHaveOfflineWork(order) ? order.assignees.filter((a) => !ids.includes(a.id)) : [];
+}
+
+export type MemberState = 'active' | 'pending' | 'declined' | 'removed';
+
+/** Estado do vínculo na lista de membros (06): a remoção vale sobre o estado do convite. */
+export function memberState(m: Pick<MemberView, 'status' | 'deleted_at'>): MemberState {
+  if (m.deleted_at) return 'removed';
+  if (m.status === 'pending') return 'pending';
+  if (m.status === 'declined') return 'declined';
+  return 'active';
+}
+
+/**
+ * Nome e email de um membro: os digitados no convite até o aceite (06, R9), inclusive de quem foi removido e convidado
+ * de novo; depois, o nome do perfil, sem email (o email fica no Auth).
+ */
+export function memberIdentity(m: Pick<MemberView, 'status' | 'profile' | 'invite'>): {
+  name: string;
+  email: string | null;
+} {
+  if (m.status !== 'accepted')
+    return { name: m.invite?.full_name ?? m.profile?.full_name ?? '—', email: m.invite?.email ?? null };
+  return { name: m.profile?.full_name ?? m.invite?.full_name ?? '—', email: null };
 }

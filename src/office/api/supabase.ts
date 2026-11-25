@@ -6,6 +6,7 @@ import { invokeFunction } from '@/lib/edge-functions';
 import { type MemberRole, OVERDUE_STATUSES } from '@/lib/enums';
 import { ApiError, classifyRpcError } from '@/lib/errors';
 import { blankToNull, phoneDigitsOrNull } from '@/lib/input';
+import { memberLink } from '@/lib/member-link';
 import { type OrderRow, toOrderDetail } from '@/lib/order-detail';
 import { HISTORY_SELECT, ORDER_SELECT, PERSON, photoUrls } from '@/lib/orders-query';
 import { supabase } from '@/lib/supabase';
@@ -21,7 +22,14 @@ import type {
   OrderQuery,
   PersonRef,
 } from '@/lib/views';
-import { type ClientRow, directWriteError, type OrderListRow, toClientListItem, toOrderListItem } from '../derive';
+import {
+  type ClientRow,
+  directWriteError,
+  memberIdentity,
+  type OrderListRow,
+  toClientListItem,
+  toOrderListItem,
+} from '../derive';
 import { readAll } from './read-all';
 import type { AddressInput, OfficeApi, OrderEdit, OrderInput } from './types';
 import { updateOrderArgs } from './update-order';
@@ -385,12 +393,15 @@ async function deleteClient(id: string, reason: string, _actor: PersonRef) {
 
 // ---------------------------------------------------------------- empresa, membros, auditoria e perfil (01, 05, 06)
 
-/** Vínculos da empresa com o perfil (sem email: docs/decisions.md, Telas do escritório). */
+/**
+ * Vínculos da empresa com o perfil (sem email: docs/decisions.md, Telas do escritório) e o nome e o email do convite,
+ * que só o owner lê (06, R9). O perfil de quem nunca aceitou vem nulo.
+ */
+const MEMBER_SELECT =
+  '*, profile:profiles!company_members_user_id_fkey(*), invite:member_invites(full_name, email, invited_at)';
+
 async function officeListMembers(filters: { includeRemoved?: boolean } = {}): Promise<MemberView[]> {
-  let query = supabase
-    .from('company_members')
-    .select('*, profile:profiles!company_members_user_id_fkey(*)')
-    .eq('company_id', current().companyId);
+  let query = supabase.from('company_members').select(MEMBER_SELECT).eq('company_id', current().companyId);
   if (!filters.includeRemoved) query = query.is('deleted_at', null);
   return rows(query.order('created_at'));
 }
@@ -411,7 +422,7 @@ async function officeAudit(): Promise<AuditView[]> {
     officeListMembers({ includeRemoved: true }),
     officeCompany(),
   ]);
-  const memberName = new Map(members.map((m) => [m.id, m.profile.full_name]));
+  const memberName = new Map(members.map((m) => [m.id, memberIdentity(m).name]));
   return logs.map((log) => ({
     ...log,
     // O nome guardado no registro (05): renomear o perfil depois não reescreve a auditoria.
@@ -440,26 +451,25 @@ async function updateCompany(
   );
 }
 
-/** invite_member (06). Convite de quem já é membro ativo devolve o vínculo existente, com `already`. */
+/** invite_member (06): o vínculo pendente e o link do convite. Membro já aceito: o vínculo, sem link. */
 async function inviteMember(input: { email: string; full_name: string; role: MemberRole }, _actor: PersonRef) {
-  const result = await invokeFunction<{ member_id: string; user_id: string; reactivated: boolean; already: boolean }>(
-    'invite_member',
-    {
-      company_id: current().companyId,
-      email: input.email.trim(),
-      full_name: input.full_name.trim(),
-      role: input.role,
-    },
-  );
+  const result = await invokeFunction<{ member_id: string; token: string | null }>('invite_member', {
+    company_id: current().companyId,
+    email: input.email.trim(),
+    full_name: input.full_name.trim(),
+    role: input.role,
+  });
   const member = await maybe(
-    supabase
-      .from('company_members')
-      .select('*, profile:profiles!company_members_user_id_fkey(*)')
-      .eq('id', result.member_id)
-      .maybeSingle(),
+    supabase.from('company_members').select(MEMBER_SELECT).eq('id', result.member_id).maybeSingle(),
   );
   if (!member) throw new ApiError('rule', 'not_found', 'not_found');
-  return { member, reactivated: result.reactivated, already: result.already };
+  return { member, link: result.token && memberLink(window.location.origin, result.token) };
+}
+
+/** create_password_link (06, R14). */
+async function createPasswordLink(memberId: string, _actor: PersonRef) {
+  const { token } = await invokeFunction<{ token: string }>('create_password_link', { member_id: memberId });
+  return { link: memberLink(window.location.origin, token) };
 }
 
 async function updateMemberRole(memberId: string, role: MemberRole, _actor: PersonRef) {
@@ -500,6 +510,7 @@ async function officeTechnicians(): Promise<PersonRef[]> {
       .select(`user:profiles!company_members_user_id_fkey(${PERSON})`)
       .eq('company_id', current().companyId)
       .eq('role', 'technician')
+      .eq('status', 'accepted')
       .is('deleted_at', null),
   );
   return found.map((m) => m.user).sort((a, b) => a.full_name.localeCompare(b.full_name, 'pt-BR'));
@@ -545,6 +556,7 @@ export const supabaseApi: OfficeApi = {
   deleteClient,
   updateCompany,
   inviteMember,
+  createPasswordLink,
   updateMemberRole,
   removeMember,
   updateProfile,

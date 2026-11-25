@@ -33,6 +33,7 @@ import {
   company,
   executions,
   history,
+  memberInvites,
   members,
   NOW,
   orders,
@@ -320,16 +321,23 @@ export function listMembers(filters: { includeRemoved?: boolean } = {}): Promise
     .filter((m) => filters.includeRemoved || m.deleted_at === null)
     .map((m) => ({
       ...m,
-      profile: allProfiles.find((p) => p.id === m.user_id) as Profile,
+      // O RLS esconde o perfil de quem nunca aceitou o convite (01, R9).
+      profile: m.accepted_at ? ((allProfiles.find((p) => p.id === m.user_id) as Profile) ?? null) : null,
+      invite: memberInvites[m.id] ?? null,
     }))
-    .sort((a, b) => a.profile.full_name.localeCompare(b.profile.full_name, 'pt-BR'));
+    .sort((a, b) =>
+      (a.profile?.full_name ?? a.invite?.full_name ?? '').localeCompare(
+        b.profile?.full_name ?? b.invite?.full_name ?? '',
+        'pt-BR',
+      ),
+    );
   return delay(list);
 }
 
-/** Técnicos ativos (para atribuir e filtrar). */
+/** Técnicos ativos, com o convite aceito (para atribuir e filtrar). */
 export function listTechnicians(): Promise<PersonRef[]> {
   const list = members
-    .filter((m) => m.role === 'technician' && m.deleted_at === null)
+    .filter((m) => m.role === 'technician' && m.status === 'accepted' && m.deleted_at === null)
     .map((m) => person(m.user_id))
     .sort((a, b) => a.full_name.localeCompare(b.full_name, 'pt-BR'));
   return delay(list);

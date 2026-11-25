@@ -15,7 +15,14 @@ import { useAudit } from '../queries';
 import { useOffice } from '../session';
 import { OwnerOnly } from '../shared';
 
-const ACTIONS = ['company_updated', 'member_invited', 'member_role_changed', 'member_removed'] as const;
+const ACTIONS = [
+  'company_updated',
+  'member_invited',
+  'member_accepted',
+  'member_role_changed',
+  'member_removed',
+  'password_link_created',
+] as const;
 type AuditAction = (typeof ACTIONS)[number];
 const FIELDS = ['name', 'document', 'phone', 'email', 'timezone', 'deleted_at'] as const;
 

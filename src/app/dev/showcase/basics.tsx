@@ -390,7 +390,10 @@ export function StatesSection() {
 
 export function UsersSection() {
   const members = useQuery({ queryKey: ['mock', 'members'], queryFn: () => listMembers() });
-  const people = (members.data ?? []).map((m) => ({ id: m.user_id, full_name: m.profile.full_name }));
+  const people = (members.data ?? []).map((m) => ({
+    id: m.user_id,
+    full_name: m.profile?.full_name ?? m.invite?.full_name ?? '—',
+  }));
   return (
     <ShowcaseSection id="users" title={t('ui.showcase.sections.users')}>
       <Demo label="UserAvatar · size">
@@ -407,7 +410,7 @@ export function UsersSection() {
         {members.data?.slice(0, 3).map((m, i) => (
           <Demo key={m.id} label={`UserChip size="${(['sm', 'md', 'lg'] as const)[i]}"`}>
             <UserChip
-              name={m.profile.full_name}
+              name={m.profile?.full_name ?? m.invite?.full_name ?? '—'}
               seed={m.user_id}
               memberRole={m.role}
               isSelf={i === 1}

@@ -27,14 +27,7 @@ Decisões de 2026-11-24 em [06 Membros](decisions.md#06-membros). Contrato em [0
 
 | Parte | Repo | O que fazer |
 | --- | --- | --- |
-| Vínculo pendente | backend | `company_members` com o estado do aceite e o nome digitado no convite; o vínculo pendente não dá acesso à empresa nem entra no `colleague_ids()` (o owner não lê o perfil); a lista de membros mostra o nome e o email do convite até o aceite |
-| `invite_member` | backend | saída sem `already`, `reactivated` e `created`, igual para email novo e existente, com o link do convite ([sem email](#sem-email)); convite a quem tem vínculo aceito em outra empresa fica pendente |
-| Aceitar e recusar | backend | operações do próprio convidado; a recusa deixa o vínculo como recusado, e o convite seguinte o reabre; aceitar recusa se ele já tem vínculo aceito em outra empresa (um por pessoa); conta nova aceita ao definir a senha pelo link do convite |
-| Atribuição | backend | `create_order` e `set_assignees` recusam técnico pendente |
-| Remoção (R8) | backend | não bane quem tem convite pendente |
-| Tela de membros | front | pendente com o nome e o email do convite; recusado; cancelar o pendente pela remoção; aviso de "já era membro" sai junto com o `already` |
 | Convite no app | front | sem vínculo ativo e com convite pendente: tela "A empresa X convidou você" (aceitar, recusar) no lugar do aviso de removido; "definir senha" pelo link do convite aceita |
-| Técnicos da O.S. | front | seletor só com técnicos aceitos |
 
 ### Sem email
 
@@ -42,10 +35,8 @@ Decisões de 2026-11-24 em [01 Fundação](decisions.md#01-fundação). Contrato
 
 | Parte | Repo | O que fazer |
 | --- | --- | --- |
-| Link do convite | os dois | o `invite_member` cria o usuário sem mandar email e devolve um link do app com um token próprio, de uso único, válido por 7 dias, que invalida o anterior; o app abre "definir senha" (conta nova) ou "entre com sua senha para aceitar" (conta existente), e o owner vê o mesmo link nos dois casos. A tela de membros mostra o link para copiar ou compartilhar |
-| Link de recuperação | os dois | operação do owner que gera o link de "definir senha" para um membro da empresa, de uso único, válido por 24 h, com auditoria; a tela "esqueci a senha" vira "peça o link ao responsável" |
+| Link do convite e de recuperação | front | a página `/link#<token>` abre "definir senha" (conta nova e recuperação) ou "entre com sua senha para aceitar" (conta existente); a tela "esqueci a senha" vira "peça o link ao responsável". O backend (`open_link`, `use_link`) e a tela de membros já estão feitos |
 | Trocar a senha | front | pede a senha atual e entra de novo com ela antes de trocar |
-| Config do Auth | backend | sem SMTP e sem os templates de email; `secure_password_change = true` e senha mínima de 6 no `config.toml` |
 
 ### Versão e atualização automática
 
