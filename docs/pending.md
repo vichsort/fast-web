@@ -21,7 +21,6 @@ Achados da análise do banco aprovados pelo P.O. em 2026-11-25 (os reprovados fo
 
 | Item | Gravidade | Repo | O que fazer |
 | --- | --- | --- | --- |
-| Prazo não anda com a troca de fuso | média | backend | em `update_order`, manter o `due_at` quando `p_due_date` é a data do `due_at` atual no fuso da empresa; hoje trocar `companies.timezone` desloca o prazo na próxima edição |
 | Técnico guarda só as colunas usadas | média | front | o select do técnico (`ORDER_SELECT`, `lib/orders-query.ts`) sem `*` nem `clients(*)`: só as colunas que as telas usam, como diz o offline.md (`clients.notes` fica: é para o técnico) |
 | O.S. encerrada some do técnico em 7 dias | média | backend | `assigned_order_ids` (`orders_rls`) aceita O.S. `approved`/`cancelled` só com `updated_at` de até 7 dias, a janela que o front já usa; hoje o técnico lê pela API, sem prazo, toda O.S. em que esteve, e o convidado de novo volta a ler as antigas. As atribuições das encerradas continuam abertas (registro de quem fez); a escrita (`is_assigned`) não muda, e o complemento tardio segue aceito. 03 R14; pgTAP 14, 15 e 24 |
 | Senha definida pelo painel | baixa | backend | linha no `operations.md`: ao definir a senha de alguém pelo painel do Supabase, gravar também `password_pending: false` no `app_metadata` |
