@@ -373,10 +373,10 @@ isOneToOne: false
       referencedColumns: ["id"]
     },{
       foreignKeyName: "service_order_executions_supplements_execution_id_fkey"
-      columns: ["supplements_execution_id"]
+      columns: ["supplements_execution_id","service_order_id"]
 isOneToOne: false
       referencedRelation: "service_order_executions"
-      referencedColumns: ["id"]
+      referencedColumns: ["id","service_order_id"]
     }
                   ]
                 },"service_order_history": {
@@ -463,16 +463,16 @@ isOneToOne: false
       referencedColumns: ["id"]
     },{
       foreignKeyName: "service_orders_client_address_id_fkey"
-      columns: ["client_address_id"]
+      columns: ["client_address_id","client_id"]
 isOneToOne: false
       referencedRelation: "client_addresses"
-      referencedColumns: ["id"]
+      referencedColumns: ["id","client_id"]
     },{
       foreignKeyName: "service_orders_client_id_fkey"
-      columns: ["client_id"]
+      columns: ["client_id","company_id"]
 isOneToOne: false
       referencedRelation: "clients"
-      referencedColumns: ["id"]
+      referencedColumns: ["id","company_id"]
     },{
       foreignKeyName: "service_orders_company_id_fkey"
       columns: ["company_id"]
